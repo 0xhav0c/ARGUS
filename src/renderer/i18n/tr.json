@@ -1,0 +1,72 @@
+{
+  "app": {
+    "title": "ARGUS",
+    "subtitle": "Küresel İstihbarat",
+    "version": "v0.1",
+    "operational": "OPERASYONEL"
+  },
+  "topbar": {
+    "search": "Olay, bölge veya kaynak ara...",
+    "zulu": "ZULU",
+    "online": "ÇEVRİMİÇİ"
+  },
+  "sidebar": {
+    "layers": "KATMANLAR",
+    "activeLayers": "Aktif Katmanlar"
+  },
+  "layers": {
+    "conflict": "ÇATIŞMA",
+    "cyber": "SİBER",
+    "intel": "İSTİHBARAT",
+    "finance": "FİNANS",
+    "activeZones": "Aktif Bölgeler",
+    "militaryMovements": "Askeri Hareketler",
+    "refugeeFlows": "Mülteci Akışları",
+    "armsTransfers": "Silah Transferleri",
+    "ddosAttacks": "DDoS Saldırıları",
+    "aptGroups": "APT Grupları",
+    "zeroDays": "Zero-Day Açıkları",
+    "infraOutages": "Altyapı Kesintileri",
+    "geopolitical": "Jeopolitik Olaylar",
+    "sanctions": "Yaptırımlar",
+    "diplomatic": "Diplomatik",
+    "nuclear": "Nükleer Aktivite",
+    "markets": "Borsa Endeksleri",
+    "commodities": "Emtialar",
+    "currencies": "Döviz Kurları",
+    "crypto": "Kripto Paralar"
+  },
+  "panels": {
+    "liveFeed": "Canlı Akış",
+    "incidentCount": "{{count}} olay",
+    "waitingForData": "Veri bekleniyor...",
+    "source": "Kaynak",
+    "time": "Zaman",
+    "coords": "Koordinat",
+    "locate": "Konumla",
+    "viewSource": "Kaynak",
+    "hideStats": "İstatistikleri Gizle",
+    "showStats": "İstatistikleri Göster"
+  },
+  "filters": {
+    "severity": "ÖNC",
+    "time": "ZAMAN",
+    "region": "BÖLGE",
+    "all": "HEPSİ"
+  },
+  "stats": {
+    "domainDistribution": "Alan Dağılımı",
+    "severity": "Önem Derecesi"
+  },
+  "timeline": {
+    "title": "24s Zaman Çizelgesi"
+  },
+  "statusbar": {
+    "sysOk": "SİSTEM OK",
+    "uptime": "Çalışma",
+    "feeds": "Kaynaklar",
+    "active": "aktif",
+    "incidents": "Olaylar",
+    "cache": "Önbellek"
+  }
+}

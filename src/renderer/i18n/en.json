@@ -1,0 +1,72 @@
+{
+  "app": {
+    "title": "ARGUS",
+    "subtitle": "Global Intelligence",
+    "version": "v0.1",
+    "operational": "OPERATIONAL"
+  },
+  "topbar": {
+    "search": "Search incidents, regions, sources...",
+    "zulu": "ZULU",
+    "online": "ONLINE"
+  },
+  "sidebar": {
+    "layers": "LAYERS",
+    "activeLayers": "Active Layers"
+  },
+  "layers": {
+    "conflict": "CONFLICT",
+    "cyber": "CYBER",
+    "intel": "INTEL",
+    "finance": "FINANCE",
+    "activeZones": "Active Zones",
+    "militaryMovements": "Military Movements",
+    "refugeeFlows": "Refugee Flows",
+    "armsTransfers": "Arms Transfers",
+    "ddosAttacks": "DDoS Attacks",
+    "aptGroups": "APT Groups",
+    "zeroDays": "Zero-Day Exploits",
+    "infraOutages": "Infra Outages",
+    "geopolitical": "Geopolitical Events",
+    "sanctions": "Sanctions",
+    "diplomatic": "Diplomatic",
+    "nuclear": "Nuclear Activity",
+    "markets": "Stock Markets",
+    "commodities": "Commodities",
+    "currencies": "Currencies",
+    "crypto": "Crypto"
+  },
+  "panels": {
+    "liveFeed": "Live Feed",
+    "incidentCount": "{{count}} incidents",
+    "waitingForData": "Waiting for data...",
+    "source": "Source",
+    "time": "Time",
+    "coords": "Coords",
+    "locate": "Locate",
+    "viewSource": "Source",
+    "hideStats": "Hide Stats",
+    "showStats": "Show Stats"
+  },
+  "filters": {
+    "severity": "SEV",
+    "time": "TIME",
+    "region": "AOR",
+    "all": "ALL"
+  },
+  "stats": {
+    "domainDistribution": "Domain Distribution",
+    "severity": "Severity"
+  },
+  "timeline": {
+    "title": "24h Timeline"
+  },
+  "statusbar": {
+    "sysOk": "SYS OK",
+    "uptime": "Uptime",
+    "feeds": "Feeds",
+    "active": "active",
+    "incidents": "Incidents",
+    "cache": "Cache"
+  }
+}

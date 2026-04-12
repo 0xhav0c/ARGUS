@@ -1,0 +1,55 @@
+@theme {
+  --color-hq-bg: #0a0f0d;
+  --color-hq-surface: #111a16;
+  --color-hq-panel: #0d1511;
+  --color-hq-overlay: #0a0f0dcc;
+  --color-hq-green: #00ff41;
+  --color-hq-green-dim: #00ff4133;
+  --color-hq-amber: #ffb000;
+  --color-hq-amber-dim: #ffb00033;
+  --color-hq-red: #ff0040;
+  --color-hq-red-dim: #ff004033;
+  --color-hq-blue: #00b4d8;
+  --color-hq-blue-dim: #00b4d833;
+  --color-hq-cyan: #00f5d4;
+  --color-hq-text: #c5d0c8;
+  --color-hq-text-dim: #6b7f72;
+  --color-hq-border: #1a2f24;
+  --color-hq-border-bright: #2a4f3a;
+
+  --color-domain-conflict: #ff6b35;
+  --color-domain-cyber: #00ff41;
+  --color-domain-intel: #00b4d8;
+  --color-domain-finance: #f5c542;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-scan: scan 4s linear infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor; }
+  to { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+@keyframes scan {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

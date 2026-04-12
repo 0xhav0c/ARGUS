@@ -1,0 +1,88 @@
+{
+  "name": "argus",
+  "version": "1.0.0",
+  "description": "ARGUS — Real-time Global OSINT & Intelligence Dashboard",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "postinstall": "electron-builder install-app-deps",
+    "setup-cesium": "node -e \"const{cpSync,mkdirSync}=require('fs');const p=require('path');const s=p.join('node_modules','cesium','Build','Cesium');const d=p.join('public','cesium');mkdirSync(d,{recursive:true});['Workers','Assets','ThirdParty','Widgets'].forEach(f=>cpSync(p.join(s,f),p.join(d,f),{recursive:true}));console.log('Cesium assets copied.')\"",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.argus.intel",
+    "productName": "ARGUS",
+    "directories": {
+      "buildResources": "resources"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "resources/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "resources/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "resources/icon.png"
+    }
+  },
+  "author": "0xhav0c",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xhav0c/ARGUS.git"
+  },
+  "homepage": "https://github.com/0xhav0c/ARGUS",
+  "bugs": {
+    "url": "https://github.com/0xhav0c/ARGUS/issues"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "cesium": "^1.140.0",
+    "hls.js": "^1.6.15",
+    "i18next": "^26.0.3",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.2",
+    "rss-parser": "^3.13.0",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "eslint": "^10.2.0",
+    "jsdom": "^29.0.2",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vite": "^7.3.1",
+    "vitest": "^4.1.3"
+  }
+}
