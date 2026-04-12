@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell, ipcMain, Notification, session, protocol, net } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, Notification, session } from 'electron'
 import { join } from 'path'
-import { pathToFileURL } from 'url'
+import { createServer, type Server } from 'http'
+import { createReadStream, statSync } from 'fs'
 import { registerIncidentHandlers, setCompanionServer } from './ipc/incidents'
 import { registerFeedHandlers } from './ipc/feeds'
 import { FeedAggregator, classifyDomain, classifySeverity, isOffTopic } from './services/feed-aggregator'
@@ -49,20 +50,88 @@ function sendMainLog(level: string, category: string, message: string, detail?: 
   } catch { /* ignore if no windows */ }
 }
 
-// Register custom protocol scheme BEFORE app.ready — required for YouTube embeds
-// YouTube Error 153 = embed blocked from file:// origin; using app:// scheme fixes this
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'app',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      corsEnabled: true,
-      stream: true,
-    },
-  },
-])
+// Local HTTP server to serve renderer files in packaged builds.
+// YouTube blocks iframe embeds from file:// and custom app:// origins (Error 153).
+// Serving from http://localhost gives a valid web origin that YouTube accepts.
+let rendererServer: Server | null = null
+let rendererPort = 0
+
+function startRendererServer(rendererDir: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const mimeTypes: Record<string, string> = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.mjs': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.wasm': 'application/wasm',
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.glb': 'model/gltf-binary',
+      '.gltf': 'model/gltf+json',
+    }
+
+    const server = createServer((req, res) => {
+      let urlPath = decodeURIComponent(new URL(req.url || '/', `http://localhost`).pathname)
+      if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
+
+      const filePath = join(rendererDir, urlPath)
+      // Prevent path traversal attacks
+      if (!filePath.startsWith(rendererDir)) {
+        res.writeHead(403)
+        res.end('Forbidden')
+        return
+      }
+      try {
+        const stat = statSync(filePath)
+        if (!stat.isFile()) {
+          // SPA fallback — serve index.html for unknown routes
+          const indexPath = join(rendererDir, 'index.html')
+          const indexStat = statSync(indexPath)
+          res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexStat.size })
+          createReadStream(indexPath).pipe(res)
+          return
+        }
+
+        const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase()
+        const contentType = mimeTypes[ext] || 'application/octet-stream'
+        res.writeHead(200, { 'Content-Type': contentType, 'Content-Length': stat.size })
+        createReadStream(filePath).pipe(res)
+      } catch {
+        // SPA fallback for any missing file
+        try {
+          const indexPath = join(rendererDir, 'index.html')
+          const indexStat = statSync(indexPath)
+          res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexStat.size })
+          createReadStream(indexPath).pipe(res)
+        } catch {
+          res.writeHead(404)
+          res.end('Not Found')
+        }
+      }
+    })
+
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address()
+      const port = typeof addr === 'object' && addr ? addr.port : 0
+      rendererServer = server
+      rendererPort = port
+      console.log(`[Renderer Server] Listening on http://127.0.0.1:${port}`)
+      resolve(port)
+    })
+
+    server.on('error', reject)
+  })
+}
 
 let mainWindow: BrowserWindow | null = null
 let feedAggregator: FeedAggregator | null = null
@@ -164,8 +233,7 @@ function createWindow(): void {
   if (process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
-    // Load via app:// custom scheme so YouTube embeds see a proper origin (not file://)
-    mainWindow.loadURL('app://argus/index.html')
+    mainWindow.loadURL(`http://127.0.0.1:${rendererPort}/index.html`)
   }
 
   windowManager.setMainWindow(mainWindow)
@@ -256,7 +324,7 @@ function registerWindowHandlers(): void {
     if (process.env.ELECTRON_RENDERER_URL) {
       child.loadURL(`${process.env.ELECTRON_RENDERER_URL}#${opts.route}`)
     } else {
-      child.loadURL(`app://argus/index.html#${opts.route}`)
+      child.loadURL(`http://127.0.0.1:${rendererPort}/index.html#${opts.route}`)
     }
   })
 
@@ -499,7 +567,7 @@ function registerWindowHandlers(): void {
       frame: true, title: `Argus — ${type}`,
       webPreferences: { preload: join(__dirname, '../preload/index.js'), nodeIntegration: false, contextIsolation: true },
     })
-    win.loadURL(mainWindow?.webContents?.getURL() || 'app://argus/index.html')
+    win.loadURL(mainWindow?.webContents?.getURL() || `http://127.0.0.1:${rendererPort}/index.html`)
     return { windowId: win.id }
   })
 
@@ -756,20 +824,15 @@ async function initializeServices(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  // ─── Custom app:// protocol for serving renderer files ───
-  // This makes YouTube embeds work in packaged app (fixes Error 153)
-  // YouTube blocks iframe embeds from file:// origin but allows any https-like origin
-  const rendererDir = join(__dirname, '../renderer')
-  protocol.handle('app', (req) => {
-    const url = new URL(req.url)
-    let filePath = url.pathname
-    // Serve index.html for root or any route (SPA)
-    if (filePath === '/' || filePath === '') filePath = '/index.html'
-    const fullPath = join(rendererDir, filePath)
-    return net.fetch(pathToFileURL(fullPath).toString())
-  })
+  // Start local HTTP server for renderer files in packaged builds.
+  // YouTube blocks iframe embeds from file:// and custom scheme origins (Error 153).
+  // Serving from http://127.0.0.1:PORT provides a valid origin that YouTube accepts.
+  if (!process.env.ELECTRON_RENDERER_URL) {
+    const rendererDir = join(__dirname, '../renderer')
+    await startRendererServer(rendererDir)
+  }
 
-  // Block ad/tracking domains from YouTube embeds (prevents ERR_ADDRESS_INVALID noise in packaged app)
+  // Block ad/tracking domains from YouTube embeds
   const adBlockPatterns = [
     '*://googleads.g.doubleclick.net/*',
     '*://static.doubleclick.net/*',
@@ -785,25 +848,25 @@ app.whenReady().then(async () => {
     (_details, callback) => callback({ cancel: true })
   )
 
-  // CSP: allow YouTube/Twitch iframe embeds + app:// scheme
+  // CSP: allow YouTube/Twitch iframe embeds + localhost renderer origin
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' app:;" +
-          " script-src 'self' app: 'unsafe-inline' 'unsafe-eval' blob:;" +
-          " style-src 'self' app: 'unsafe-inline' https://fonts.googleapis.com;" +
-          " font-src 'self' app: https://fonts.gstatic.com;" +
-          " img-src 'self' app: data: blob: https: http:;" +
-          " connect-src 'self' app: https: http: ws: wss:;" +
-          " worker-src 'self' app: blob:;" +
-          " child-src 'self' app: blob:;" +
-          " frame-src 'self' app: blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://player.twitch.tv;" +
-          " media-src 'self' app: blob: https: http:;" +
+          "default-src 'self' http://127.0.0.1:*;" +
+          " script-src 'self' http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval' blob:;" +
+          " style-src 'self' http://127.0.0.1:* 'unsafe-inline' https://fonts.googleapis.com;" +
+          " font-src 'self' http://127.0.0.1:* https://fonts.gstatic.com;" +
+          " img-src 'self' http://127.0.0.1:* data: blob: https: http:;" +
+          " connect-src 'self' http://127.0.0.1:* https: http: ws: wss:;" +
+          " worker-src 'self' http://127.0.0.1:* blob:;" +
+          " child-src 'self' http://127.0.0.1:* blob:;" +
+          " frame-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://player.twitch.tv;" +
+          " media-src 'self' http://127.0.0.1:* blob: https: http:;" +
           " object-src 'none';" +
-          " base-uri 'self' app:;" +
-          " form-action 'self' app:;"
+          " base-uri 'self' http://127.0.0.1:*;" +
+          " form-action 'self' http://127.0.0.1:*;"
         ],
       },
     })
@@ -824,6 +887,10 @@ function cleanupBeforeQuit() {
   if (cascadeInterval) clearInterval(cascadeInterval)
   if (tweetInterval) clearInterval(tweetInterval)
   feedAggregator?.stopAutoRefresh()
+  if (rendererServer) {
+    rendererServer.close()
+    rendererServer = null
+  }
   closeDatabase()
 }
 

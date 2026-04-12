@@ -280,7 +280,7 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
     if (url.includes('youtu.be/')) { const id = url.split('youtu.be/')[1]?.split('?')[0]; if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0` }
     if (url.includes('youtube.com/embed')) return url
     // Twitch
-    if (url.includes('twitch.tv')) { const tc = url.split('twitch.tv/')[1]?.split('/')[0]; if (tc) return `https://player.twitch.tv/?channel=${tc}&parent=localhost&muted=${muted}` }
+    if (url.includes('twitch.tv')) { const tc = url.split('twitch.tv/')[1]?.split('/')[0]; if (tc) return `https://player.twitch.tv/?channel=${tc}&parent=${window.location.hostname || '127.0.0.1'}&muted=${muted}` }
     // m3u8 / direct stream → handled by HLSPlayer
     if (url.endsWith('.m3u8') || url.includes('.m3u8?')) return url
     return url
