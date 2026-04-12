@@ -79,6 +79,11 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -87,6 +92,47 @@ jobs:
 
       - name: List release assets
         run: find artifacts -type f | head -20
+
+      - name: Generate release notes
+        run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/}"
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${TAG}$" | head -n1)
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --no-merges)
+            COMPARE="[Full diff](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG})"
+          else
+            CHANGELOG=$(git log "${TAG}" --pretty=format:"- %s (%h)" --no-merges)
+            COMPARE=""
+          fi
+          NOTES_FILE="release-notes/${TAG}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            EXTRA_NOTES=$(cat "$NOTES_FILE")
+          else
+            EXTRA_NOTES=""
+          fi
+          {
+            echo "## ARGUS ${TAG}"
+            echo ""
+            echo "${EXTRA_NOTES}"
+            echo ""
+            echo "### Commits"
+            echo "${CHANGELOG}"
+            echo ""
+            if [ -n "$COMPARE" ]; then
+              echo "${COMPARE}"
+              echo ""
+            fi
+            echo "---"
+            echo "Download the installer for your platform below and run it."
+            echo ""
+            echo "| Platform | File |"
+            echo "|----------|------|"
+            echo "| Windows | \`.exe\` |"
+            echo "| macOS (Intel) | \`.dmg\` (x64) |"
+            echo "| macOS (Apple Silicon) | \`.dmg\` (arm64) |"
+            echo "| Linux | \`.AppImage\` |"
+          } > release-body.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -97,48 +143,4 @@ jobs:
             artifacts/*.AppImage
           draft: false
           prerelease: false
-          body: |
-            ## ARGUS — Real-time Global OSINT & Intelligence Dashboard
-
-            A desktop intelligence platform that aggregates, classifies, and visualizes global incidents in real-time on an interactive 3D globe.
-
-            ### Highlights
-
-            **Intelligence & Analysis**
-            - 3D CesiumJS globe with real-time incident markers, heatmaps, animated arcs, and multi-layer overlays
-            - 50+ open-source feed aggregation across CONFLICT, CYBER, INTEL, and FINANCE domains
-            - AI-powered summarization and daily briefings via Ollama, OpenAI, or custom endpoints
-            - Smart alert system with geofence triggers, keyword matching, and desktop notifications
-            - Cyber threat intelligence with CVE tracking, ransomware feeds, and IoC extraction
-
-            **Tracking & Monitoring**
-            - Real-time flight tracking (OpenSky Network) with military aircraft filtering
-            - Maritime vessel tracking with route visualization
-            - Earthquake monitoring (USGS) and disaster tracking (GDACS)
-            - Nuclear facility monitoring, pandemic surveillance, and weather alerts
-            - VIP social media monitoring (X/Twitter) and Telegram channel aggregation
-
-            **Media & Live TV**
-            - Multi-channel live TV grid (2×2 / 3×3 / 4×4) with 40+ preset news channels
-            - YouTube live stream resolution with optimized iframe embedding
-            - Custom app:// protocol scheme for reliable YouTube embed in packaged builds
-            - HLS.js player for direct m3u8 streams with 480p quality cap
-            - Ad/tracker domain blocking for clean playback
-            - Template system for saving and loading channel layouts
-
-            **Architecture**
-            - Electron 41 + React 19 + TypeScript + electron-vite
-            - SQLite (better-sqlite3) offline-first incident caching
-            - Multi-process IPC with cascade data refresh pipeline
-            - Zustand state management with persistence
-            - Content Security Policy hardened for production
-
-            ### Installation
-            Download the installer for your platform below and run it. No additional setup required.
-
-            | Platform | File |
-            |----------|------|
-            | Windows | `.exe` |
-            | macOS (Intel) | `.dmg` (x64) |
-            | macOS (Apple Silicon) | `.dmg` (arm64) |
-            | Linux | `.AppImage` |
+          body_path: release-body.md
