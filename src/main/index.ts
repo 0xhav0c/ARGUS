@@ -78,6 +78,7 @@ function startRendererServer(rendererDir: string): Promise<number> {
       '.webm': 'video/webm',
       '.glb': 'model/gltf-binary',
       '.gltf': 'model/gltf+json',
+      '.xml': 'application/xml',
     }
 
     const server = createServer((req, res) => {

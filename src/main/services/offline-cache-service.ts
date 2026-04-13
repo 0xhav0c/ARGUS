@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync } from 'fs'
 
-const CACHE_DIR = join(app.getPath('userData'), 'tile-cache')
+let CACHE_DIR = ''
 const MAX_CACHE_SIZE_MB = 500
 const MAX_TILE_AGE_DAYS = 30
 
@@ -11,6 +11,7 @@ export class OfflineCacheService {
 
   init() {
     if (this.initialized) return
+    if (!CACHE_DIR) CACHE_DIR = join(app.getPath('userData'), 'tile-cache')
     if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true })
     this.initialized = true
     console.log(`[OfflineCache] Cache dir: ${CACHE_DIR}`)

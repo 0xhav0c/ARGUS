@@ -1,6 +1,6 @@
 {
   "name": "argus",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ARGUS — Real-time Global OSINT & Intelligence Dashboard",
   "main": "./out/main/index.js",
   "scripts": {

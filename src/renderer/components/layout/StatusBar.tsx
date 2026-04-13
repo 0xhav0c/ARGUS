@@ -91,7 +91,7 @@ export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span>v1.0.2</span>
+        <span>v1.0.3</span>
       </div>
     </footer>
   )

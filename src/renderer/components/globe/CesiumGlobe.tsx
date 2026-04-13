@@ -292,6 +292,22 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
 
         scene.globe.maximumScreenSpaceError = 1.3
 
+        // Apple Silicon ANGLE/Metal shader bug workaround
+        // https://github.com/CesiumGS/cesium/issues/11251
+        const isAppleSiliconMac = (() => {
+          try {
+            if (typeof process !== 'undefined' && process.platform === 'darwin' && process.arch === 'arm64') return true
+          } catch { /* renderer may not have process */ }
+          return navigator.platform === 'MacIntel'
+            && typeof (navigator as any).userAgentData?.architecture === 'string'
+              ? (navigator as any).userAgentData.architecture === 'arm'
+              : (navigator.platform === 'MacIntel'
+                  && !('ontouchend' in document)
+                  && navigator.maxTouchPoints === 0
+                  && window.matchMedia?.('(-webkit-device-pixel-ratio: 2)').matches
+                  && /Mac/.test(navigator.userAgent))
+        })()
+
         // Layer 1: NaturalEarthII - dark blue tinted globe
         let baseLayer: any = null
         try {
@@ -300,10 +316,12 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           )
           if (!destroyed) {
             baseLayer = viewer.imageryLayers.addImageryProvider(baseImagery)
-            baseLayer.brightness = 0.5
-            baseLayer.contrast = 1.3
-            baseLayer.saturation = 0.3
-            baseLayer.gamma = 0.8
+            if (!isAppleSiliconMac) {
+              baseLayer.brightness = 0.5
+              baseLayer.contrast = 1.3
+              baseLayer.saturation = 0.3
+              baseLayer.gamma = 0.8
+            }
           }
         } catch {
           console.warn('[Globe] Base imagery failed')
@@ -477,7 +495,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
 
           if (satLayer) satLayer.alpha = satAlpha
 
-          if (baseLayer) {
+          if (baseLayer && !isAppleSiliconMac) {
             baseLayer.brightness = 0.5 + 0.3 * satAlpha
             baseLayer.saturation = 0.3 + 0.5 * satAlpha
           }
