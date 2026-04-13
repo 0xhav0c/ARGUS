@@ -21,7 +21,7 @@
     "appId": "com.argus.intel",
     "productName": "ARGUS",
     "asarUnpack": [
-      "out/renderer/cesium/**/*"
+      "**/cesium/**"
     ],
     "directories": {
       "buildResources": "resources"

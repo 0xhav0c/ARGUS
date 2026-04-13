@@ -904,28 +904,53 @@ app.whenReady().then(async () => {
     (_details, callback) => callback({ cancel: true })
   )
 
-  // CSP: allow YouTube/Twitch iframe embeds + localhost renderer origin
+  // Strip Origin header from outgoing requests to external APIs so that
+  // CORS checks are not triggered (Cesium Ion, ArcGIS, etc. reject http://127.0.0.1 origin)
+  session.defaultSession.webRequest.onBeforeSendHeaders(
+    { urls: ['https://*.cesium.com/*', 'https://*.arcgisonline.com/*', 'https://*.arcgis.com/*', 'https://*.virtualearth.net/*', 'https://*.bing.com/*'] },
+    (details, callback) => {
+      delete details.requestHeaders['Origin']
+      callback({ requestHeaders: details.requestHeaders })
+    }
+  )
+
+  // CSP + CORS: allow YouTube/Twitch iframe embeds, localhost renderer origin,
+  // and inject CORS headers for external map tile / terrain APIs
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' http://127.0.0.1:*;" +
-          " script-src 'self' http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval' blob:;" +
-          " style-src 'self' http://127.0.0.1:* 'unsafe-inline' https://fonts.googleapis.com;" +
-          " font-src 'self' http://127.0.0.1:* https://fonts.gstatic.com;" +
-          " img-src 'self' http://127.0.0.1:* data: blob: https: http:;" +
-          " connect-src 'self' http://127.0.0.1:* https: http: ws: wss:;" +
-          " worker-src 'self' http://127.0.0.1:* blob:;" +
-          " child-src 'self' http://127.0.0.1:* blob:;" +
-          " frame-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://player.twitch.tv;" +
-          " media-src 'self' http://127.0.0.1:* blob: https: http:;" +
-          " object-src 'none';" +
-          " base-uri 'self' http://127.0.0.1:*;" +
-          " form-action 'self' http://127.0.0.1:*;"
-        ],
-      },
-    })
+    const responseHeaders = { ...details.responseHeaders }
+
+    // Inject CORS headers for external API responses so Cesium/ArcGIS terrain & tile
+    // requests from http://127.0.0.1 origin are not blocked by the browser
+    const url = details.url || ''
+    if (
+      url.includes('.cesium.com') ||
+      url.includes('.arcgisonline.com') ||
+      url.includes('.arcgis.com') ||
+      url.includes('.virtualearth.net') ||
+      url.includes('.bing.com')
+    ) {
+      responseHeaders['Access-Control-Allow-Origin'] = ['*']
+      responseHeaders['Access-Control-Allow-Methods'] = ['GET, OPTIONS']
+      responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization, Accept']
+    }
+
+    responseHeaders['Content-Security-Policy'] = [
+      "default-src 'self' http://127.0.0.1:*;" +
+      " script-src 'self' http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval' blob:;" +
+      " style-src 'self' http://127.0.0.1:* 'unsafe-inline' https://fonts.googleapis.com;" +
+      " font-src 'self' http://127.0.0.1:* https://fonts.gstatic.com;" +
+      " img-src 'self' http://127.0.0.1:* data: blob: https: http:;" +
+      " connect-src 'self' http://127.0.0.1:* https: http: ws: wss:;" +
+      " worker-src 'self' http://127.0.0.1:* blob:;" +
+      " child-src 'self' http://127.0.0.1:* blob:;" +
+      " frame-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://player.twitch.tv;" +
+      " media-src 'self' http://127.0.0.1:* blob: https: http:;" +
+      " object-src 'none';" +
+      " base-uri 'self' http://127.0.0.1:*;" +
+      " form-action 'self' http://127.0.0.1:*;"
+    ]
+
+    callback({ responseHeaders })
   })
 
   await initializeServices()
