@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, memo } from 'react'
 import type { Incident } from '../../../shared/types'
 
 const P = {
@@ -18,7 +18,7 @@ interface StatusBarProps {
   onSceneModeChange?: (mode: '3d' | '2d' | 'columbus') => void
 }
 
-export function StatusBar({ incidents = [], sceneMode = '3d', onSceneModeChange }: StatusBarProps) {
+export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '3d', onSceneModeChange }: StatusBarProps) {
   const [uptime, setUptime] = useState(0)
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function StatusBar({ incidents = [], sceneMode = '3d', onSceneModeChange 
 
   const ModeBtn = ({ mode, label }: { mode: '3d' | '2d' | 'columbus'; label: string }) => (
     <button onClick={() => onSceneModeChange?.(mode)} style={{
-      padding: '1px 6px', fontSize: '8px', fontFamily: P.font,
+      padding: '1px 6px', fontSize: '9px', fontFamily: P.font,
       background: sceneMode === mode ? P.accent + '20' : 'transparent',
       border: `1px solid ${sceneMode === mode ? P.accent + '60' : P.border}`,
       borderRadius: '2px', cursor: 'pointer',
@@ -95,4 +95,4 @@ export function StatusBar({ incidents = [], sceneMode = '3d', onSceneModeChange 
       </div>
     </footer>
   )
-}
+})

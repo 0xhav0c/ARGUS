@@ -110,7 +110,7 @@ function SpikeLabel({ v }: { v: number }) {
     <span
       style={{
         marginLeft: '6px',
-        fontSize: '7px',
+        fontSize: '9px',
         fontWeight: 800,
         color: '#ff3b5c',
         letterSpacing: '0.08em',
@@ -194,14 +194,14 @@ function DualPeriodChart({
       ctx.globalAlpha = 1
 
       ctx.fillStyle = P.dim
-      ctx.font = `600 7px ${P.font}`
+      ctx.font = `600 9px ${P.font}`
       ctx.textAlign = 'center'
       const short = lab === 'TOTAL' ? 'ALL' : lab.slice(0, 3)
       ctx.fillText(short, gx, h - 8)
     })
 
     ctx.textAlign = 'left'
-    ctx.font = `600 8px ${P.font}`
+    ctx.font = `600 9px ${P.font}`
     ctx.fillStyle = P.dim
     ctx.fillText(`prev vs current (${periodLabel})`, padL, 14)
     ctx.fillStyle = P.text
@@ -319,7 +319,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
       >
         <div style={{ ...card, flex: '1 1 140px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.08em' }}>TOTAL EVENTS</span>
+            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.08em' }}>TOTAL EVENTS</span>
             <InfoTip text="Total incident count in the current vs previous time window. Percentage shows change rate. SPIKE label appears when change exceeds 50%." />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px' }}>
@@ -346,7 +346,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
 
       <div style={{ ...card, marginBottom: '12px', minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em' }}>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em' }}>
             DUAL BAR — TOTAL & DOMAINS
           </span>
           <InfoTip text="Side-by-side comparison of incident counts per domain. Grey bars = previous period, colored bars = current period." />
@@ -364,7 +364,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
       >
         <div style={{ ...card, flex: '1 1 180px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.08em' }}>BY DOMAIN (% Δ)</span>
+            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.08em' }}>BY DOMAIN (% Δ)</span>
             <InfoTip text="Percentage change in incident count per domain between the two periods. Positive = increase, negative = decrease." />
           </div>
           {DOMAIN_ORDER.map(d => {
@@ -400,7 +400,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
 
         <div style={{ ...card, flex: '1 1 180px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.08em' }}>
+            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.08em' }}>
               SEVERITY (CUR vs PREV)
             </span>
             <InfoTip text="Severity level comparison between current and previous periods. Bar lengths are proportional to incident counts." />
@@ -453,12 +453,12 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
 
       <div style={{ ...card, marginBottom: '12px', minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em' }}>TOP 5 COUNTRIES</span>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em' }}>TOP 5 COUNTRIES</span>
           <InfoTip text="Most affected countries in each period, ranked by incident count." />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: '12px' }}>
           <div>
-            <div style={{ fontSize: '8px', color: P.accent, marginBottom: '6px' }}>CURRENT</div>
+            <div style={{ fontSize: '9px', color: P.accent, marginBottom: '6px' }}>CURRENT</div>
             {curStats.topCountries.map((row, i) => (
               <div
                 key={`c-${row.name}`}
@@ -482,7 +482,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
             )}
           </div>
           <div>
-            <div style={{ fontSize: '8px', color: P.dim, marginBottom: '6px' }}>PREVIOUS</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '6px' }}>PREVIOUS</div>
             {prevStats.topCountries.map((row, i) => (
               <div
                 key={`p-${row.name}`}
@@ -510,7 +510,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
 
       <div style={{ ...card, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em' }}>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em' }}>
             NEW TAGS / TOPICS (CURRENT PERIOD ONLY)
           </span>
           <InfoTip text="Keywords and tags that appear in the current period but were not present in the previous period. Useful for detecting emerging threats." />
@@ -521,7 +521,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
               <span
                 key={t}
                 style={{
-                  fontSize: '8px',
+                  fontSize: '9px',
                   fontFamily: P.font,
                   color: P.accent,
                   border: `1px solid ${P.border}`,
@@ -539,7 +539,7 @@ export function DashboardTimeAnalysis({ incidents }: { incidents: Incident[] }) 
         )}
       </div>
 
-      <div style={{ fontSize: '8px', color: P.dim, marginTop: '10px', fontFamily: P.font }}>
+      <div style={{ fontSize: '9px', color: P.dim, marginTop: '10px', fontFamily: P.font }}>
         Windows end at {new Date(now).toISOString().replace('T', ' ').slice(0, 16)} UTC · SPIKE if |Δ| {'>'} 50%
       </div>
     </section>

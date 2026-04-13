@@ -103,14 +103,7 @@ export class TelegramService {
       }
     }
 
-    if (messages.length === 0) {
-      messages.push(
-        { id: 'tg-f1', channel: 'intelslava', channelTitle: 'Intel Slava Z', content: 'Breaking: Major military operation reported in eastern sector. Multiple units deployed.', timestamp: new Date().toISOString(), views: 45000, category: 'conflict', priority: 'high' },
-        { id: 'tg-f2', channel: 'ryaborsvoboda', channelTitle: 'Rybar', content: 'Situation map update: Front line changes in Zaporizhzhia direction.', timestamp: new Date(Date.now() - 1800000).toISOString(), views: 32000, category: 'conflict', priority: 'medium' },
-        { id: 'tg-f3', channel: 'operativnozsu', channelTitle: 'OperativnoZSU', content: 'Air alert declared in multiple regions. Air defense active.', timestamp: new Date(Date.now() - 3600000).toISOString(), views: 28000, category: 'conflict', priority: 'high' },
-        { id: 'tg-f4', channel: 'DarkReading', channelTitle: 'Dark Reading', content: 'New critical vulnerability discovered in widely-used enterprise software', timestamp: new Date(Date.now() - 7200000).toISOString(), views: 15000, category: 'cyber', priority: 'medium' },
-      )
-    }
+    // No fake fallback — return empty if all RSS mirrors fail
 
     cache = messages.sort((a, b) => {
       const pa = a.priority === 'high' ? 3 : a.priority === 'medium' ? 2 : 1

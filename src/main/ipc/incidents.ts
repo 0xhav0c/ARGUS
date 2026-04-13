@@ -19,7 +19,11 @@ export function registerIncidentHandlers(): void {
   })
 
   ipcMain.handle('get-settings', () => {
-    return cache.getSettings()
+    // Filter out API keys — they must never reach the renderer
+    const all = cache.getSettings()
+    return Object.fromEntries(
+      Object.entries(all).filter(([k]) => !k.startsWith('api_key_'))
+    )
   })
 
   const ALLOWED_SETTINGS = new Set([

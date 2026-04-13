@@ -26,18 +26,14 @@ export class DarkWebService {
           })
         }
       }
-    } catch { /* fallback */ }
-    if (alerts.length === 0) {
-      alerts.push(
-        { id: 'dw-1', type: 'ransomware', title: 'LockBit 3.0 New Victim Posted', severity: 'HIGH', source: 'RansomWatch', discoveredAt: new Date().toISOString(), description: 'Major financial institution data posted on LockBit leak site', threatActor: 'LockBit', affectedOrg: 'Financial Corp' },
-        { id: 'dw-2', type: 'data_leak', title: 'Government Database Leaked', severity: 'CRITICAL', source: 'DarkWeb Monitor', discoveredAt: new Date().toISOString(), description: 'Database containing citizen records found on dark web marketplace', dataType: 'PII', threatActor: 'Unknown' },
-        { id: 'dw-3', type: 'exploit', title: 'Zero-Day Exploit for Sale', severity: 'CRITICAL', source: 'DarkWeb Monitor', discoveredAt: new Date(Date.now() - 3600000).toISOString(), description: 'Remote code execution zero-day for enterprise VPN being sold', dataType: 'exploit' },
-        { id: 'dw-4', type: 'threat_actor', title: 'New APT Group Recruitment', severity: 'MEDIUM', source: 'DarkWeb Monitor', discoveredAt: new Date(Date.now() - 7200000).toISOString(), description: 'New threat actor group recruiting developers on underground forums', threatActor: 'APT-New' },
-        { id: 'dw-5', type: 'marketplace', title: 'Stolen Credentials Bulk Sale', severity: 'HIGH', source: 'DarkWeb Monitor', discoveredAt: new Date(Date.now() - 14400000).toISOString(), description: '500K+ corporate email credentials from multiple breaches on sale', dataType: 'Credentials' },
-      )
-    }
+    } catch { /* API unavailable */ }
+    // No fake fallback — return empty if API fails
     cache = alerts
     lastFetch = Date.now()
+    console.log(`[DarkWeb] ${cache.length} alerts loaded`)
     return cache
   }
 }
+// Removed: 5 hardcoded fake dark web alerts (fake LockBit victim "Financial Corp",
+// fake "Government Database Leaked", fake zero-day, etc.) that were silently injected
+// with new Date().toISOString() timestamps when the API failed.

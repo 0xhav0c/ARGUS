@@ -102,12 +102,6 @@ export function LogPage() {
     return s
   }, [entries])
 
-  const handleTestLog = useCallback(() => {
-    argusLog('info', 'system', 'Debug mode test log entry', 'This is a test detail to verify logging is working.')
-    argusLog('warn', 'feed', 'Feed refresh test', 'Simulated feed refresh warning.')
-    argusLog('debug', 'network', 'Network connectivity check', JSON.stringify({ status: 'ok', latency: '42ms' }))
-  }, [])
-
   return (
     <div style={{ fontFamily: P.font, display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
@@ -125,25 +119,20 @@ export function LogPage() {
           {/* Stats badges */}
           {(Object.entries(stats) as [LogLevel, number][]).map(([lv, count]) => (
             <span key={lv} style={{
-              fontSize: '8px', fontWeight: 700, padding: '2px 6px',
+              fontSize: '9px', fontWeight: 700, padding: '2px 6px',
               borderRadius: '3px', color: LEVEL_STYLE[lv].color,
               background: LEVEL_STYLE[lv].bg, border: `1px solid ${LEVEL_STYLE[lv].color}20`,
             }}>{LEVEL_STYLE[lv].label} {count}</span>
           ))}
           <div style={{ width: '1px', height: '16px', background: P.border, margin: '0 4px' }} />
           <button onClick={() => setAutoScroll(!autoScroll)} style={{
-            padding: '3px 8px', fontSize: '8px', fontFamily: P.font, fontWeight: 600,
+            padding: '3px 8px', fontSize: '9px', fontFamily: P.font, fontWeight: 600,
             background: autoScroll ? `${P.accent}15` : 'transparent',
             border: `1px solid ${autoScroll ? P.accent + '40' : P.border}`,
             borderRadius: '3px', color: autoScroll ? P.accent : P.dim, cursor: 'pointer',
           }}>AUTO-SCROLL {autoScroll ? 'ON' : 'OFF'}</button>
-          <button onClick={handleTestLog} style={{
-            padding: '3px 8px', fontSize: '8px', fontFamily: P.font, fontWeight: 600,
-            background: 'transparent', border: `1px solid ${P.border}`,
-            borderRadius: '3px', color: P.dim, cursor: 'pointer',
-          }}>TEST</button>
           <button onClick={clear} style={{
-            padding: '3px 8px', fontSize: '8px', fontFamily: P.font, fontWeight: 600,
+            padding: '3px 8px', fontSize: '9px', fontFamily: P.font, fontWeight: 600,
             background: 'transparent', border: `1px solid ${P.border}`,
             borderRadius: '3px', color: P.dim, cursor: 'pointer',
           }}>CLEAR</button>
@@ -174,10 +163,10 @@ export function LogPage() {
         ))}
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>LEVEL:</span>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>LEVEL:</span>
           {(['debug', 'info', 'warn', 'error'] as LogLevel[]).map(lv => (
             <button key={lv} onClick={() => toggleLevel(lv)} style={{
-              padding: '3px 8px', fontSize: '8px', fontFamily: P.font, fontWeight: 600,
+              padding: '3px 8px', fontSize: '9px', fontFamily: P.font, fontWeight: 600,
               background: levelFilter.has(lv) ? `${LEVEL_STYLE[lv].color}18` : 'transparent',
               border: `1px solid ${levelFilter.has(lv) ? LEVEL_STYLE[lv].color + '40' : P.border}`,
               borderRadius: '3px', color: levelFilter.has(lv) ? LEVEL_STYLE[lv].color : P.dim,
@@ -246,11 +235,11 @@ export function LogPage() {
                 {formatTime(entry.timestamp)}
               </span>
               <span style={{
-                fontSize: '8px', fontWeight: 700, color: ls.color, width: '28px', flexShrink: 0,
+                fontSize: '9px', fontWeight: 700, color: ls.color, width: '28px', flexShrink: 0,
                 padding: '2px 0', textAlign: 'center',
               }}>{ls.label}</span>
               <span style={{
-                fontSize: '8px', fontWeight: 600, color: cc, width: '60px', flexShrink: 0,
+                fontSize: '9px', fontWeight: 600, color: cc, width: '60px', flexShrink: 0,
                 padding: '2px 4px', letterSpacing: '0.03em', textTransform: 'uppercase',
               }}>{entry.category}</span>
               <div style={{ flex: 1, minWidth: 0 }}>

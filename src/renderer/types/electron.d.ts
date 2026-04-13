@@ -10,7 +10,7 @@ export interface ArgusAPI {
   addFeed: (opts: { url: string; name?: string; category?: string }) => Promise<any>
   removeFeed: (feedId: string) => Promise<any>
   updateFeed: (feedId: string, updates: { name?: string; url?: string; category?: string }) => Promise<any>
-  refreshFeeds: () => Promise<import('../../shared/types').FeedSource[]>
+  refreshFeeds: () => Promise<{ feeds: import('../../shared/types').FeedSource[]; error?: string }>
   onIncidentUpdate: (callback: (data: import('../../shared/types').Incident) => void) => () => void
   getSettings: () => Promise<Record<string, unknown>>
   updateSettings: (settings: Record<string, unknown>) => Promise<void>

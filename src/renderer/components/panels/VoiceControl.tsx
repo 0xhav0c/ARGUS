@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 const P = { bg: '#0a0e17', card: '#0d1220', border: '#141c2e', accent: '#00d4ff', dim: '#4a5568', text: '#c8d6e5', font: "'JetBrains Mono', monospace" }
 
@@ -54,6 +54,14 @@ export function VoiceControl({ onCommand, briefingText }: VoiceControlProps) {
   const stopSpeaking = useCallback(() => {
     speechSynthesis.cancel()
     setSpeaking(false)
+  }, [])
+
+  // Cleanup on unmount — stop speech and recognition
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop() } catch {}
+      try { speechSynthesis.cancel() } catch {}
+    }
   }, [])
 
   return (

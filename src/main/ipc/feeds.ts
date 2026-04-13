@@ -14,14 +14,16 @@ export function registerFeedHandlers(feedAggregator: FeedAggregator): void {
   })
 
   ipcMain.handle('refresh-feeds', async () => {
+    let error: string | undefined
     try {
       if (aggregator) {
         await aggregator.refreshAll()
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[IPC] refresh-feeds failed:', err)
+      error = err?.message || 'Feed refresh failed'
     }
-    return cache.getFeeds()
+    return { feeds: cache.getFeeds(), error }
   })
 
   ipcMain.handle('add-feed', (_event, opts: { url: string; name?: string; category?: string }) => {
@@ -59,8 +61,13 @@ export function registerFeedHandlers(feedAggregator: FeedAggregator): void {
     const existing = feeds.find(f => f.id === feedId)
     if (!existing) return { error: 'Feed not found' }
     const updated = { ...existing }
-    if (updates.name) updated.name = updates.name.trim()
-    if (updates.url) updated.url = updates.url.trim()
+    if (updates.name) updated.name = updates.name.trim().substring(0, 200)
+    if (updates.url) {
+      const url = updates.url.trim()
+      if (!/^https?:\/\//i.test(url)) return { error: 'Invalid URL scheme (http/https only)' }
+      if (url.length > 2048) return { error: 'URL too long' }
+      updated.url = url
+    }
     cache.upsertFeed(updated)
     return { ok: true, feed: updated }
   })

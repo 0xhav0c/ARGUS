@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useFilterStore } from '@/stores/filter-store'
 import { useNotificationStore } from '@/stores/notification-store'
 
@@ -39,7 +39,7 @@ function WinBtn({ onClick, children, hoverColor, title }: {
   )
 }
 
-export function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch, trackingSearchOpen }: TopBarProps) {
+export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch, trackingSearchOpen }: TopBarProps) {
   const [time, setTime] = useState(new Date())
   const [isMaximized, setIsMaximized] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -163,7 +163,7 @@ export function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch,
           {unreadCount > 0 && (
             <span style={{
               position: 'absolute', top: '-2px', right: '-4px',
-              background: P.danger, color: '#fff', fontSize: '8px', fontWeight: 700,
+              background: P.danger, color: '#fff', fontSize: '9px', fontWeight: 700,
               width: '14px', height: '14px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -196,7 +196,7 @@ export function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch,
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3fb950' }} />
-          <span style={{ fontSize: '10px', color: P.dim }}>LIVE</span>
+          <span style={{ fontSize: '10px', color: P.dim }}>ACTIVE</span>
         </div>
       </div>
 
@@ -216,4 +216,4 @@ export function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch,
       )}
     </header>
   )
-}
+})

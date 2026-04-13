@@ -314,6 +314,13 @@ export class CacheManager {
       .run(key, value)
   }
 
+  deleteSetting(key: string): void {
+    if (isFallbackMode()) { getFallbackStore().settings.delete(key); return }
+    const db = getDatabase()
+    if (!db) return
+    db.prepare('DELETE FROM settings WHERE key = ?').run(key)
+  }
+
   searchIncidents(query: string): Incident[] {
     if (!query || query.trim().length === 0) return this.getIncidents()
 

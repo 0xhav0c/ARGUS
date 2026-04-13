@@ -45,7 +45,7 @@ class WindowManager {
       backgroundColor: '#0a0e17',
       webPreferences: {
         preload: path.join(__dirname, '../preload/index.js'),
-        sandbox: false,
+        sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,
       },

@@ -50,7 +50,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
   const setCountryFilter = useFilterStore(s => s.setCountryFilter)
   const domainFilter = useFilterStore(s => s.domainFilter)
   const setDomainFilter = useFilterStore(s => s.setDomainFilter)
-  const selectedRegion = useFilterStore(s => s.selectedRegion)
+
   const clearFilters = useFilterStore(s => s.clearFilters)
 
   const countries = useMemo(() => {
@@ -88,12 +88,11 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
     if (searchQuery.trim()) n++
     if (severityFilter) n++
     if (dateRange.start || dateRange.end) n++
-    if (selectedRegion) n++
     if (sourceFilter) n++
     if (countryFilter) n++
     if (domainFilter) n++
     return n
-  }, [searchQuery, severityFilter, dateRange.start, dateRange.end, selectedRegion, sourceFilter, countryFilter, domainFilter])
+  }, [searchQuery, severityFilter, dateRange.start, dateRange.end, sourceFilter, countryFilter, domainFilter])
 
   const filteredAll = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -132,7 +131,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
         type="button"
         onClick={() => setDateRange(start, null)}
         style={{
-          padding: '4px 8px', fontSize: '8px', fontWeight: 600,
+          padding: '4px 8px', fontSize: '9px', fontWeight: 600,
           background: activePreset === label ? `${P.accent}15` : 'transparent',
           border: `1px solid ${activePreset === label ? P.accent + '40' : P.border}`,
           borderRadius: '3px', cursor: 'pointer',
@@ -158,12 +157,12 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ width: '3px', height: '16px', background: '#ff6b35', borderRadius: '2px' }} />
-        <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>LIVE FEED</span>
-        <InfoTip text="Real-time incident feed showing all incoming events. Filter by time range, domain, country, or source. Click any incident to view details and locate on the globe." />
+        <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>INCIDENT FEED</span>
+        <InfoTip text="Incident feed aggregated from RSS sources, APIs and intelligence feeds. Data freshness depends on source publication timing and poll interval." />
         <span style={{ fontSize: '9px', color: P.dim }}>{filteredAll.length} / {incidents.length} events</span>
         {filterCount > 0 && (
           <span style={{
-            fontSize: '8px', fontWeight: 700, color: P.bg, background: P.accent,
+            fontSize: '9px', fontWeight: 700, color: P.bg, background: P.accent,
             padding: '2px 7px', borderRadius: '10px', letterSpacing: '0.06em',
           }}>
             {filterCount} FILTER{filterCount === 1 ? '' : 'S'}
@@ -174,7 +173,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           onClick={() => clearFilters()}
           disabled={filterCount === 0}
           style={{
-            marginLeft: 'auto', padding: '4px 10px', fontSize: '8px', fontWeight: 600,
+            marginLeft: 'auto', padding: '4px 10px', fontSize: '9px', fontWeight: 600,
             fontFamily: P.font, letterSpacing: '0.08em',
             background: filterCount ? `${P.accent}12` : 'transparent',
             border: `1px solid ${filterCount ? P.accent + '35' : P.border}`,
@@ -203,7 +202,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           }}
         />
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>RANGE</span>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>RANGE</span>
           {presetBtn('1H')}
           {presetBtn('6H')}
           {presetBtn('24H')}
@@ -246,7 +245,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
               type="button"
               onClick={() => setDomainFilter(d === 'ALL' ? null : d)}
               style={{
-                padding: '3px 8px', fontSize: '8px', fontWeight: 600,
+                padding: '3px 8px', fontSize: '9px', fontWeight: 600,
                 background: (domainFilter === d || (d === 'ALL' && !domainFilter)) ? `${P.accent}15` : 'transparent',
                 border: `1px solid ${(domainFilter === d || (d === 'ALL' && !domainFilter)) ? P.accent + '40' : P.border}`,
                 borderRadius: '3px', cursor: 'pointer',
@@ -269,7 +268,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           gridTemplateColumns: '32px 60px 1fr 120px 80px 60px',
           gap: '8px', padding: '8px 14px',
           borderBottom: `1px solid ${P.border}`,
-          fontSize: '8px', color: P.dim, letterSpacing: '0.12em', fontWeight: 600,
+          fontSize: '9px', color: P.dim, letterSpacing: '0.12em', fontWeight: 600,
         }}>
           <span />
           <span>SEV</span>
@@ -300,7 +299,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
               </span>
 
               <span style={{
-                padding: '2px 6px', fontSize: '8px', fontWeight: 700,
+                padding: '2px 6px', fontSize: '9px', fontWeight: 700,
                 borderRadius: '3px', textAlign: 'center',
                 background: sevColor + '20', color: sevColor,
               }}>{inc.severity}</span>

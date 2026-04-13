@@ -210,6 +210,7 @@ export class FeedAggregator {
   private providers: Map<IncidentDomain, FeedProvider> = new Map()
   private refreshTimer: ReturnType<typeof setInterval> | null = null
   private fetchedIds: Set<string> = new Set()
+  private refreshing = false
 
   constructor() {
     this.parser = new Parser({
@@ -243,6 +244,12 @@ export class FeedAggregator {
   }
 
   async refreshAll(): Promise<void> {
+    if (this.refreshing) return // prevent concurrent refreshes
+    this.refreshing = true
+    try { await this._refreshAllInner() } finally { this.refreshing = false }
+  }
+
+  private async _refreshAllInner(): Promise<void> {
     const feeds = this.cache.getFeeds().filter(f => f.enabled)
     const now = Date.now()
 
@@ -277,6 +284,12 @@ export class FeedAggregator {
 
     if (newCount > 0) {
       console.log(`[Feed] Added ${newCount} new incidents`)
+    }
+
+    // Cap fetchedIds to prevent unbounded growth (keep last 50k)
+    if (this.fetchedIds.size > 50000) {
+      const arr = Array.from(this.fetchedIds)
+      this.fetchedIds = new Set(arr.slice(arr.length - 40000))
     }
   }
 

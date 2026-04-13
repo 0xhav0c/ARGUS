@@ -21,7 +21,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
   KR: '\uD83C\uDDF0\uD83C\uDDF7', BR: '\uD83C\uDDE7\uD83C\uDDF7', AU: '\uD83C\uDDE6\uD83C\uDDFA',
 }
 
-const mgLabel: CSSProperties = { fontSize: '8px', color: P.dim, marginBottom: '3px', letterSpacing: '0.06em' }
+const mgLabel: CSSProperties = { fontSize: '9px', color: P.dim, marginBottom: '3px', letterSpacing: '0.06em' }
 const mgInput: CSSProperties = {
   background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px',
   color: P.text, fontFamily: P.font, fontSize: '10px', padding: '5px 8px',
@@ -189,7 +189,7 @@ export function DashboardTweets() {
           {filteredTweets.length} tweets \u2022 {accounts.length} accounts
         </span>
         <span style={{
-          fontSize: '8px', color: P.dim, padding: '2px 6px',
+          fontSize: '9px', color: P.dim, padding: '2px 6px',
           background: '#0d122080', borderRadius: '3px', border: `1px solid ${P.border}`,
         }}>
           {'\u21BB'} {refreshAgo}
@@ -198,7 +198,7 @@ export function DashboardTweets() {
         <div style={{ display: 'flex', gap: '3px' }}>
           {(['6h', '12h', '24h'] as const).map(tf => (
             <button key={tf} onClick={() => setTimeFilter(tf)} style={{
-              padding: '2px 7px', fontSize: '8px', fontWeight: 600,
+              padding: '2px 7px', fontSize: '9px', fontWeight: 600,
               background: timeFilter === tf ? `${P.accent}15` : 'transparent',
               border: `1px solid ${timeFilter === tf ? P.accent + '40' : P.border}`,
               borderRadius: '3px', cursor: 'pointer',
@@ -217,7 +217,7 @@ export function DashboardTweets() {
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {catOptions.map(c => (
             <button key={c.id} onClick={() => setCategoryFilter(c.id)} style={{
-              padding: '3px 8px', fontSize: '8px', fontWeight: 600,
+              padding: '3px 8px', fontSize: '9px', fontWeight: 600,
               background: categoryFilter === c.id ? `${c.color}15` : 'transparent',
               border: `1px solid ${categoryFilter === c.id ? c.color + '40' : P.border}`,
               borderRadius: '3px', cursor: 'pointer',
@@ -289,13 +289,13 @@ export function DashboardTweets() {
                     <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{tweet.author}</span>
                     <span style={{ fontSize: '9px', color: P.dim }}>{tweet.authorHandle}</span>
                     {isNew && (
-                      <span style={{ fontSize: '7px', color: '#00ff87', padding: '1px 4px', background: '#00ff870d', border: '1px solid #00ff8730', borderRadius: '2px', fontWeight: 700 }}>NEW</span>
+                      <span style={{ fontSize: '9px', color: '#00ff87', padding: '1px 4px', background: '#00ff870d', border: '1px solid #00ff8730', borderRadius: '2px', fontWeight: 700 }}>NEW</span>
                     )}
-                    <span style={{ fontSize: '8px', color: P.dim, marginLeft: 'auto', flexShrink: 0 }}>
+                    <span style={{ fontSize: '9px', color: P.dim, marginLeft: 'auto', flexShrink: 0 }}>
                       {timeAgo(tweet.timestamp)}
                     </span>
                   </div>
-                  <div style={{ fontSize: '8px', color: P.accent, marginTop: '2px' }}>
+                  <div style={{ fontSize: '9px', color: P.accent, marginTop: '2px' }}>
                     {tweet.authorTitle}
                   </div>
                   <div style={{
@@ -399,10 +399,10 @@ export function DashboardTweets() {
                   <span style={{ fontSize: '10px', fontWeight: 600, color: P.text }}>@{a.handle}</span>
                   <span style={{ fontSize: '9px', color: P.dim, marginLeft: '8px' }}>{a.name}</span>
                 </div>
-                <span style={{ fontSize: '8px', color: P.accent, padding: '2px 6px', border: `1px solid ${P.accent}30`, borderRadius: '3px' }}>{a.category}</span>
+                <span style={{ fontSize: '9px', color: P.accent, padding: '2px 6px', border: `1px solid ${P.accent}30`, borderRadius: '3px' }}>{a.category}</span>
                 {a.isCustom && (
                   <button onClick={() => removeAccount(a.id)} style={{
-                    padding: '3px 8px', fontSize: '8px', background: '#ff3b5c10',
+                    padding: '3px 8px', fontSize: '9px', background: '#ff3b5c10',
                     border: '1px solid #ff3b5c30', borderRadius: '3px',
                     color: '#ff6b7a', cursor: 'pointer', fontFamily: P.font, fontWeight: 600,
                   }}>DEL</button>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { useLayerStore } from '@/stores/layer-store'
 import { useViewStore } from '@/stores/view-store'
 import { useWatchlistStore } from '@/stores/watchlist-store'
@@ -88,7 +88,7 @@ const SIDEBAR_TABS = [
   { id: 'watchlist', icon: '★', label: 'Watch' },
 ]
 
-export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
   const layers = useLayerStore(s => s.layers)
   const toggleLayer = useLayerStore(s => s.toggleLayer)
   const toggleSublayer = useLayerStore(s => s.toggleSublayer)
@@ -101,11 +101,11 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
   const trackingEnabled = useTrackingStore(s => s.enabledLayers)
   const toggleTrackingLayer = useTrackingStore(s => s.toggleLayer)
   const trackingLoading = useTrackingStore(s => s.loading)
-  const trackingFlights = useTrackingStore(s => s.flights)
-  const trackingVessels = useTrackingStore(s => s.vessels)
-  const trackingQuakes = useTrackingStore(s => s.earthquakes)
-  const trackingDisasters = useTrackingStore(s => s.disasters)
-  const trackingSatellites = useTrackingStore(s => s.satellites)
+  const flightCount = useTrackingStore(s => s.flights.length)
+  const vesselCount = useTrackingStore(s => s.vessels.length)
+  const quakeCount = useTrackingStore(s => s.earthquakes.length)
+  const disasterCount = useTrackingStore(s => s.disasters.length)
+  const satelliteCount = useTrackingStore(s => s.satellites.length)
   const features = useSettingsStore(s => s.features)
   const visibleTrackingLayers = useMemo(() => TRACKING_LAYERS.filter(t => features?.[t.featureKey] ?? true), [features])
 
@@ -190,7 +190,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
       {/* LAYERS TAB */}
       {tab === 'layers' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ padding: '8px 10px 4px', fontSize: '8px', color: P.dim, letterSpacing: '0.2em' }}>
+          <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
             DOMAIN LAYERS
           </div>
           {DOMAINS.map(domain => {
@@ -210,7 +210,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                     width: '14px', height: '14px', borderRadius: '3px', border: 'none',
                     background: isActive ? domain.color + '25' : '#0d1220',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '8px', color: isActive ? domain.color : P.dim,
+                    fontSize: '9px', color: isActive ? domain.color : P.dim,
                     transition: 'all 0.2s',
                   }}>{isActive ? '✓' : ''}</button>
 
@@ -229,7 +229,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                   </button>
 
                   <span style={{
-                    fontSize: '8px', color: P.dim, transition: 'transform 0.2s',
+                    fontSize: '9px', color: P.dim, transition: 'transform 0.2s',
                     transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)',
                   }}>▸</span>
                 </div>
@@ -267,17 +267,17 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
       {/* TRACKING TAB */}
       {tab === 'tracking' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ padding: '8px 10px 4px', fontSize: '8px', color: P.dim, letterSpacing: '0.2em' }}>
+          <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
             LIVE TRACKING LAYERS
           </div>
           {visibleTrackingLayers.map(track => {
             const isActive = trackingEnabled[track.id]
             const isLoading = trackingLoading[track.id]
-            const count = track.id === 'flights' ? trackingFlights.length
-              : track.id === 'vessels' ? trackingVessels.length
-              : track.id === 'earthquakes' ? trackingQuakes.length
-              : track.id === 'satellites' ? trackingSatellites.length
-              : trackingDisasters.length
+            const count = track.id === 'flights' ? flightCount
+              : track.id === 'vessels' ? vesselCount
+              : track.id === 'earthquakes' ? quakeCount
+              : track.id === 'satellites' ? satelliteCount
+              : disasterCount
 
             return (
               <div key={track.id} style={{
@@ -293,7 +293,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                   width: '14px', height: '14px', borderRadius: '3px', border: 'none',
                   background: isActive ? track.color + '25' : '#0d1220',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '8px', color: isActive ? track.color : P.dim,
+                  fontSize: '9px', color: isActive ? track.color : P.dim,
                   transition: 'all 0.2s', flexShrink: 0,
                 }}>{isActive ? '✓' : ''}</button>
 
@@ -307,7 +307,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                     fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                     color: isActive ? P.text : P.dim, transition: 'color 0.2s',
                   }}>{track.label.toUpperCase()}</div>
-                  <div style={{ fontSize: '8px', color: P.dim, marginTop: '1px' }}>
+                  <div style={{ fontSize: '9px', color: P.dim, marginTop: '1px' }}>
                     {track.description}
                   </div>
                 </div>
@@ -315,7 +315,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {isLoading ? (
                     <span style={{
-                      fontSize: '8px', color: track.color,
+                      fontSize: '9px', color: track.color,
                       animation: 'pulse 1s infinite',
                     }}>Loading...</span>
                   ) : isActive ? (
@@ -342,7 +342,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
               width: '14px', height: '14px', borderRadius: '3px', border: 'none',
               background: (trackingEnabled as any).daynight ? '#fbbf2425' : '#0d1220',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '8px', color: (trackingEnabled as any).daynight ? '#fbbf24' : P.dim,
+              fontSize: '9px', color: (trackingEnabled as any).daynight ? '#fbbf24' : P.dim,
               transition: 'all 0.2s', flexShrink: 0,
             }}>{(trackingEnabled as any).daynight ? '\u2713' : ''}</button>
             <span style={{
@@ -353,7 +353,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                 fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                 color: (trackingEnabled as any).daynight ? P.text : P.dim,
               }}>DAY / NIGHT</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>Solar terminator overlay</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>Solar terminator overlay</div>
             </div>
           </div>
 
@@ -370,7 +370,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
               width: '14px', height: '14px', borderRadius: '3px', border: 'none',
               background: (trackingEnabled as any).infrastructure ? '#ff8c0025' : '#0d1220',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '8px', color: (trackingEnabled as any).infrastructure ? '#ff8c00' : P.dim,
+              fontSize: '9px', color: (trackingEnabled as any).infrastructure ? '#ff8c00' : P.dim,
               transition: 'all 0.2s', flexShrink: 0,
             }}>{(trackingEnabled as any).infrastructure ? '\u2713' : ''}</button>
             <span style={{
@@ -381,7 +381,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                 fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                 color: (trackingEnabled as any).infrastructure ? P.text : P.dim,
               }}>INFRASTRUCTURE</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>Pipelines, cables, chokepoints</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>Pipelines, cables, chokepoints</div>
             </div>
           </div>
 
@@ -410,13 +410,13 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                 width: '14px', height: '14px', borderRadius: '3px', border: 'none',
                 background: (trackingEnabled as any)[item.key] ? item.color + '25' : '#0d1220',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '8px', color: (trackingEnabled as any)[item.key] ? item.color : P.dim,
+                fontSize: '9px', color: (trackingEnabled as any)[item.key] ? item.color : P.dim,
                 transition: 'all 0.2s', flexShrink: 0,
               }}>{(trackingEnabled as any)[item.key] ? '✓' : ''}</button>
               <span style={{ fontSize: '12px', color: (trackingEnabled as any)[item.key] ? item.color : P.dim }}>{item.icon}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: (trackingEnabled as any)[item.key] ? P.text : P.dim }}>{item.label}</div>
-                <div style={{ fontSize: '8px', color: P.dim }}>{item.desc}</div>
+                <div style={{ fontSize: '9px', color: P.dim }}>{item.desc}</div>
               </div>
             </div>
           ))}
@@ -424,10 +424,10 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
           <div style={{
             padding: '8px 10px', borderTop: `1px solid ${P.border}`, marginTop: '8px',
           }}>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
               DATA SOURCES
             </div>
-            <div style={{ fontSize: '8px', color: P.dim, lineHeight: '1.6' }}>
+            <div style={{ fontSize: '9px', color: P.dim, lineHeight: '1.6' }}>
               ✈ OpenSky Network (live)<br/>
               ⚓ AIS Global (sample)<br/>
               🛰 CelesTrak TLE (live)<br/>
@@ -444,7 +444,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
       {/* VIEWS TAB */}
       {tab === 'views' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ padding: '8px 10px 4px', fontSize: '8px', color: P.dim, letterSpacing: '0.2em' }}>
+          <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
             SAVED VIEWS
           </div>
           {views.map(view => (
@@ -477,7 +477,7 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
       {/* WATCHLIST TAB */}
       {tab === 'watchlist' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ padding: '8px 10px 4px', fontSize: '8px', color: P.dim, letterSpacing: '0.2em' }}>
+          <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
             WATCHLIST
           </div>
           <div style={{ padding: '4px 10px 8px', display: 'flex', gap: '4px' }}>
@@ -513,10 +513,10 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>{item.enabled ? '✓' : ''}</button>
               <span style={{ flex: 1, fontSize: '9px', color: item.enabled ? P.text : P.dim }}>{item.value}</span>
-              <span style={{ fontSize: '8px', color: P.dim }}>{item.matchCount}</span>
+              <span style={{ fontSize: '9px', color: P.dim }}>{item.matchCount}</span>
               <button onClick={() => removeWatchItem(item.id)} style={{
                 background: 'transparent', border: 'none', color: P.dim,
-                cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+                cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
               }}>✕</button>
             </div>
           ))}
@@ -533,11 +533,11 @@ export function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
         borderTop: `1px solid ${P.border}`, padding: '6px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>LAYERS</span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>LAYERS</span>
         <span style={{ fontSize: '10px', color: P.accent, fontWeight: 600 }}>
           {layers.filter(l => l.visible).length}/{layers.length}
         </span>
       </div>
     </aside>
   )
-}
+})

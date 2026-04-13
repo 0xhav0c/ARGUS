@@ -84,9 +84,12 @@ function startRendererServer(rendererDir: string): Promise<number> {
       let urlPath = decodeURIComponent(new URL(req.url || '/', `http://localhost`).pathname)
       if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
 
+      const { resolve: pathResolve } = require('path')
       const filePath = join(rendererDir, urlPath)
+      const resolved = pathResolve(filePath)
+      const resolvedBase = pathResolve(rendererDir)
       // Prevent path traversal attacks
-      if (!filePath.startsWith(rendererDir)) {
+      if (!resolved.startsWith(resolvedBase)) {
         res.writeHead(403)
         res.end('Forbidden')
         return
@@ -190,7 +193,7 @@ function createWindow(): void {
     ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 14 } } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -293,7 +296,7 @@ function registerWindowHandlers(): void {
       width: 1000, height: 800, x, y,
       title: 'Argus — Panels',
       frame: false, titleBarStyle: 'hidden', autoHideMenuBar: true, backgroundColor: '#0a0e17',
-      webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false, contextIsolation: true, nodeIntegration: false },
+      webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true, nodeIntegration: false },
     })
     applyWindowOpenHandler(win)
     const mainUrl = mainWindow?.webContents?.getURL() || ''
@@ -313,7 +316,7 @@ function registerWindowHandlers(): void {
       backgroundColor: '#0a0e17',
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
-        sandbox: false,
+        sandbox: true,
         contextIsolation: true,
         nodeIntegration: false
       }
@@ -381,6 +384,7 @@ function registerWindowHandlers(): void {
     catch (err: any) { sendMainLog('error', 'api', 'get-sanctions failed', err?.message); return [] }
   })
   ipcMain.handle('check-sanctions', async (_event, text: string) => {
+    if (typeof text !== 'string' || text.length > 5000) return []
     try { const r = await sanctionsService.checkText(text); sendMainLog('debug', 'api', `Sanctions check completed for "${text.slice(0, 40)}..."`); return r }
     catch (err: any) { sendMainLog('error', 'api', 'check-sanctions failed', err?.message); return [] }
   })
@@ -422,16 +426,20 @@ function registerWindowHandlers(): void {
     catch (err: any) { sendMainLog('error', 'api', 'get-cyber-threats failed', err?.message); return [] }
   })
   ipcMain.handle('shodan-search', async (_event, query: string) => {
-    sendMainLog('info', 'api', `Shodan search: "${query}"`)
+    if (typeof query !== 'string' || query.length < 1 || query.length > 500) return []
+    sendMainLog('info', 'api', `Shodan search: "${query.slice(0, 60)}"`)
     try { const r = await cyberThreatService.searchShodan(query); sendMainLog('info', 'api', `Shodan results: ${Array.isArray(r) ? r.length : 0}`); return r }
     catch (err: any) { sendMainLog('error', 'api', 'shodan-search failed', err?.message); return [] }
   })
   ipcMain.handle('abuseipdb-check', async (_event, ip: string) => {
+    if (typeof ip !== 'string' || !/^[\d.a-fA-F:]+$/.test(ip) || ip.length > 45) return null
     sendMainLog('info', 'api', `AbuseIPDB check: ${ip}`)
     try { const r = await cyberThreatService.checkAbuseIPDB(ip); sendMainLog('info', 'api', `AbuseIPDB result for ${ip}: score=${r?.abuseConfidenceScore ?? 'N/A'}`); return r }
     catch (err: any) { sendMainLog('error', 'api', `abuseipdb-check failed for ${ip}`, err?.message); return null }
   })
   ipcMain.handle('virustotal-scan', async (_event, resource: string, type: 'url' | 'hash') => {
+    if (typeof resource !== 'string' || resource.length > 2048) return null
+    if (type !== 'url' && type !== 'hash') return null
     sendMainLog('info', 'api', `VirusTotal scan: ${type} = ${resource.slice(0, 60)}`)
     try { const r = await cyberThreatService.scanVirusTotal(resource, type); sendMainLog('info', 'api', 'VirusTotal scan completed'); return r }
     catch (err: any) { sendMainLog('error', 'api', 'virustotal-scan failed', err?.message); return null }
@@ -508,6 +516,9 @@ function registerWindowHandlers(): void {
     catch (err: any) { sendMainLog('error', 'api', 'get-telegram-messages failed', err?.message); return [] }
   })
   ipcMain.handle('add-telegram-channel', async (_event, name: string, title: string) => {
+    if (typeof name !== 'string' || typeof title !== 'string') return { error: 'Invalid input' }
+    if (!/^[a-zA-Z0-9_]{3,64}$/.test(name)) return { error: 'Invalid channel name format' }
+    if (title.length > 200) return { error: 'Title too long' }
     sendMainLog('info', 'api', `Adding Telegram channel: ${name} (${title})`)
     return telegramService.addCustomChannel(name, title)
   })
@@ -574,9 +585,10 @@ function registerWindowHandlers(): void {
   // ─── YouTube Channel → Live Video ID resolver ───
   const liveCache = new Map<string, { videoId: string | null; ts: number }>()
 
-  function fetchPage(pageUrl: string): Promise<string> {
+  function fetchPage(pageUrl: string, maxRedirects = 5): Promise<string> {
     const { net } = require('electron') as typeof import('electron')
     return new Promise((resolve, reject) => {
+      if (maxRedirects <= 0) return reject(new Error('Too many redirects'))
       const req = net.request({ url: pageUrl, method: 'GET', redirect: 'follow' })
       let body = ''
       req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
@@ -584,7 +596,7 @@ function registerWindowHandlers(): void {
       req.on('response', (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers['location']) {
           const loc = Array.isArray(res.headers['location']) ? res.headers['location'][0] : res.headers['location']
-          fetchPage(loc).then(resolve).catch(reject)
+          fetchPage(loc, maxRedirects - 1).then(resolve).catch(reject)
           return
         }
         res.on('data', (chunk) => { body += chunk.toString() })
@@ -596,7 +608,16 @@ function registerWindowHandlers(): void {
   }
 
   // Resolve YouTube channel ID → live video ID (for embed)
+  // Periodically clean stale liveCache entries
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, val] of liveCache) {
+      if (now - val.ts > 10 * 60 * 1000) liveCache.delete(key)
+    }
+  }, 5 * 60 * 1000)
+
   ipcMain.handle('resolve-yt-live', async (_event, channelId: string) => {
+    if (typeof channelId !== 'string' || !/^UC[a-zA-Z0-9_-]{22}$/.test(channelId)) return null
     const cached = liveCache.get(channelId)
     if (cached && Date.now() - cached.ts < 5 * 60 * 1000) return cached.videoId // cache 5min
     try {
@@ -640,18 +661,27 @@ function registerWindowHandlers(): void {
     }
   })
   ipcMain.handle('ai-check', async () => {
-    const result = await aiService.checkAvailability()
-    sendMainLog('info', 'ai', `AI availability: ${result?.available ? 'ONLINE' : 'OFFLINE'} (${result?.provider || 'unknown'})`)
-    return result
+    try {
+      const result = await aiService.checkAvailability()
+      sendMainLog('info', 'ai', `AI availability check completed`)
+      return result
+    } catch (err: any) {
+      sendMainLog('error', 'ai', 'AI availability check failed', err?.message)
+      return { ollama: false, openai: false, custom: false }
+    }
   })
   ipcMain.handle('ai-config-get', () => aiService.getConfig())
   ipcMain.handle('ai-config-set', (_event, updates: any) => {
+    if (!updates || typeof updates !== 'object') return aiService.getConfig()
     aiService.updateConfig(updates)
     sendMainLog('info', 'ai', `AI config updated: provider=${updates.provider || 'unchanged'}`)
     return aiService.getConfig()
   })
 
   ipcMain.handle('ai-analyze-incident', async (_event, incident: any) => {
+    if (!incident || typeof incident !== 'object' || typeof incident.title !== 'string') {
+      return { summary: 'Invalid incident data', model: 'error' }
+    }
     try {
       const result = await aiService.analyzeIncident(incident)
       sendMainLog('debug', 'ai', `[AI-DEBUG] analyzeIncident raw (${result.summary.length} chars)`, JSON.stringify(result.summary).slice(0, 2000))
@@ -691,13 +721,16 @@ function registerWindowHandlers(): void {
   const apiKeyMgr = getApiKeyManager()
   ipcMain.handle('get-api-keys', () => apiKeyMgr.getAll())
   ipcMain.handle('set-api-key', (_event, name: string, value: string) => {
-    apiKeyMgr.set(name, value)
+    if (typeof name !== 'string' || typeof value !== 'string') return apiKeyMgr.getAll()
+    if (value.length > 500) return apiKeyMgr.getAll()
+    apiKeyMgr.set(name, value) // set() validates against VALID_KEY_IDS internally
     sendMainLog('info', 'system', `API key set: ${name}`)
     if (name === 'opensky_user' || name === 'opensky_pass') trackingService.resetOpenSkyAuth()
     return apiKeyMgr.getAll()
   })
   ipcMain.handle('delete-api-key', (_event, name: string) => {
-    apiKeyMgr.delete(name)
+    if (typeof name !== 'string') return apiKeyMgr.getAll()
+    apiKeyMgr.delete(name) // delete() validates against VALID_KEY_IDS internally
     sendMainLog('info', 'system', `API key deleted: ${name}`)
     if (name === 'opensky_user' || name === 'opensky_pass') trackingService.resetOpenSkyAuth()
     return apiKeyMgr.getAll()
@@ -728,6 +761,7 @@ function registerWindowHandlers(): void {
   ipcMain.handle('companion-stop', () => { companionServer.stop(); sendMainLog('info', 'network', 'Companion server stopped'); return { success: true } })
   ipcMain.handle('companion-info', () => companionServer.getConnectionInfo())
   ipcMain.handle('companion-push-incident', (_event, incident: any) => {
+    if (!incident || typeof incident !== 'object' || typeof incident.id !== 'string') return { pushed: 0 }
     companionServer.pushIncident(incident)
     const count = companionServer.getClientCount()
     sendMainLog('debug', 'network', `Incident pushed to ${count} companion client(s)`)
@@ -884,14 +918,17 @@ app.whenReady().then(async () => {
 }).catch(err => { console.error('Fatal startup error:', err); sendMainLog('error', 'system', 'Fatal startup error', String(err)); app.quit() })
 
 function cleanupBeforeQuit() {
-  if (cascadeInterval) clearInterval(cascadeInterval)
-  if (tweetInterval) clearInterval(tweetInterval)
-  feedAggregator?.stopAutoRefresh()
-  if (rendererServer) {
-    rendererServer.close()
-    rendererServer = null
-  }
-  closeDatabase()
+  try { if (cascadeInterval) clearInterval(cascadeInterval) } catch {}
+  try { if (tweetInterval) clearInterval(tweetInterval) } catch {}
+  try { feedAggregator?.stopAutoRefresh() } catch {}
+  try { companionServer.stop() } catch {}
+  try {
+    if (rendererServer) {
+      rendererServer.close()
+      rendererServer = null
+    }
+  } catch {}
+  try { closeDatabase() } catch {}
 }
 
 app.on('window-all-closed', () => {

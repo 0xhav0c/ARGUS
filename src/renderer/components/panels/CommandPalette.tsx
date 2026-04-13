@@ -247,7 +247,7 @@ export function AIPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
             {EXAMPLE_QUERIES.map((q, i) => (
               <button key={i} onClick={() => { setQuery(q); setTimeout(handleSubmit, 50) }}
-                style={{ padding: '3px 8px', fontSize: '8px', background: `${P.accent}10`, border: `1px solid ${P.accent}25`, borderRadius: '4px', color: P.accent, cursor: 'pointer', fontFamily: P.font }}>
+                style={{ padding: '3px 8px', fontSize: '9px', background: `${P.accent}10`, border: `1px solid ${P.accent}25`, borderRadius: '4px', color: P.accent, cursor: 'pointer', fontFamily: P.font }}>
                 {q.length > 35 ? q.slice(0, 35) + '...' : q}
               </button>
             ))}
@@ -265,7 +265,7 @@ export function AIPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
           {result && (
             <div style={{ marginTop: '16px', padding: '16px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '8px' }}>
-              <div style={{ fontSize: '8px', color: P.dim, marginBottom: '8px', letterSpacing: '0.1em' }}>
+              <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px', letterSpacing: '0.1em' }}>
                 MODEL: {result.model.toUpperCase()}
               </div>
               <MarkdownText text={result.summary} style={{ fontSize: '12px', color: P.text }} />

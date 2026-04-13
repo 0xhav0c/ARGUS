@@ -157,7 +157,7 @@ function HourlyActivityChart({ incidents }: { incidents: Incident[] }) {
   return (
     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px', minWidth: 0, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', minWidth: 0 }}>
-        <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>ACTIVITY (24H)</span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>ACTIVITY (24H)</span>
         <InfoTip text="Hourly incident distribution over the last 24 hours. Each bar is color-coded by domain: orange=Conflict, green=Cyber, blue=Intel, yellow=Finance." size={11} />
       </div>
       <div ref={wrapRef} style={{ width: '100%', height: '140px' }}>
@@ -165,7 +165,7 @@ function HourlyActivityChart({ incidents }: { incidents: Incident[] }) {
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
         {DOMAIN_CONFIG.map(d => (
-          <span key={d.id} style={{ fontSize: '7px', color: d.color, fontFamily: P.font }}>{d.icon} {d.label}</span>
+          <span key={d.id} style={{ fontSize: '9px', color: d.color, fontFamily: P.font }}>{d.icon} {d.label}</span>
         ))}
       </div>
     </div>
@@ -236,7 +236,7 @@ function TopCountriesChart({ incidents }: { incidents: Incident[] }) {
   return (
     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px', minWidth: 0, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', minWidth: 0 }}>
-        <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>TOP COUNTRIES</span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>TOP COUNTRIES</span>
         <InfoTip text="Countries with the most incidents in the last 24 hours, ranked by total count." size={11} />
       </div>
       <div ref={wrapRef} style={{ width: '100%', height: '160px' }}>
@@ -309,7 +309,7 @@ function SeverityDonutChart({ incidents }: { incidents: Incident[] }) {
   return (
     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px', minWidth: 0, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', minWidth: 0 }}>
-        <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>SEVERITY</span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>SEVERITY</span>
         <InfoTip text="Severity distribution across all incidents. The center number shows the total count." size={11} />
       </div>
       <div ref={wrapRef} style={{ width: '100%', height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -317,7 +317,7 @@ function SeverityDonutChart({ incidents }: { incidents: Incident[] }) {
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', justifyContent: 'center', marginTop: '4px' }}>
         {SEV_CONFIG.map(s => (
-          <span key={s.id} style={{ fontSize: '7px', color: P.dim, fontFamily: P.font, whiteSpace: 'nowrap' }}>
+          <span key={s.id} style={{ fontSize: '9px', color: P.dim, fontFamily: P.font, whiteSpace: 'nowrap' }}>
             <span style={{ color: s.color, marginRight: '3px' }}>●</span>{s.id} {counts[s.id] || 0}
           </span>
         ))}
@@ -338,6 +338,8 @@ export function DashboardStats({ incidents }: { incidents: Incident[] }) {
     }, 60000)
     return () => clearInterval(iv)
   }, [])
+
+  const lastRefreshed = useMemo(() => new Date().toLocaleTimeString(), [incidents.length])
 
   const stats = useMemo(() => {
     const now = Date.now()
@@ -372,35 +374,36 @@ export function DashboardStats({ incidents }: { incidents: Incident[] }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ width: '3px', height: '14px', background: P.accent, borderRadius: '2px' }} />
         <span style={{ fontSize: '10px', fontWeight: 700, color: P.text }}>SITUATION OVERVIEW</span>
-        <InfoTip text="Real-time overview of all incidents collected in the last 24 hours from RSS feeds, APIs and other intelligence sources. Database total shows all cached incidents." />
-        <span style={{ fontSize: '8px', color: P.dim }}>last 24h &middot; {stats.dbTotal} in db</span>
+        <InfoTip text="Overview of incidents collected in the last 24 hours from RSS feeds, APIs and other intelligence sources. Database total shows all cached incidents." />
+        <span style={{ fontSize: '9px', color: P.dim }}>last 24h &middot; {stats.dbTotal} in db</span>
+        <span style={{ fontSize: '9px', color: P.dim }}>Updated {lastRefreshed}</span>
       </div>
 
       {/* Stat cards - use flex with wrap instead of grid for better adaptability */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
         <div style={{ flex: '1 1 100px', minWidth: '90px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>LAST 24H</div>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>LAST 24H</div>
             <InfoTip text="Number of incidents detected in the last 24 hours across all domains and sources." size={11} />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: P.accent }}>{stats.last24h}</div>
-          <div style={{ fontSize: '8px', color: P.dim, marginTop: '2px' }}>{stats.cacheTotal} cached</div>
+          <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>{stats.cacheTotal} cached</div>
         </div>
 
         <div style={{ flex: '1 1 100px', minWidth: '90px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>COUNTRIES</div>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>COUNTRIES</div>
             <InfoTip text="Unique countries mentioned in incidents from the last 24 hours." size={11} />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#00ff87' }}>{stats.countries}</div>
-          <div style={{ fontSize: '8px', color: P.dim, marginTop: '2px' }}>in 24h</div>
+          <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>in 24h</div>
         </div>
 
         {DOMAIN_CONFIG.map(d => (
           <div key={d.id} style={{ flex: '1 1 90px', minWidth: '80px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px 12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
               <span style={{ fontSize: '10px' }}>{d.icon}</span>
-              <span style={{ fontSize: '8px', color: d.color, letterSpacing: '0.06em', fontWeight: 600 }}>{d.label}</span>
+              <span style={{ fontSize: '9px', color: d.color, letterSpacing: '0.06em', fontWeight: 600 }}>{d.label}</span>
             </div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: d.color }}>{stats.byDomain[d.id] || 0}</div>
           </div>
@@ -410,14 +413,14 @@ export function DashboardStats({ incidents }: { incidents: Incident[] }) {
       {/* Severity bar */}
       <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px 12px', marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>SEVERITY (24H)</div>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600 }}>SEVERITY (24H)</div>
           <InfoTip text="Incident severity breakdown for the last 24h. CRITICAL = immediate threat, HIGH = significant risk, MEDIUM = notable, LOW = monitoring, INFO = awareness only." size={11} />
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {SEV_CONFIG.map(s => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '7px', height: '7px', borderRadius: '2px', background: s.color }} />
-              <span style={{ fontSize: '8px', color: P.dim }}>{s.id}</span>
+              <span style={{ fontSize: '9px', color: P.dim }}>{s.id}</span>
               <span style={{ fontSize: '12px', fontWeight: 700, color: s.color }}>{stats.bySeverity[s.id] || 0}</span>
             </div>
           ))}

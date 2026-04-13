@@ -120,7 +120,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
           <span style={{ fontSize: '10px', fontWeight: 700, color: P.text, letterSpacing: '0.1em' }}>ALERTS</span>
           {unreadCount > 0 && (
             <span style={{
-              background: '#ff3b5c', color: '#fff', fontSize: '8px', fontWeight: 700,
+              background: '#ff3b5c', color: '#fff', fontSize: '9px', fontWeight: 700,
               padding: '1px 5px', borderRadius: '8px', marginLeft: '4px',
             }}>{unreadCount}</span>
           )}
@@ -130,7 +130,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
               background: tab === t ? `${P.accent}22` : 'transparent',
               border: `1px solid ${tab === t ? P.accent : 'transparent'}`,
               color: tab === t ? P.accent : P.dim,
-              cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+              cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
               letterSpacing: '0.12em', padding: '3px 8px', borderRadius: '3px',
             }}>{t === 'log' ? 'LOG' : t === 'matches' ? `MATCHES${alertUnread > 0 ? ` (${alertUnread})` : ''}` : 'RULES'}</button>
           ))}
@@ -140,11 +140,11 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             <>
               <button type="button" onClick={markAllRead} style={{
                 background: 'transparent', border: 'none', color: P.accent,
-                cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+                cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
               }}>READ ALL</button>
               <button type="button" onClick={dismissAll} style={{
                 background: 'transparent', border: 'none', color: P.dim,
-                cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+                cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
               }}>CLEAR</button>
             </>
           )}
@@ -163,7 +163,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             borderBottom: `1px solid ${P.border}`, flexWrap: 'wrap',
           }}>
             <button onClick={() => setTypeFilter(null)} style={{
-              padding: '2px 8px', fontSize: '8px', fontFamily: P.font,
+              padding: '2px 8px', fontSize: '9px', fontFamily: P.font,
               background: !typeFilter ? `${P.accent}20` : 'transparent',
               border: `1px solid ${!typeFilter ? P.accent + '60' : P.border}`,
               borderRadius: '3px', cursor: 'pointer',
@@ -171,7 +171,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             }}>ALL ({notifications.length})</button>
             {Object.entries(TYPE_CONFIG).map(([type, cfg]) => (
               <button key={type} onClick={() => setTypeFilter(typeFilter === type ? null : type)} style={{
-                padding: '2px 8px', fontSize: '8px', fontFamily: P.font,
+                padding: '2px 8px', fontSize: '9px', fontFamily: P.font,
                 background: typeFilter === type ? `${cfg.color}20` : 'transparent',
                 border: `1px solid ${typeFilter === type ? cfg.color + '60' : P.border}`,
                 borderRadius: '3px', cursor: 'pointer',
@@ -214,18 +214,18 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                       <span style={{
-                        fontSize: '7px', fontWeight: 700, color: cfg.color,
+                        fontSize: '9px', fontWeight: 700, color: cfg.color,
                         letterSpacing: '0.12em', padding: '1px 4px',
                         background: `${cfg.color}12`, borderRadius: '2px',
                       }}>{cfg.label}</span>
                       {n.severity && (
                         <span style={{
-                          fontSize: '7px', fontWeight: 700, color: sevColor,
+                          fontSize: '9px', fontWeight: 700, color: sevColor,
                           letterSpacing: '0.1em',
                         }}>{n.severity}</span>
                       )}
                       {n.magnitude && (
-                        <span style={{ fontSize: '8px', fontWeight: 700, color: '#ff8800' }}>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#ff8800' }}>
                           M{n.magnitude.toFixed(1)}
                         </span>
                       )}
@@ -235,7 +235,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       lineHeight: '1.3',
                     }}>{n.title}</div>
-                    <div style={{ fontSize: '8px', color: P.dim, marginTop: '3px' }}>
+                    <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>
                       {n.subtitle && <span>{n.subtitle} · </span>}
                       {ageStr}
                     </div>
@@ -257,8 +257,8 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
       {tab === 'matches' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 10px', borderBottom: `1px solid ${P.border}`, gap: '6px' }}>
-            <button type="button" onClick={markAllAlertRead} style={{ background: 'transparent', border: 'none', color: P.accent, cursor: 'pointer', fontSize: '8px', fontFamily: P.font }}>READ ALL</button>
-            <button type="button" onClick={clearAlertNotifs} style={{ background: 'transparent', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '8px', fontFamily: P.font }}>CLEAR</button>
+            <button type="button" onClick={markAllAlertRead} style={{ background: 'transparent', border: 'none', color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>READ ALL</button>
+            <button type="button" onClick={clearAlertNotifs} style={{ background: 'transparent', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>CLEAR</button>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {alertNotifications.length === 0 ? (
@@ -282,14 +282,14 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '7px', fontWeight: 700, color: P.accent, letterSpacing: '0.12em', padding: '1px 4px', background: `${P.accent}12`, borderRadius: '2px' }}>RULE</span>
-                      <span style={{ fontSize: '8px', color: P.dim }}>{an.ruleName}</span>
-                      <span style={{ fontSize: '7px', fontWeight: 700, color: sevColor, letterSpacing: '0.1em' }}>{an.incident.severity}</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, color: P.accent, letterSpacing: '0.12em', padding: '1px 4px', background: `${P.accent}12`, borderRadius: '2px' }}>RULE</span>
+                      <span style={{ fontSize: '9px', color: P.dim }}>{an.ruleName}</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, color: sevColor, letterSpacing: '0.1em' }}>{an.incident.severity}</span>
                     </div>
                     <div style={{ fontSize: '10px', color: an.read ? P.dim : P.text, fontWeight: an.read ? 400 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {an.incident.title}
                     </div>
-                    <div style={{ fontSize: '8px', color: P.dim, marginTop: '3px' }}>{an.incident.domain} · {ageStr}</div>
+                    <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>{an.incident.domain} · {ageStr}</div>
                   </div>
                   {!an.read && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: sevColor, marginTop: '6px', flexShrink: 0, boxShadow: `0 0 6px ${sevColor}80` }} />}
                 </button>
@@ -313,12 +313,12 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
               background: P.bg, border: `1px solid ${P.border}`,
               borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px',
             }}>
-              <label style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>RULE NAME</label>
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>RULE NAME</label>
               <input value={ruleName} onChange={e => setRuleName(e.target.value)} style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
               }} />
-              <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>DOMAINS</div>
+              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>DOMAINS</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {DOMAIN_OPTIONS.map(d => (
                   <label key={d} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
@@ -326,7 +326,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                   </label>
                 ))}
               </div>
-              <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>SEVERITIES</div>
+              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>SEVERITIES</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {SEVERITY_OPTIONS.map(sv => (
                   <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
@@ -334,12 +334,12 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                   </label>
                 ))}
               </div>
-              <label style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>KEYWORDS (COMMA-SEPARATED)</label>
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>KEYWORDS (COMMA-SEPARATED)</label>
               <input value={keywordsText} onChange={e => setKeywordsText(e.target.value)} placeholder="e.g. missile, breach" style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
               }} />
-              <label style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>REGION (COUNTRY NAME)</label>
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>REGION (COUNTRY NAME)</label>
               <input value={regionText} onChange={e => setRegionText(e.target.value)} placeholder="e.g. Ukraine, Iran" style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
@@ -358,7 +358,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             </div>
           )}
 
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em' }}>ACTIVE RULES</div>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em' }}>ACTIVE RULES</div>
           {rules.map(rule => (
             <div key={rule.id} style={{
               background: P.card, border: `1px solid ${P.border}`,
@@ -370,17 +370,17 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                 <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                   <button type="button" onClick={() => toggleRule(rule.id)} style={{
                     background: 'transparent', border: `1px solid ${P.border}`,
-                    color: P.accent, cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+                    color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
                     padding: '2px 6px', borderRadius: '3px',
                   }}>{rule.enabled ? 'DISABLE' : 'ENABLE'}</button>
                   <button type="button" onClick={() => removeRule(rule.id)} style={{
                     background: 'transparent', border: `1px solid ${P.border}`,
-                    color: '#ff3b5c', cursor: 'pointer', fontSize: '8px', fontFamily: P.font,
+                    color: '#ff3b5c', cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
                     padding: '2px 6px', borderRadius: '3px',
                   }}>DEL</button>
                 </div>
               </div>
-              <div style={{ fontSize: '8px', color: P.dim }}>
+              <div style={{ fontSize: '9px', color: P.dim }}>
                 triggers: {rule.triggerCount}
                 {rule.lastTriggered && ` · last ${new Date(rule.lastTriggered).toLocaleString()}`}
               </div>
