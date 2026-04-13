@@ -1,19 +1,36 @@
 version: 2
 updates:
+  # NPM: only security updates, no version bumps
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - dependencies
+      - security
+    # Only open PRs for security vulnerabilities
+    allow:
+      - dependency-type: direct
     ignore:
-      - dependency-name: "cesium"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
+  # GitHub Actions: only security updates
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     labels:
       - ci
+      - security
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
