@@ -82,6 +82,19 @@ function startRendererServer(rendererDir: string): Promise<number> {
     }
 
     const server = createServer((req, res) => {
+      // CORS headers required for Cesium tile loading via crossOrigin attribute
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers': 'Range, Content-Type',
+      }
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, corsHeaders)
+        res.end()
+        return
+      }
+
       let urlPath = decodeURIComponent(new URL(req.url || '/', `http://localhost`).pathname)
       if (urlPath === '/' || urlPath === '') urlPath = '/index.html'
 
@@ -91,7 +104,7 @@ function startRendererServer(rendererDir: string): Promise<number> {
       const resolvedBase = pathResolve(rendererDir)
       // Prevent path traversal attacks
       if (!resolved.startsWith(resolvedBase)) {
-        res.writeHead(403)
+        res.writeHead(403, corsHeaders)
         res.end('Forbidden')
         return
       }
@@ -101,24 +114,24 @@ function startRendererServer(rendererDir: string): Promise<number> {
           // SPA fallback — serve index.html for unknown routes
           const indexPath = join(rendererDir, 'index.html')
           const indexStat = statSync(indexPath)
-          res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexStat.size })
+          res.writeHead(200, { ...corsHeaders, 'Content-Type': 'text/html', 'Content-Length': String(indexStat.size) })
           createReadStream(indexPath).pipe(res)
           return
         }
 
         const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase()
         const contentType = mimeTypes[ext] || 'application/octet-stream'
-        res.writeHead(200, { 'Content-Type': contentType, 'Content-Length': stat.size })
+        res.writeHead(200, { ...corsHeaders, 'Content-Type': contentType, 'Content-Length': String(stat.size) })
         createReadStream(filePath).pipe(res)
       } catch {
         // SPA fallback for any missing file
         try {
           const indexPath = join(rendererDir, 'index.html')
           const indexStat = statSync(indexPath)
-          res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexStat.size })
+          res.writeHead(200, { ...corsHeaders, 'Content-Type': 'text/html', 'Content-Length': String(indexStat.size) })
           createReadStream(indexPath).pipe(res)
         } catch {
-          res.writeHead(404)
+          res.writeHead(404, corsHeaders)
           res.end('Not Found')
         }
       }
