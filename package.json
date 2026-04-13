@@ -51,7 +51,7 @@
     "url": "https://github.com/0xhav0c/ARGUS/issues"
   },
   "dependencies": {
-    "better-sqlite3": "^12.8.0",
+    "better-sqlite3": "^12.9.0",
     "cesium": "^1.140.0",
     "hls.js": "^1.6.15",
     "i18next": "^26.0.3",
