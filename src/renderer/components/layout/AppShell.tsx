@@ -1167,6 +1167,7 @@ function AppShellContent() {
   const panelWidthPct = useSettingsStore(s => s.panelWidthPct)
   const updateSetting = useSettingsStore(s => s.updateSetting)
   const features = useSettingsStore(s => s.features)
+  const uiScale = useSettingsStore(s => s.uiScale)
   const ff = useCallback((key: keyof FeatureFlags) => features?.[key] ?? true, [features])
   const isHorizontal = layoutMode === 'globe-left' || layoutMode === 'globe-right'
 
@@ -1495,74 +1496,6 @@ function AppShellContent() {
     selectedCountry, trackingPopup, incidentScreenPos, flyToRegion, resetView,
     sidebarCollapsed, handleApplyView, handleAlertNavigate, unlockRotation])
 
-  // Hook must be called before any conditional return (React rules of hooks)
-  const uiScale = useSettingsStore(s => s.uiScale)
-
-  if (mapFullscreen) {
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, background: P.bg, fontFamily: P.font, color: P.text, zIndex: 100,
-        display: 'flex',
-      }}>
-        <div style={{
-          flex: 1, position: 'relative',
-          filter: visualMode === 'nightvision' ? 'hue-rotate(80deg) saturate(3) brightness(1.2)'
-            : visualMode === 'thermal' ? 'hue-rotate(-40deg) saturate(2) contrast(1.3)'
-            : visualMode === 'tactical' ? 'saturate(0.4) brightness(0.9) contrast(1.2)'
-            : 'none',
-        }}>
-          <AppErrorBoundary>
-            <Suspense fallback={<GlobeLoadingFallback />}><CesiumGlobe onReady={handleGlobeReady} sceneMode={sceneMode} /></Suspense>
-          </AppErrorBoundary>
-          <GlobeControls sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} handleApplyView={handleApplyView} resetView={resetView} unlockRotation={unlockRotation} />
-        </div>
-        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 200 }}>
-          <div style={{ pointerEvents: 'auto' }}><FloatingPopups {...overlayProps} /></div>
-        </div>
-        {splitView && (
-          <>
-            <div style={{ width: '3px', background: P.border, cursor: 'col-resize' }} />
-            <div style={{
-              flex: 1, position: 'relative',
-              filter: visualMode === 'nightvision' ? 'hue-rotate(80deg) saturate(3) brightness(1.2)'
-                : visualMode === 'thermal' ? 'hue-rotate(-40deg) saturate(2) contrast(1.3)'
-                : visualMode === 'tactical' ? 'saturate(0.4) brightness(0.9) contrast(1.2)'
-                : 'none',
-            }}>
-              <AppErrorBoundary>
-                <Suspense fallback={<GlobeLoadingFallback />}><CesiumGlobe onReady={() => {}} sceneMode={splitSceneMode} /></Suspense>
-              </AppErrorBoundary>
-              <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 25, display: 'flex', gap: '4px' }}>
-                {(['3d', '2d'] as const).map(m => (
-                  <button key={m} onClick={() => setSplitSceneMode(m)} style={{
-                    padding: '4px 10px', background: splitSceneMode === m ? `${P.accent}15` : 'rgba(10,14,23,0.85)',
-                    border: `1px solid ${splitSceneMode === m ? P.accent + '40' : P.border}`,
-                    borderRadius: '4px', color: splitSceneMode === m ? P.accent : P.dim,
-                    fontSize: '9px', fontWeight: 700, cursor: 'pointer', fontFamily: P.font,
-                  }}>{m.toUpperCase()}</button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-        <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 25, display: 'flex', gap: '6px' }}>
-          <button onClick={() => { setMapFullscreen(false); setSplitView(false) }} style={{
-            padding: '8px 20px', background: 'rgba(10,14,23,0.9)', border: `1px solid ${P.border}`,
-            borderRadius: '6px', color: P.accent, cursor: 'pointer', fontFamily: P.font,
-            fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
-          }}>{'< BACK'}</button>
-          {ff('featureSplitView') && <button onClick={() => setSplitView(s => !s)} style={{
-            padding: '8px 14px', background: splitView ? `${P.accent}15` : 'rgba(10,14,23,0.9)',
-            border: `1px solid ${splitView ? P.accent + '40' : P.border}`,
-            borderRadius: '6px', color: splitView ? P.accent : P.dim, cursor: 'pointer', fontFamily: P.font,
-            fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
-          }}>SPLIT</button>}
-        </div>
-        {ff('featureCommandPalette') && <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />}
-      </div>
-    )
-  }
-
   const globeFilter = visualMode === 'nightvision' ? 'hue-rotate(80deg) saturate(3) brightness(1.2)'
     : visualMode === 'thermal' ? 'hue-rotate(-40deg) saturate(2) contrast(1.3)'
     : visualMode === 'tactical' ? 'saturate(0.4) brightness(0.9) contrast(1.2)' : 'none'
@@ -1776,6 +1709,62 @@ function AppShellContent() {
         <ToastContainer notifications={notifications} allIncidents={allIncidents} selectIncident={selectIncident} flyToIncident={flyToIncident} scrollRef={scrollRef} setActiveTab={setActiveTab} markRead={markNotifRead} />
         <SettingsModal open={settingsOpen} onClose={() => { setSettingsOpen(false); setSettingsTab(undefined) }} incidents={allIncidents} initialTab={settingsTab as any} />
         <StatusBar incidents={incidents} sceneMode={sceneMode} onSceneModeChange={setSceneMode} />
+      </div>
+    )
+  }
+
+  if (mapFullscreen) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, background: P.bg, fontFamily: P.font, color: P.text, zIndex: 100,
+        display: 'flex',
+      }}>
+        <div style={{
+          flex: 1, position: 'relative',
+          filter: globeFilter,
+        }}>
+          <AppErrorBoundary>
+            <Suspense fallback={<GlobeLoadingFallback />}><CesiumGlobe onReady={handleGlobeReady} sceneMode={sceneMode} /></Suspense>
+          </AppErrorBoundary>
+          <GlobeControls sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} handleApplyView={handleApplyView} resetView={resetView} unlockRotation={unlockRotation} />
+        </div>
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 200 }}>
+          <div style={{ pointerEvents: 'auto' }}><FloatingPopups {...overlayProps} /></div>
+        </div>
+        {splitView && (
+          <>
+            <div style={{ width: '3px', background: P.border, cursor: 'col-resize' }} />
+            <div style={{ flex: 1, position: 'relative', filter: globeFilter }}>
+              <AppErrorBoundary>
+                <Suspense fallback={<GlobeLoadingFallback />}><CesiumGlobe onReady={() => {}} sceneMode={splitSceneMode} /></Suspense>
+              </AppErrorBoundary>
+              <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 25, display: 'flex', gap: '4px' }}>
+                {(['3d', '2d'] as const).map(m => (
+                  <button key={m} onClick={() => setSplitSceneMode(m)} style={{
+                    padding: '4px 10px', background: splitSceneMode === m ? `${P.accent}15` : 'rgba(10,14,23,0.85)',
+                    border: `1px solid ${splitSceneMode === m ? P.accent + '40' : P.border}`,
+                    borderRadius: '4px', color: splitSceneMode === m ? P.accent : P.dim,
+                    fontSize: '9px', fontWeight: 700, cursor: 'pointer', fontFamily: P.font,
+                  }}>{m.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+        <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 25, display: 'flex', gap: '6px' }}>
+          <button onClick={() => { setMapFullscreen(false); setSplitView(false) }} style={{
+            padding: '8px 20px', background: 'rgba(10,14,23,0.9)', border: `1px solid ${P.border}`,
+            borderRadius: '6px', color: P.accent, cursor: 'pointer', fontFamily: P.font,
+            fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
+          }}>{'< BACK'}</button>
+          {ff('featureSplitView') && <button onClick={() => setSplitView(s => !s)} style={{
+            padding: '8px 14px', background: splitView ? `${P.accent}15` : 'rgba(10,14,23,0.9)',
+            border: `1px solid ${splitView ? P.accent + '40' : P.border}`,
+            borderRadius: '6px', color: splitView ? P.accent : P.dim, cursor: 'pointer', fontFamily: P.font,
+            fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
+          }}>SPLIT</button>}
+        </div>
+        {ff('featureCommandPalette') && <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />}
       </div>
     )
   }
