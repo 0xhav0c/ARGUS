@@ -472,7 +472,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
               return (
                 <button key={t.id} onClick={() => setTab(t.id)} style={{
                   display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                  padding: '9px 16px', fontSize: '8px', fontWeight: 600, fontFamily: P.font,
+                  padding: '9px 16px', fontSize: '9px', fontWeight: 600, fontFamily: P.font,
                   letterSpacing: '0.06em', whiteSpace: 'nowrap', textAlign: 'left',
                   background: active ? `${t.color}10` : 'transparent',
                   border: 'none', borderLeft: active ? `2px solid ${t.color}` : '2px solid transparent',
@@ -657,7 +657,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
               <div style={{ padding: '14px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                   <div>
-                    <label style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>FEED NAME</label>
+                    <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>FEED NAME</label>
                     <input value={newFeedName} onChange={e => setNewFeedName(e.target.value)} placeholder="e.g. Reuters World" style={inputStyle} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
@@ -668,7 +668,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>FEED URL</label>
+                  <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>FEED URL</label>
                   <input value={newFeedUrl} onChange={e => setNewFeedUrl(e.target.value)} placeholder="https://feeds.reuters.com/reuters/worldNews" style={inputStyle}
                     onKeyDown={e => { if (e.key === 'Enter') handleAddFeed() }} />
                 </div>
@@ -682,25 +682,25 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                       <div style={{ display: 'grid', gap: '6px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                           <div>
-                            <label style={{ fontSize: '7px', color: P.dim }}>NAME</label>
+                            <label style={{ fontSize: '9px', color: P.dim }}>NAME</label>
                             <input value={feedEditForm.name} onChange={e => setFeedEditForm(p => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, border: `1px solid ${P.accent}30` }} />
                           </div>
                           <div>
-                            <label style={{ fontSize: '7px', color: P.dim }}>CATEGORY</label>
+                            <label style={{ fontSize: '9px', color: P.dim }}>CATEGORY</label>
                             <input value={feedEditForm.category} onChange={e => setFeedEditForm(p => ({ ...p, category: e.target.value }))} placeholder="e.g. news" style={{ ...inputStyle, border: `1px solid ${P.accent}30` }} />
                           </div>
                         </div>
                         <div>
-                          <label style={{ fontSize: '7px', color: P.dim }}>URL</label>
+                          <label style={{ fontSize: '9px', color: P.dim }}>URL</label>
                           <input value={feedEditForm.url} onChange={e => setFeedEditForm(p => ({ ...p, url: e.target.value }))} style={{ ...inputStyle, border: `1px solid ${P.accent}30` }} />
                         </div>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                           <button onClick={() => handleSaveFeedEdit(f.id)} style={{
-                            padding: '4px 14px', fontSize: '8px', fontWeight: 700, background: '#3fb950',
+                            padding: '4px 14px', fontSize: '9px', fontWeight: 700, background: '#3fb950',
                             border: 'none', borderRadius: '3px', cursor: 'pointer', color: '#000', fontFamily: P.font,
                           }}>SAVE</button>
                           <button onClick={() => { setEditingFeed(null); setFeedEditForm({ name: '', url: '', category: '' }) }} style={{
-                            padding: '4px 12px', fontSize: '8px', fontWeight: 600, background: 'transparent',
+                            padding: '4px 12px', fontSize: '9px', fontWeight: 600, background: 'transparent',
                             border: `1px solid ${P.border}`, borderRadius: '3px', cursor: 'pointer', color: P.dim, fontFamily: P.font,
                           }}>CANCEL</button>
                         </div>
@@ -710,16 +710,16 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: f.enabled ? '#3fb950' : P.dim, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '10px', fontWeight: 600, color: P.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                          <div style={{ fontSize: '8px', color: P.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.url}</div>
+                          <div style={{ fontSize: '9px', color: P.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.url}</div>
                         </div>
-                        <span style={{ fontSize: '7px', color: P.dim, padding: '2px 6px', background: P.card, borderRadius: '3px', flexShrink: 0 }}>{(f as any).category || f.domain || 'general'}</span>
+                        <span style={{ fontSize: '9px', color: P.dim, padding: '2px 6px', background: P.card, borderRadius: '3px', flexShrink: 0 }}>{(f as any).category || f.domain || 'general'}</span>
                         <button onClick={() => { setEditingFeed(f.id); setFeedEditForm({ name: f.name, url: f.url, category: (f as any).category || '' }) }} style={{
                           background: `${P.accent}10`, border: `1px solid ${P.accent}30`, color: P.accent,
-                          cursor: 'pointer', fontSize: '8px', fontWeight: 600, borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
+                          cursor: 'pointer', fontSize: '9px', fontWeight: 600, borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
                         }}>EDIT</button>
                         <button onClick={() => handleRemoveFeed(f.id)} style={{
                           background: 'rgba(255,59,92,0.1)', border: '1px solid rgba(255,59,92,0.3)',
-                          color: '#ff6b7a', cursor: 'pointer', fontSize: '8px', fontWeight: 600,
+                          color: '#ff6b7a', cursor: 'pointer', fontSize: '9px', fontWeight: 600,
                           borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
                         }}>DEL</button>
                       </div>
@@ -757,7 +757,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                     onKeyDown={e => { if (e.key === 'Enter' && tvNewCat.trim()) { addCategory(tvNewCat.trim()); setTvNewCat('') } }}
                   />
                   <button onClick={() => { if (tvNewCat.trim()) { addCategory(tvNewCat.trim()); setTvNewCat(''); setToast('Category added') } }} style={{
-                    padding: '3px 10px', fontSize: '8px', fontWeight: 600, background: '#3fb95015',
+                    padding: '3px 10px', fontSize: '9px', fontWeight: 600, background: '#3fb95015',
                     border: '1px solid #3fb95040', borderRadius: '3px', cursor: 'pointer', color: '#3fb950', fontFamily: P.font,
                   }}>ADD</button>
                 </div>
@@ -768,16 +768,16 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
               <div style={{ padding: '12px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                   <div>
-                    <label style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>NAME</label>
+                    <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>NAME</label>
                     <input value={tvAddForm.name} onChange={e => setTvAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Channel name" style={inputStyle} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>COUNTRY</label>
+                    <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>COUNTRY</label>
                     <input value={tvAddForm.country} onChange={e => setTvAddForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Turkey" style={inputStyle} />
                   </div>
                 </div>
                 <div style={{ marginBottom: '8px' }}>
-                  <label style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>STREAM URL</label>
+                  <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>STREAM URL</label>
                   <input value={tvAddForm.url} onChange={e => setTvAddForm(f => ({ ...f, url: e.target.value }))} placeholder="YouTube live URL, embed URL, or stream link" style={inputStyle} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -825,11 +825,11 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                           </select>
                           <div style={{ flex: 1 }} />
                           <button onClick={() => handleSaveTvEdit(ch.id)} style={{
-                            padding: '4px 14px', fontSize: '8px', fontWeight: 700, background: '#3fb950',
+                            padding: '4px 14px', fontSize: '9px', fontWeight: 700, background: '#3fb950',
                             border: 'none', borderRadius: '3px', cursor: 'pointer', color: '#000', fontFamily: P.font,
                           }}>SAVE</button>
                           <button onClick={() => { setEditingTv(null); setTvEditForm({}) }} style={{
-                            padding: '4px 12px', fontSize: '8px', fontWeight: 600, background: 'transparent',
+                            padding: '4px 12px', fontSize: '9px', fontWeight: 600, background: 'transparent',
                             border: `1px solid ${P.border}`, borderRadius: '3px', cursor: 'pointer', color: P.dim, fontFamily: P.font,
                           }}>CANCEL</button>
                         </div>
@@ -839,16 +839,16 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                         <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: ch.isCustom ? '#f5c542' : '#3fb950', flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ fontSize: '10px', color: P.text, fontWeight: 600 }}>{ch.name}</span>
-                          <span style={{ fontSize: '8px', color: P.dim, marginLeft: '8px' }}>{ch.country}</span>
+                          <span style={{ fontSize: '9px', color: P.dim, marginLeft: '8px' }}>{ch.country}</span>
                         </div>
-                        <span style={{ fontSize: '7px', color: P.dim, padding: '2px 5px', background: P.card, borderRadius: '3px' }}>{ch.category}</span>
+                        <span style={{ fontSize: '9px', color: P.dim, padding: '2px 5px', background: P.card, borderRadius: '3px' }}>{ch.category}</span>
                         <button onClick={() => { setEditingTv(ch.id); setTvEditForm({ name: ch.name, url: ch.url, country: ch.country, category: ch.category }) }} style={{
                           background: `${P.accent}10`, border: `1px solid ${P.accent}30`, color: P.accent,
-                          cursor: 'pointer', fontSize: '8px', fontWeight: 600, borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
+                          cursor: 'pointer', fontSize: '9px', fontWeight: 600, borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
                         }}>EDIT</button>
                         <button onClick={() => removeChannel(ch.id)} style={{
                           background: 'rgba(255,59,92,0.1)', border: '1px solid rgba(255,59,92,0.3)',
-                          color: '#ff6b7a', cursor: 'pointer', fontSize: '8px', fontWeight: 600,
+                          color: '#ff6b7a', cursor: 'pointer', fontSize: '9px', fontWeight: 600,
                           borderRadius: '3px', padding: '3px 8px', fontFamily: P.font,
                         }}>DEL</button>
                       </div>
@@ -879,7 +879,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                   { label: 'STORAGE EST.', value: formatBytes(archiveStats.bytes), color: P.text },
                 ].map(s => (
                   <div key={s.label} style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px' }}>{s.label}</div>
+                    <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px' }}>{s.label}</div>
                     <div style={{ fontSize: s.small ? '10px' : '16px', fontWeight: 700, color: s.color }}>{s.value}</div>
                   </div>
                 ))}
@@ -922,7 +922,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
               <SectionTitle text="MOBILE COMPANION" color="#a855f7" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                 <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px', padding: '16px' }}>
-                  <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '10px' }}>PUSH SERVER</div>
+                  <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '10px' }}>PUSH SERVER</div>
                   {companionInfo?.running ? (
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -945,14 +945,17 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                   {companionError && <div style={{ fontSize: '9px', color: '#ff3b5c', marginTop: '8px' }}>{companionError}</div>}
                 </div>
                 <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px', padding: '16px' }}>
-                  <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '10px' }}>CONNECTION INFO</div>
+                  <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '10px' }}>CONNECTION INFO</div>
                   {companionInfo?.running ? (
                     <>
                       <div style={{ fontSize: '10px', color: P.text, marginBottom: '8px' }}>SSE endpoint:</div>
                       <div style={{ padding: '8px 12px', background: P.bg, border: `1px solid ${P.accent}30`, borderRadius: '4px', fontSize: '10px', color: P.accent, fontWeight: 600, wordBreak: 'break-all' }}>
                         http://127.0.0.1:{companionInfo.port}/events
                       </div>
-                      <button onClick={() => navigator.clipboard.writeText(`http://127.0.0.1:${companionInfo.port}/events?token=${companionInfo.token || ''}`)} style={{ marginTop: '10px', padding: '5px 12px', fontSize: '8px', background: 'transparent', border: `1px solid ${P.border}`, borderRadius: '3px', color: P.accent, cursor: 'pointer', fontFamily: P.font, fontWeight: 600 }}>COPY FULL URL</button>
+                      <button onClick={() => navigator.clipboard.writeText(`http://127.0.0.1:${companionInfo.port}/events`)} style={{ marginTop: '10px', padding: '5px 12px', fontSize: '9px', background: 'transparent', border: `1px solid ${P.border}`, borderRadius: '3px', color: P.accent, cursor: 'pointer', fontFamily: P.font, fontWeight: 600 }}>COPY ENDPOINT URL</button>
+                      <div style={{ marginTop: '6px', fontSize: '9px', color: P.dim }}>
+                        Auth: Bearer header required (token: {companionInfo.tokenPreview || '••••'})
+                      </div>
                     </>
                   ) : (
                     <div style={{ fontSize: '10px', color: P.dim, lineHeight: 1.6 }}>Start the server to enable mobile push notifications.</div>
@@ -987,9 +990,9 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: apiKey.configured ? '#3fb950' : P.dim, boxShadow: apiKey.configured ? '0 0 4px #3fb95088' : 'none', flexShrink: 0 }} />
                               <span style={{ fontSize: '10px', fontWeight: 700, color: P.text, letterSpacing: '0.05em' }}>{apiKey.label}</span>
-                              <span style={{ fontSize: '8px', color: P.dim, flex: 1 }}>{apiKey.description}</span>
+                              <span style={{ fontSize: '9px', color: P.dim, flex: 1 }}>{apiKey.description}</span>
                               <a href={apiKey.docsUrl} target="_blank" rel="noopener noreferrer" onClick={e => { e.preventDefault(); window.open(apiKey.docsUrl, '_blank') }}
-                                style={{ fontSize: '7px', color: catColors[category] || P.accent, textDecoration: 'none', flexShrink: 0, padding: '2px 6px', background: `${catColors[category] || P.accent}10`, border: `1px solid ${catColors[category] || P.accent}30`, borderRadius: '3px' }}>GET KEY</a>
+                                style={{ fontSize: '9px', color: catColors[category] || P.accent, textDecoration: 'none', flexShrink: 0, padding: '2px 6px', background: `${catColors[category] || P.accent}10`, border: `1px solid ${catColors[category] || P.accent}30`, borderRadius: '3px' }}>GET KEY</a>
                             </div>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                               <div style={{ flex: 1, position: 'relative' }}>
@@ -1003,19 +1006,19 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                                 />
                               </div>
                               <button onClick={() => handleSaveApiKey(apiKey.id)} disabled={!hasInput}
-                                style={{ padding: '6px 10px', fontSize: '8px', fontWeight: 700, fontFamily: P.font, background: hasInput ? '#3fb950' : P.card, border: hasInput ? 'none' : `1px solid ${P.border}`, borderRadius: '3px', color: hasInput ? '#000' : P.dim, cursor: hasInput ? 'pointer' : 'default', whiteSpace: 'nowrap' }}>SAVE</button>
+                                style={{ padding: '6px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font, background: hasInput ? '#3fb950' : P.card, border: hasInput ? 'none' : `1px solid ${P.border}`, borderRadius: '3px', color: hasInput ? '#000' : P.dim, cursor: hasInput ? 'pointer' : 'default', whiteSpace: 'nowrap' }}>SAVE</button>
                               <button onClick={() => handleTestApiKey(apiKey.id)} disabled={isTesting}
-                                style={{ padding: '6px 10px', fontSize: '8px', fontWeight: 700, fontFamily: P.font, background: `${catColors[category] || P.accent}15`, border: `1px solid ${catColors[category] || P.accent}30`, borderRadius: '3px', color: isTesting ? P.dim : (catColors[category] || P.accent), cursor: isTesting ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>{isTesting ? 'TESTING...' : 'TEST'}</button>
+                                style={{ padding: '6px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font, background: `${catColors[category] || P.accent}15`, border: `1px solid ${catColors[category] || P.accent}30`, borderRadius: '3px', color: isTesting ? P.dim : (catColors[category] || P.accent), cursor: isTesting ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>{isTesting ? 'TESTING...' : 'TEST'}</button>
                               {apiKey.configured && (
                                 <button onClick={() => handleDeleteApiKey(apiKey.id)}
-                                  style={{ padding: '6px 8px', fontSize: '8px', fontWeight: 600, fontFamily: P.font, background: '#ff3b5c10', border: '1px solid #ff3b5c30', borderRadius: '3px', color: '#ff6b7a', cursor: 'pointer', whiteSpace: 'nowrap' }}>DEL</button>
+                                  style={{ padding: '6px 8px', fontSize: '9px', fontWeight: 600, fontFamily: P.font, background: '#ff3b5c10', border: '1px solid #ff3b5c30', borderRadius: '3px', color: '#ff6b7a', cursor: 'pointer', whiteSpace: 'nowrap' }}>DEL</button>
                               )}
                             </div>
                             {result && (
                               <div style={{ marginTop: '6px', padding: '5px 8px', background: result.success ? '#3fb95010' : '#ff3b5c10', border: `1px solid ${result.success ? '#3fb95030' : '#ff3b5c30'}`, borderRadius: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '8px', color: result.success ? '#3fb950' : '#ff3b5c', fontWeight: 600 }}>{result.success ? 'OK' : 'FAIL'}</span>
-                                <span style={{ fontSize: '8px', color: P.dim, flex: 1 }}>{result.message}</span>
-                                {result.latencyMs != null && <span style={{ fontSize: '7px', color: P.dim }}>{result.latencyMs}ms</span>}
+                                <span style={{ fontSize: '9px', color: result.success ? '#3fb950' : '#ff3b5c', fontWeight: 600 }}>{result.success ? 'OK' : 'FAIL'}</span>
+                                <span style={{ fontSize: '9px', color: P.dim, flex: 1 }}>{result.message}</span>
+                                {result.latencyMs != null && <span style={{ fontSize: '9px', color: P.dim }}>{result.latencyMs}ms</span>}
                               </div>
                             )}
                           </div>
@@ -1039,15 +1042,15 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: P.accent }}>{(cacheStats.sizeBytes / (1024 * 1024)).toFixed(1)} MB</div>
-                      <div style={{ fontSize: '8px', color: P.dim }}>Cache Size</div>
+                      <div style={{ fontSize: '9px', color: P.dim }}>Cache Size</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: '#f5c542' }}>{cacheStats.tileCount.toLocaleString()}</div>
-                      <div style={{ fontSize: '8px', color: P.dim }}>Tiles</div>
+                      <div style={{ fontSize: '9px', color: P.dim }}>Tiles</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '10px', color: P.dim, wordBreak: 'break-all', lineHeight: 1.4 }}>{cacheStats.dir}</div>
-                      <div style={{ fontSize: '8px', color: P.dim }}>Directory</div>
+                      <div style={{ fontSize: '9px', color: P.dim }}>Directory</div>
                     </div>
                   </div>
                 ) : <div style={{ fontSize: '10px', color: P.dim }}>Loading...</div>}
@@ -1064,13 +1067,13 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
                     <div style={{ fontSize: '18px', fontWeight: 800, color: P.accent }}>{incidents.length.toLocaleString()}</div>
-                    <div style={{ fontSize: '8px', color: P.dim }}>Total Incidents</div>
+                    <div style={{ fontSize: '9px', color: P.dim }}>Total Incidents</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '18px', fontWeight: 800, color: '#ff6b35' }}>
                       {(() => { const s = new Set<string>(); incidents.forEach(i => s.add(i.source || 'Unknown')); return s.size })()}
                     </div>
-                    <div style={{ fontSize: '8px', color: P.dim }}>Sources</div>
+                    <div style={{ fontSize: '9px', color: P.dim }}>Sources</div>
                   </div>
                 </div>
               </div>
@@ -1083,19 +1086,19 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                     <div style={{ fontSize: '18px', fontWeight: 800, color: '#a78bfa' }}>
                       {((performance as any)?.memory?.usedJSHeapSize ? ((performance as any).memory.usedJSHeapSize / (1024 * 1024)).toFixed(0) : '—')} MB
                     </div>
-                    <div style={{ fontSize: '8px', color: P.dim }}>JS Heap Used</div>
+                    <div style={{ fontSize: '9px', color: P.dim }}>JS Heap Used</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '18px', fontWeight: 800, color: '#f5c542' }}>
                       {((performance as any)?.memory?.totalJSHeapSize ? ((performance as any).memory.totalJSHeapSize / (1024 * 1024)).toFixed(0) : '—')} MB
                     </div>
-                    <div style={{ fontSize: '8px', color: P.dim }}>JS Heap Total</div>
+                    <div style={{ fontSize: '9px', color: P.dim }}>JS Heap Total</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '18px', fontWeight: 800, color: '#3fb950' }}>
                       {(() => { const ms = Date.now() - uptime; const h = Math.floor(ms / 3600000); const m = Math.floor((ms % 3600000) / 60000); return `${h}h ${m}m` })()}
                     </div>
-                    <div style={{ fontSize: '8px', color: P.dim }}>Session Uptime</div>
+                    <div style={{ fontSize: '9px', color: P.dim }}>Session Uptime</div>
                   </div>
                 </div>
               </div>
@@ -1116,13 +1119,13 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                       {nonAiKeys.map(k => (
                         <div key={k.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: k.configured ? '#3fb95010' : '#ff3b5c08', border: `1px solid ${k.configured ? '#3fb95030' : '#ff3b5c20'}`, borderRadius: '4px' }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: k.configured ? '#3fb950' : '#ff3b5c40' }} />
-                          <span style={{ fontSize: '8px', color: k.configured ? P.text : P.dim }}>{k.label}</span>
+                          <span style={{ fontSize: '9px', color: k.configured ? P.text : P.dim }}>{k.label}</span>
                         </div>
                       ))}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: aiConnected ? '#a855f710' : '#ff3b5c08', border: `1px solid ${aiConnected ? '#a855f730' : '#ff3b5c20'}`, borderRadius: '4px' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: aiConnected ? '#a855f7' : '#ff3b5c40', boxShadow: aiConnected ? '0 0 6px #a855f7' : 'none' }} />
-                        <span style={{ fontSize: '8px', color: aiConnected ? P.text : P.dim }}>AI: {aiLabel}</span>
-                        {aiStatus && <span style={{ fontSize: '7px', color: aiConnected ? '#a855f7' : '#ff3b5c80', marginLeft: '2px' }}>{aiConnected ? 'CONNECTED' : 'OFFLINE'}</span>}
+                        <span style={{ fontSize: '9px', color: aiConnected ? P.text : P.dim }}>AI: {aiLabel}</span>
+                        {aiStatus && <span style={{ fontSize: '9px', color: aiConnected ? '#a855f7' : '#ff3b5c80', marginLeft: '2px' }}>{aiConnected ? 'CONNECTED' : 'OFFLINE'}</span>}
                       </div>
                     </div>
                   )
@@ -1199,7 +1202,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                     ) : (
                       <input value={aiOllamaModel} onChange={e => { setAiOllamaModel(e.target.value); setAiDirty(true) }} style={inputStyle} placeholder="llama3.2" />
                     )}
-                    {aiOllamaModels.length > 0 && <div style={{ fontSize: '8px', color: P.dim, marginTop: '3px' }}>{aiOllamaModels.length} model(s) detected</div>}
+                    {aiOllamaModels.length > 0 && <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>{aiOllamaModels.length} model(s) detected</div>}
                   </div>
                 </div>
               )}
@@ -1230,7 +1233,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                   <div>
                     <div style={rowLabel}>API BASE URL</div>
                     <input value={aiCustomUrl} onChange={e => { setAiCustomUrl(e.target.value); setAiDirty(true) }} style={inputStyle} placeholder="https://your-api.com/v1" />
-                    <div style={{ fontSize: '7px', color: P.dim, marginTop: '2px' }}>/chat/completions is appended automatically if not included</div>
+                    <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>/chat/completions is appended automatically if not included</div>
                   </div>
                   <div>
                     <div style={rowLabel}>MODEL NAME <span style={{ color: P.dim, fontWeight: 400 }}>(optional)</span></div>
@@ -1421,17 +1424,17 @@ function FeaturesTab() {
       }}>
         <div style={{ fontSize: '20px', fontWeight: 800, color: '#f97316', lineHeight: 1 }}>{enabledCount}<span style={{ fontSize: '11px', color: P.dim, fontWeight: 400 }}>/{totalCount}</span></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px' }}>ACTIVE MODULES — {pct}%</div>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px' }}>ACTIVE MODULES — {pct}%</div>
           <div style={{ height: '3px', borderRadius: '2px', background: P.border, overflow: 'hidden' }}>
             <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #f97316, #f5c542)', transition: 'width 0.3s' }} />
           </div>
         </div>
         <button onClick={enableAll} style={{
-          padding: '4px 10px', fontSize: '7px', fontWeight: 700, fontFamily: P.font, letterSpacing: '0.06em',
+          padding: '4px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font, letterSpacing: '0.06em',
           background: '#00e67612', border: '1px solid #00e67635', borderRadius: '3px', color: '#00e676', cursor: 'pointer',
         }}>ALL ON</button>
         <button onClick={disableNonEssential} style={{
-          padding: '4px 10px', fontSize: '7px', fontWeight: 700, fontFamily: P.font, letterSpacing: '0.06em',
+          padding: '4px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font, letterSpacing: '0.06em',
           background: '#ff3b5c0c', border: '1px solid #ff3b5c28', borderRadius: '3px', color: '#ff3b5c', cursor: 'pointer',
         }}>MINIMAL</button>
       </div>
@@ -1452,10 +1455,10 @@ function FeaturesTab() {
               background: `${group.color}06`,
             }}>
               <span style={{ fontSize: '10px' }}>{group.icon}</span>
-              <span style={{ fontSize: '8px', fontWeight: 700, color: group.color, letterSpacing: '0.1em', flex: 1 }}>{group.title}</span>
-              <span style={{ fontSize: '7px', color: P.dim }}>{onCount}/{group.items.length}</span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: group.color, letterSpacing: '0.1em', flex: 1 }}>{group.title}</span>
+              <span style={{ fontSize: '9px', color: P.dim }}>{onCount}/{group.items.length}</span>
               <button onClick={() => toggleGroup(group)} style={{
-                padding: '2px 8px', fontSize: '7px', fontWeight: 600, fontFamily: P.font,
+                padding: '2px 8px', fontSize: '9px', fontWeight: 600, fontFamily: P.font,
                 background: allOn ? '#ff3b5c0a' : `${group.color}0a`,
                 border: `1px solid ${allOn ? '#ff3b5c25' : group.color + '25'}`,
                 borderRadius: '3px', color: allOn ? '#ff3b5c' : group.color, cursor: 'pointer',
@@ -1495,7 +1498,7 @@ function FeaturesTab() {
         )
       })}
 
-      <div style={{ fontSize: '8px', color: P.dim, textAlign: 'center', padding: '4px 0' }}>
+      <div style={{ fontSize: '9px', color: P.dim, textAlign: 'center', padding: '4px 0' }}>
         Click any item to toggle · Changes apply immediately
       </div>
     </div>

@@ -103,13 +103,13 @@ function TelegramMonitor() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '10px', fontWeight: 700, color: P.accent, letterSpacing: '0.12em' }}>TELEGRAM</span>
-          {loading && <span style={{ fontSize: '8px', color: P.dim }}>fetching...</span>}
+          {loading && <span style={{ fontSize: '9px', color: P.dim }}>fetching...</span>}
         </div>
         <div style={{ display: 'flex', gap: '4px' }}>
-          <button onClick={() => setAddOpen(o => !o)} style={{ background: `${P.accent}15`, border: `1px solid ${P.accent}40`, color: P.accent, cursor: 'pointer', fontSize: '8px', fontFamily: P.font, padding: '2px 8px', borderRadius: '3px', letterSpacing: '0.08em' }}>
+          <button onClick={() => setAddOpen(o => !o)} style={{ background: `${P.accent}15`, border: `1px solid ${P.accent}40`, color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font, padding: '2px 8px', borderRadius: '3px', letterSpacing: '0.08em' }}>
             {addOpen ? 'CANCEL' : '+ CHANNEL'}
           </button>
-          <button onClick={fetchMessages} style={{ background: 'transparent', border: `1px solid ${P.border}`, color: P.dim, cursor: 'pointer', fontSize: '8px', fontFamily: P.font, padding: '2px 8px', borderRadius: '3px' }}>
+          <button onClick={fetchMessages} style={{ background: 'transparent', border: `1px solid ${P.border}`, color: P.dim, cursor: 'pointer', fontSize: '9px', fontFamily: P.font, padding: '2px 8px', borderRadius: '3px' }}>
             REFRESH
           </button>
         </div>
@@ -119,15 +119,15 @@ function TelegramMonitor() {
         <div style={{ padding: '8px 12px', borderBottom: `1px solid ${P.border}`, display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input value={chName} onChange={e => setChName(e.target.value)} placeholder="Channel @name" style={{ flex: 1, minWidth: '100px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '3px', padding: '4px 8px', color: P.text, fontFamily: P.font, fontSize: '9px' }} />
           <input value={chTitle} onChange={e => setChTitle(e.target.value)} placeholder="Display title" style={{ flex: 1, minWidth: '100px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '3px', padding: '4px 8px', color: P.text, fontFamily: P.font, fontSize: '9px' }} />
-          <button onClick={handleAddChannel} style={{ background: P.accent, border: 'none', color: P.bg, cursor: 'pointer', fontSize: '8px', fontFamily: P.font, fontWeight: 700, padding: '5px 12px', borderRadius: '3px' }}>ADD</button>
+          <button onClick={handleAddChannel} style={{ background: P.accent, border: 'none', color: P.bg, cursor: 'pointer', fontSize: '9px', fontFamily: P.font, fontWeight: 700, padding: '5px 12px', borderRadius: '3px' }}>ADD</button>
         </div>
       )}
 
       {customChannels.length > 0 && (
         <div style={{ padding: '6px 12px', borderBottom: `1px solid ${P.border}`, display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>CUSTOM:</span>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>CUSTOM:</span>
           {customChannels.map(c => (
-            <span key={c.name} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: '#f5c54215', border: '1px solid #f5c54230', borderRadius: '3px', fontSize: '8px', color: '#f5c542' }}>
+            <span key={c.name} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 6px', background: '#f5c54215', border: '1px solid #f5c54230', borderRadius: '3px', fontSize: '9px', color: '#f5c542' }}>
               {c.title}
               <button onClick={() => handleRemoveChannel(c.name)} style={{ background: 'none', border: 'none', color: '#ff3b5c80', cursor: 'pointer', fontSize: '9px', fontFamily: P.font, padding: 0 }}>×</button>
             </span>
@@ -138,7 +138,7 @@ function TelegramMonitor() {
       <div style={{ display: 'flex', gap: '3px', padding: '6px 12px', borderBottom: `1px solid ${P.border}`, flexWrap: 'wrap' }}>
         {TG_CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setCatFilter(cat)} style={{
-            padding: '2px 8px', fontSize: '8px', fontFamily: P.font,
+            padding: '2px 8px', fontSize: '9px', fontFamily: P.font,
             background: catFilter === cat ? `${CAT_COLORS[cat] || P.accent}15` : 'transparent',
             border: `1px solid ${catFilter === cat ? (CAT_COLORS[cat] || P.accent) + '40' : P.border}`,
             borderRadius: '3px', cursor: 'pointer',
@@ -156,18 +156,18 @@ function TelegramMonitor() {
             borderLeft: `3px solid ${PRIORITY_COLORS[msg.priority] || P.dim}`,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-              <span style={{ fontSize: '7px', fontWeight: 700, color: CAT_COLORS[msg.category] || P.dim, letterSpacing: '0.1em', padding: '1px 4px', background: `${CAT_COLORS[msg.category] || P.dim}12`, borderRadius: '2px' }}>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: CAT_COLORS[msg.category] || P.dim, letterSpacing: '0.1em', padding: '1px 4px', background: `${CAT_COLORS[msg.category] || P.dim}12`, borderRadius: '2px' }}>
                 {msg.category.toUpperCase()}
               </span>
-              <span style={{ fontSize: '8px', color: P.accent, fontWeight: 600 }}>{msg.channelTitle}</span>
-              <span style={{ fontSize: '7px', fontWeight: 700, color: PRIORITY_COLORS[msg.priority], letterSpacing: '0.08em' }}>
+              <span style={{ fontSize: '9px', color: P.accent, fontWeight: 600 }}>{msg.channelTitle}</span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: PRIORITY_COLORS[msg.priority], letterSpacing: '0.08em' }}>
                 {msg.priority.toUpperCase()}
               </span>
             </div>
             <div style={{ fontSize: '10px', color: P.text, lineHeight: 1.4, marginBottom: '3px', wordBreak: 'break-word' }}>
               {msg.content.length > 200 ? msg.content.substring(0, 200) + '...' : msg.content}
             </div>
-            <div style={{ fontSize: '7px', color: P.dim }}>
+            <div style={{ fontSize: '9px', color: P.dim }}>
               {new Date(msg.timestamp).toLocaleString()}
               {msg.views != null && ` · ${(msg.views / 1000).toFixed(1)}k views`}
             </div>
@@ -365,12 +365,13 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '60vh', flexWrap: 'wrap', overflow: 'hidden' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       {/* Left: TV Grid */}
       <div style={{ flex: '1 1 300px', padding: '16px 20px', borderRight: `1px solid ${P.border}`, minWidth: 0, overflow: 'hidden' }}>
         {/* Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em' }}>GRID</span>
+            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>GRID</span>
             {GRID_SIZES.map(g => (
               <button key={g.id} onClick={() => handleGridChange(g.id)} style={{
                 padding: '4px 10px', fontSize: '9px', fontWeight: 600,
@@ -390,14 +391,14 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
               style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: '3px', padding: '3px 8px', color: P.text, fontFamily: P.font, fontSize: '9px', width: '120px', outline: 'none' }}
             />
             <button onClick={handleSaveTemplate} style={{
-              padding: '3px 10px', fontSize: '8px', fontWeight: 600, background: '#3fb95015',
+              padding: '3px 10px', fontSize: '9px', fontWeight: 600, background: '#3fb95015',
               border: '1px solid #3fb95040', borderRadius: '3px', cursor: 'pointer', color: '#3fb950', fontFamily: P.font,
             }}>SAVE</button>
           </div>
 
           {/* Manage channels via Settings */}
           <button onClick={() => onOpenSettings?.()} style={{
-            padding: '3px 10px', fontSize: '8px', fontWeight: 600, background: `${P.accent}10`,
+            padding: '3px 10px', fontSize: '9px', fontWeight: 600, background: `${P.accent}10`,
             border: `1px solid ${P.accent}30`, borderRadius: '3px', cursor: 'pointer',
             color: P.accent, fontFamily: P.font, letterSpacing: '0.08em',
           }}>⚙ MANAGE</button>
@@ -405,16 +406,16 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
           {/* Load templates */}
           {templates.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <span style={{ fontSize: '7px', color: P.dim }}>TEMPLATES:</span>
+              <span style={{ fontSize: '9px', color: P.dim }}>TEMPLATES:</span>
               {templates.map(t => (
                 <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                   <button onClick={() => handleLoadTemplate(t)} style={{
-                    padding: '2px 8px', fontSize: '8px', background: `${P.accent}08`,
+                    padding: '2px 8px', fontSize: '9px', background: `${P.accent}08`,
                     border: `1px solid ${P.border}`, borderRadius: '3px', cursor: 'pointer',
                     color: P.accent, fontFamily: P.font,
                   }}>{t.name} ({t.gridSize})</button>
                   <button onClick={() => handleDeleteTemplate(t.id)} style={{
-                    padding: '1px 4px', fontSize: '8px', background: 'transparent',
+                    padding: '1px 4px', fontSize: '9px', background: 'transparent',
                     border: 'none', cursor: 'pointer', color: '#ff3b5c60', fontFamily: P.font,
                   }}>×</button>
                 </div>
@@ -468,7 +469,6 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
                           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTop: `2px solid ${P.accent}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                             <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>Resolving live stream...</span>
-                            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
                           </div>
                         ) : noStream ? (
                           /* No live stream */
@@ -476,7 +476,7 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
                             <span style={{ fontSize: '14px' }}>📡</span>
                             <span style={{ fontSize: '9px', color: '#ff6b7a', fontFamily: P.font }}>No live stream available</span>
                             <button onClick={(e) => { e.stopPropagation(); setResolvedIds(prev => { const n = { ...prev }; delete n[ch.url]; return n }) }}
-                              style={{ fontSize: '8px', color: '#f5c542', background: 'none', border: `1px solid #f5c54240`, borderRadius: '3px', padding: '3px 10px', cursor: 'pointer', fontFamily: P.font, marginTop: '4px' }}>
+                              style={{ fontSize: '9px', color: '#f5c542', background: 'none', border: `1px solid #f5c54240`, borderRadius: '3px', padding: '3px 10px', cursor: 'pointer', fontFamily: P.font, marginTop: '4px' }}>
                               ↻ RETRY
                             </button>
                           </div>
@@ -511,7 +511,7 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0, flex: 1 }}>
                           <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: '8px', color: '#ccc', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
+                          <span style={{ fontSize: '9px', color: '#ccc', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                           <button onClick={(e) => { e.stopPropagation(); toggleMute(i) }}
@@ -547,7 +547,7 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
                     color: P.dim, fontFamily: P.font,
                   }}>
                     <span style={{ fontSize: '20px' }}>+</span>
-                    <span style={{ fontSize: '8px', letterSpacing: '0.1em' }}>ADD CHANNEL</span>
+                    <span style={{ fontSize: '9px', letterSpacing: '0.1em' }}>ADD CHANNEL</span>
                   </button>
                 )}
               </div>
@@ -604,7 +604,7 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
               <div style={{ padding: '8px 16px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                 {catOptions.map(c => (
                   <button key={c.id} onClick={() => setCategory(c.id)} style={{
-                    padding: '3px 8px', fontSize: '8px', fontWeight: 600,
+                    padding: '3px 8px', fontSize: '9px', fontWeight: 600,
                     background: category === c.id ? `${c.color}15` : 'transparent',
                     border: `1px solid ${category === c.id ? c.color + '40' : P.border}`,
                     borderRadius: '3px', cursor: 'pointer', color: category === c.id ? c.color : P.dim, fontFamily: P.font,
@@ -625,9 +625,9 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3fb950', flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '10px', fontWeight: 600, color: P.text }}>{ch.name}</div>
-                      <div style={{ fontSize: '8px', color: P.dim }}>{ch.country} · {ch.language.toUpperCase()}</div>
+                      <div style={{ fontSize: '9px', color: P.dim }}>{ch.country} · {ch.language.toUpperCase()}</div>
                     </div>
-                    <span style={{ fontSize: '7px', color: P.dim, padding: '2px 5px', background: P.card, borderRadius: '3px' }}>{ch.category}</span>
+                    <span style={{ fontSize: '9px', color: P.dim, padding: '2px 5px', background: P.card, borderRadius: '3px' }}>{ch.category}</span>
                   </button>
                 ))}
               </div>

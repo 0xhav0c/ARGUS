@@ -36,11 +36,12 @@ export class PandemicService {
   }
 
   private getKnownOutbreaks(): PandemicEvent[] {
+    // Reference data — case counts are approximate estimates, not live figures
     return [
-      { id: 'mpox-drc', disease: 'Mpox (Clade Ib)', country: 'DR Congo', latitude: -4.3, longitude: 15.3, cases: 32000, deaths: 990, alertLevel: 'HIGH', source: 'WHO', reportedAt: new Date().toISOString(), description: 'Ongoing Mpox outbreak in DRC with cross-border spread.' },
-      { id: 'cholera-multi', disease: 'Cholera', country: 'Multi-country', latitude: -15.4, longitude: 28.3, cases: 85000, deaths: 1200, alertLevel: 'HIGH', source: 'WHO', reportedAt: new Date().toISOString(), description: 'Multi-country cholera outbreaks across southern/eastern Africa.' },
-      { id: 'dengue-brazil', disease: 'Dengue', country: 'Brazil', latitude: -15.8, longitude: -47.9, cases: 4500000, deaths: 3200, alertLevel: 'EMERGENCY', source: 'PAHO', reportedAt: new Date().toISOString(), description: 'Record dengue season in Brazil with over 4.5M cases.' },
-      { id: 'avian-flu', disease: 'H5N1 Avian Influenza', country: 'Global', latitude: 40.0, longitude: -95.0, cases: 65, deaths: 2, alertLevel: 'MODERATE', source: 'CDC', reportedAt: new Date().toISOString(), description: 'H5N1 spreading in dairy cattle with sporadic human cases.' },
+      { id: 'mpox-drc', disease: 'Mpox (Clade Ib)', country: 'DR Congo', latitude: -4.3, longitude: 15.3, cases: 32000, deaths: 990, alertLevel: 'HIGH', source: 'WHO (reference)', reportedAt: '2024-12-01T00:00:00Z', description: 'Ongoing Mpox outbreak in DRC with cross-border spread. Case counts are reference estimates.' },
+      { id: 'cholera-multi', disease: 'Cholera', country: 'Multi-country', latitude: -15.4, longitude: 28.3, cases: 85000, deaths: 1200, alertLevel: 'HIGH', source: 'WHO (reference)', reportedAt: '2024-12-01T00:00:00Z', description: 'Multi-country cholera outbreaks across southern/eastern Africa. Case counts are reference estimates.' },
+      { id: 'dengue-brazil', disease: 'Dengue', country: 'Brazil', latitude: -15.8, longitude: -47.9, cases: 4500000, deaths: 3200, alertLevel: 'EMERGENCY', source: 'PAHO (reference)', reportedAt: '2024-12-01T00:00:00Z', description: 'Record dengue season in Brazil. Case counts are reference estimates from 2024.' },
+      { id: 'avian-flu', disease: 'H5N1 Avian Influenza', country: 'Global', latitude: 40.0, longitude: -95.0, cases: 65, deaths: 2, alertLevel: 'MODERATE', source: 'CDC (reference)', reportedAt: '2024-12-01T00:00:00Z', description: 'H5N1 spreading in dairy cattle with sporadic human cases. Case counts are reference estimates.' },
     ]
   }
 }

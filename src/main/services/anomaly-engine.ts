@@ -1,12 +1,23 @@
 import type { Incident } from '../../shared/types'
 
+export interface RelatedIncidentInfo {
+  id: string
+  title: string
+  severity: string
+  domain: string
+  country?: string
+  timestamp: string
+  latitude?: number
+  longitude?: number
+}
+
 export interface AnomalyResult {
   id: string
   type: 'spike' | 'pattern' | 'correlation' | 'silence' | 'cascade' | 'escalation'
   title: string
   description: string
   severity: 'HIGH' | 'MEDIUM' | 'LOW'
-  relatedIncidents: string[]
+  relatedIncidents: RelatedIncidentInfo[]
   detectedAt: string
   region?: string
 }
@@ -67,7 +78,8 @@ export class AnomalyEngine {
         results.push({
           id: `spike-${domain}`, type: 'spike', title: `${domain} Spike Detected`,
           description: `${domain} events surged ${Math.round((count / prevCount - 1) * 100)}% vs previous 24h (${count} vs ${prevCount}).`,
-          severity: count / prevCount > 3 ? 'HIGH' : 'MEDIUM', relatedIncidents: last24h.filter(i => i.domain === domain).map(i => i.id).slice(0, 10),
+          severity: count / prevCount > 3 ? 'HIGH' : 'MEDIUM',
+          relatedIncidents: last24h.filter(i => i.domain === domain).slice(0, 10).map(i => ({ id: i.id, title: i.title, severity: i.severity, domain: i.domain, country: i.country, timestamp: i.timestamp, latitude: i.latitude, longitude: i.longitude })),
           detectedAt: new Date().toISOString(),
         })
       }
@@ -88,7 +100,8 @@ export class AnomalyEngine {
           results.push({
             id: `corr-${country}`, type: 'correlation', title: `Multi-domain crisis: ${country}`,
             description: `${incs.length} high/critical events across ${domains.join(', ')} in ${country}.`,
-            severity: 'HIGH', relatedIncidents: incs.map(i => i.id),
+            severity: 'HIGH',
+            relatedIncidents: incs.map(i => ({ id: i.id, title: i.title, severity: i.severity, domain: i.domain, country: i.country, timestamp: i.timestamp, latitude: i.latitude, longitude: i.longitude })),
             detectedAt: new Date().toISOString(), region: country,
           })
         }
@@ -155,7 +168,7 @@ export class AnomalyEngine {
           title: `CASCADE: ${rule.name}`,
           description: `${cluster.length} cross-domain events (${domains.join(' + ')}) detected within ${Math.round(rule.timeWindowMs / 3600000)}h / ${rule.radiusKm}km in ${countries.join(', ') || 'multiple regions'}. Possible coordinated activity.`,
           severity: rule.severity,
-          relatedIncidents: cluster.map(c => c.id),
+          relatedIncidents: cluster.map(c => ({ id: c.id, title: c.title, severity: c.severity, domain: c.domain, country: c.country, timestamp: c.timestamp, latitude: c.latitude, longitude: c.longitude })),
           detectedAt: new Date().toISOString(),
           region: countries[0],
         }

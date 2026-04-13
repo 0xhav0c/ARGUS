@@ -127,7 +127,7 @@ function FearGreedGauge({ value, label }: { value: number; label: string }) {
 function MetricCard({ label, value, change, color, suffix, tip }: { label: string; value: string; change?: number; color?: string; suffix?: string; tip?: string }) {
   return (
     <div style={{ padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
-      <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>{label} {tip && <InfoTip text={tip} size={10} />}</div>
+      <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>{label} {tip && <InfoTip text={tip} size={10} />}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
         <span style={{ fontSize: '16px', fontWeight: 700, color: color || P.text }}>{value}{suffix}</span>
         {change != null && (
@@ -143,7 +143,7 @@ function MetricCard({ label, value, change, color, suffix, tip }: { label: strin
    ══════════════════════════════════════════════ */
 const EMPTY_SENTIMENT: MarketSentiment = {
   vix: 0, vixChange: 0, dxy: 0, dxyChange: 0,
-  fearGreed: { value: 50, label: 'Neutral', timestamp: new Date().toISOString() },
+  fearGreed: { value: 0, label: 'N/A', timestamp: new Date().toISOString() },
   bondYields: [], globalMarketCap: 0, btcDominance: 0,
 }
 
@@ -169,14 +169,21 @@ function OverviewTab({ data }: { data: FinanceFullData }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Sentiment Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
         <div style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
-          <FearGreedGauge value={sentiment.fearGreed?.value ?? 50} label={sentiment.fearGreed?.label ?? 'N/A'} />
+          {(sentiment.fearGreed?.value ?? 0) > 0
+            ? <FearGreedGauge value={sentiment.fearGreed.value} label={sentiment.fearGreed.label} />
+            : <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.08em', marginBottom: '4px' }}>FEAR & GREED</div>
+                <div style={{ fontSize: '16px', color: P.dim }}>--</div>
+                <div style={{ fontSize: '9px', color: P.dim }}>Data unavailable</div>
+              </div>
+          }
         </div>
-        <MetricCard label="VIX (VOLATILITY)" value={fmtP(sentiment.vix || 0)} change={sentiment.vixChange} color={(sentiment.vix || 0) > 25 ? P.red : (sentiment.vix || 0) > 18 ? P.yellow : P.green} tip="CBOE Volatility Index — measures expected S&P 500 volatility. Below 15 = calm markets, 15-25 = normal, above 25 = high fear/uncertainty, above 35 = extreme stress." />
-        <MetricCard label="DXY (DOLLAR INDEX)" value={fmtP(sentiment.dxy || 0)} change={sentiment.dxyChange} tip="US Dollar Index — measures USD against a basket of 6 major currencies (EUR, JPY, GBP, CAD, SEK, CHF). Rising DXY = stronger dollar, often negative for commodities and emerging markets." />
-        <MetricCard label="BTC DOMINANCE" value={fmtP(sentiment.btcDominance || 0, 1)} color={P.accent} suffix="%" tip="Bitcoin's share of total cryptocurrency market cap. High dominance (>60%) = risk-off in crypto. Low dominance (<40%) = altcoin season, more speculative activity." />
-        <MetricCard label="GLOBAL MARKET CAP" value={(sentiment.globalMarketCap || 0) > 0 ? fmt(sentiment.globalMarketCap) : '--'} tip="Total market capitalization of all publicly traded stocks worldwide. A broad indicator of global equity market size and investor confidence." />
+        <MetricCard label="VIX (VOLATILITY)" value={sentiment.vix ? fmtP(sentiment.vix) : '--'} change={sentiment.vix ? sentiment.vixChange : undefined} color={sentiment.vix ? ((sentiment.vix) > 25 ? P.red : (sentiment.vix) > 18 ? P.yellow : P.green) : P.dim} tip="CBOE Volatility Index — measures expected S&P 500 volatility. Below 15 = calm markets, 15-25 = normal, above 25 = high fear/uncertainty, above 35 = extreme stress." />
+        <MetricCard label="DXY (DOLLAR INDEX)" value={sentiment.dxy ? fmtP(sentiment.dxy) : '--'} change={sentiment.dxy ? sentiment.dxyChange : undefined} tip="US Dollar Index — measures USD against a basket of 6 major currencies (EUR, JPY, GBP, CAD, SEK, CHF). Rising DXY = stronger dollar, often negative for commodities and emerging markets." />
+        <MetricCard label="BTC DOMINANCE" value={sentiment.btcDominance ? fmtP(sentiment.btcDominance, 1) : '--'} color={P.accent} suffix={sentiment.btcDominance ? '%' : ''} tip="Bitcoin's share of total cryptocurrency market cap. High dominance (>60%) = risk-off in crypto. Low dominance (<40%) = altcoin season, more speculative activity." />
+        <MetricCard label="GLOBAL MARKET CAP" value={sentiment.globalMarketCap > 0 ? fmt(sentiment.globalMarketCap) : '--'} tip="Total market capitalization of all publicly traded stocks worldwide. A broad indicator of global equity market size and investor confidence." />
       </div>
 
       {/* Bond Yields */}
@@ -185,11 +192,12 @@ function OverviewTab({ data }: { data: FinanceFullData }) {
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {(sentiment.bondYields || []).map((b: BondYield) => (
             <div key={`${b.country}-${b.tenor}`} style={{ padding: '6px 10px', background: P.bg, borderRadius: '4px', minWidth: '90px' }}>
-              <div style={{ fontSize: '8px', color: P.dim }}>{b.country} {b.tenor}</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: P.text }}>{(b.yield * 100).toFixed(2)}%</div>
-              {b.change !== 0 && <div style={{ fontSize: '8px', color: changeColor(b.change) }}>{changePfx(b.change)}{b.change.toFixed(3)}</div>}
+              <div style={{ fontSize: '9px', color: P.dim }}>{b.country} {b.tenor}</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: P.text }}>{b.yield > 0 ? `${(b.yield * 100).toFixed(2)}%` : '--'}</div>
+              {b.change !== 0 && <div style={{ fontSize: '9px', color: changeColor(b.change) }}>{changePfx(b.change)}{b.change.toFixed(3)}</div>}
             </div>
           ))}
+          {sentiment.bondYields.length === 0 && <div style={{ padding: '12px', color: '#4a5568', fontSize: '10px', textAlign: 'center' }}>No live bond yield data available</div>}
         </div>
       </div>
 
@@ -216,6 +224,7 @@ function OverviewTab({ data }: { data: FinanceFullData }) {
         <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: '8px' }}>
           <div style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
             <div style={{ fontSize: '9px', color: P.green, letterSpacing: '0.1em', marginBottom: '6px' }}>TOP GAINERS (24H)</div>
+            {topGainers.length === 0 && <div style={{ padding: '8px', color: P.dim, fontSize: '10px', textAlign: 'center' }}>No data</div>}
             {topGainers.map(c => (
               <div key={c.symbol} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '10px' }}>
                 <span style={{ color: P.text }}>{c.symbol}</span>
@@ -225,6 +234,7 @@ function OverviewTab({ data }: { data: FinanceFullData }) {
           </div>
           <div style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px' }}>
             <div style={{ fontSize: '9px', color: P.red, letterSpacing: '0.1em', marginBottom: '6px' }}>TOP LOSERS (24H)</div>
+            {topLosers.length === 0 && <div style={{ padding: '8px', color: P.dim, fontSize: '10px', textAlign: 'center' }}>No data</div>}
             {topLosers.map(c => (
               <div key={c.symbol} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '10px' }}>
                 <span style={{ color: P.text }}>{c.symbol}</span>
@@ -273,7 +283,7 @@ function CryptoTab({ data, onWatch }: { data: CryptoData[]; onWatch: (sym: strin
 
   const toggleSort = (s: typeof sort) => { if (sort === s) setAsc(!asc); else { setSort(s); setAsc(false) } }
   const hdr = (label: string, key: typeof sort, align: CSSProperties['textAlign'] = 'right'): CSSProperties => ({
-    fontSize: '8px', color: sort === key ? P.accent : P.dim, letterSpacing: '0.08em', cursor: 'pointer', textAlign: align, padding: '6px 8px', userSelect: 'none',
+    fontSize: '9px', color: sort === key ? P.accent : P.dim, letterSpacing: '0.08em', cursor: 'pointer', textAlign: align, padding: '6px 8px', userSelect: 'none',
   })
 
   return (
@@ -287,7 +297,7 @@ function CryptoTab({ data, onWatch }: { data: CryptoData[]; onWatch: (sym: strin
         <div style={hdr('MCAP', 'mcap')} onClick={() => toggleSort('mcap')}>MCAP</div>
         <div style={hdr('VOLUME', 'vol')} onClick={() => toggleSort('vol')}>VOLUME</div>
         <div style={{ ...hdr('7D', 'rank'), textAlign: 'center' }}>7D CHART</div>
-        <div style={{ fontSize: '8px', color: P.dim, padding: '6px 0', textAlign: 'center' }}>★</div>
+        <div style={{ fontSize: '9px', color: P.dim, padding: '6px 0', textAlign: 'center' }}>★</div>
       </div>
       {sorted.map(c => (
         <div key={c.symbol} style={{ display: 'grid', gridTemplateColumns: '32px 60px 1fr 90px 80px 90px 90px 80px 40px', alignItems: 'center', borderBottom: `1px solid ${P.border}15`, padding: '2px 0', transition: 'background 0.15s' }}
@@ -355,15 +365,15 @@ function CommoditiesTab({ data }: { data: CommodityData[] }) {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: catColor }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
                 <span style={{ fontSize: '9px', fontWeight: 700, color: catColor, letterSpacing: '0.08em' }}>{c.symbol}</span>
-                <span style={{ fontSize: '8px', color: P.dim, padding: '1px 6px', background: `${catColor}10`, borderRadius: '3px' }}>{c.category?.toUpperCase()}</span>
+                <span style={{ fontSize: '9px', color: P.dim, padding: '1px 6px', background: `${catColor}10`, borderRadius: '3px' }}>{c.category?.toUpperCase()}</span>
               </div>
               <div style={{ fontSize: '10px', color: P.dim, marginBottom: '4px' }}>{c.name}</div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: P.text }}>{sym}{fmtP(c.price, c.price < 10 ? 4 : 2)}</div>
               <div style={{ fontSize: '9px', color: P.dim, marginTop: '4px' }}>{c.unit}</div>
               {(c.high24h || c.low24h) && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '8px' }}>
-                  {c.high24h && <span style={{ color: P.green }}>H: {sym}{c.high24h}</span>}
-                  {c.low24h && <span style={{ color: P.red }}>L: {sym}{c.low24h}</span>}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', fontSize: '9px' }}>
+                  {c.high24h && <span style={{ color: P.green }}>H: {fmtP(c.high24h, 2)}</span>}
+                  {c.low24h && <span style={{ color: P.red }}>L: {fmtP(c.low24h, 2)}</span>}
                 </div>
               )}
             </div>
@@ -387,8 +397,9 @@ function ForexTab({ data }: { data: ForexData[] }) {
 
   const renderRow = (f: ForexData) => {
     const [base, quote] = f.pair.split('/')
-    const diff = f.prevClose ? f.rate - f.prevClose : 0
-    const diffPct = f.prevClose ? (diff / f.prevClose) * 100 : 0
+    const hasPrev = f.prevClose != null && f.prevClose > 0
+    const diff = hasPrev ? f.rate - f.prevClose! : 0
+    const diffPct = hasPrev ? (diff / f.prevClose!) * 100 : 0
     return (
       <div key={f.pair} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 80px 70px', alignItems: 'center', padding: '8px 12px', borderBottom: `1px solid ${P.border}15` }}>
         <div>
@@ -399,16 +410,12 @@ function ForexTab({ data }: { data: ForexData[] }) {
         <div style={{ fontSize: '14px', fontWeight: 700, color: P.text, fontVariantNumeric: 'tabular-nums' }}>
           {f.rate < 10 ? f.rate.toFixed(4) : f.rate.toFixed(2)}
         </div>
-        {f.prevClose ? (
-          <div style={{ fontSize: '10px', color: changeColor(diff), textAlign: 'right' }}>
-            {changePfx(diff)}{Math.abs(diff).toFixed(4)}
-          </div>
-        ) : <div />}
-        {f.prevClose ? (
-          <div style={{ fontSize: '10px', color: changeColor(diffPct), textAlign: 'right', fontWeight: 600 }}>
-            {changePfx(diffPct)}{Math.abs(diffPct).toFixed(2)}%
-          </div>
-        ) : <div />}
+        <div style={{ fontSize: '10px', color: hasPrev ? changeColor(diff) : P.dim, textAlign: 'right' }}>
+          {hasPrev ? `${changePfx(diff)}${Math.abs(diff).toFixed(4)}` : '--'}
+        </div>
+        <div style={{ fontSize: '10px', color: hasPrev ? changeColor(diffPct) : P.dim, textAlign: 'right', fontWeight: 600 }}>
+          {hasPrev ? `${changePfx(diffPct)}${Math.abs(diffPct).toFixed(2)}%` : '--'}
+        </div>
       </div>
     )
   }
@@ -469,6 +476,9 @@ function IndicesTab({ data }: { data: MarketIndex[] }) {
         ))}
       </div>
 
+      {filtered.length === 0 ? (
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: P.dim, fontSize: '11px' }}>No index data available — market API may be unreachable</div>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
         {filtered.map(idx => (
           <div key={idx.symbol} style={{ padding: '14px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px' }}>
@@ -477,7 +487,7 @@ function IndicesTab({ data }: { data: MarketIndex[] }) {
                 <span style={{ fontSize: '11px', fontWeight: 700, color: P.text }}>{idx.symbol}</span>
                 {idx.status && <span style={{ marginLeft: '6px' }}>{statusDot(idx.status)}</span>}
               </div>
-              <span style={{ fontSize: '8px', color: P.dim, padding: '1px 6px', background: `${P.accent}08`, borderRadius: '3px' }}>{idx.region}</span>
+              <span style={{ fontSize: '9px', color: P.dim, padding: '1px 6px', background: `${P.accent}08`, borderRadius: '3px' }}>{idx.region}</span>
             </div>
             <div style={{ fontSize: '10px', color: P.dim, marginBottom: '6px' }}>{idx.name}</div>
             <div style={{ fontSize: '18px', fontWeight: 700, color: P.text, fontVariantNumeric: 'tabular-nums' }}>{idx.value.toLocaleString()}</div>
@@ -485,10 +495,11 @@ function IndicesTab({ data }: { data: MarketIndex[] }) {
               <span style={{ fontSize: '10px', color: changeColor(idx.change) }}>{changePfx(idx.change)}{Math.abs(idx.change).toFixed(2)}</span>
               <span style={{ fontSize: '10px', fontWeight: 600, color: changeColor(idx.changePercent) }}>({changePfx(idx.changePercent)}{Math.abs(idx.changePercent).toFixed(2)}%)</span>
             </div>
-            {idx.status && <div style={{ fontSize: '8px', color: P.dim, marginTop: '6px', textTransform: 'uppercase' }}>{idx.status.replace('-', ' ')}</div>}
+            {idx.status && <div style={{ fontSize: '9px', color: P.dim, marginTop: '6px', textTransform: 'uppercase' }}>{idx.status.replace('-', ' ')}</div>}
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
@@ -518,7 +529,7 @@ function WatchlistTab({ items, onRemove }: { items: WlItem[]; onRemove: (sym: st
         <div key={item.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 90px 70px 32px', alignItems: 'center', padding: '10px 14px', borderBottom: `1px solid ${P.border}15` }}>
           <div>
             <span style={{ fontSize: '11px', fontWeight: 700, color: P.text }}>{item.symbol}</span>
-            <div style={{ fontSize: '7px', color: typeColors[item.type] || P.dim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.type}</div>
+            <div style={{ fontSize: '9px', color: typeColors[item.type] || P.dim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.type}</div>
           </div>
           <div style={{ fontSize: '10px', color: P.dim }}>{item.name}</div>
           <div style={{ fontSize: '12px', fontWeight: 600, color: P.text, textAlign: 'right' }}>{sym}{fmtP(item.price, item.price < 1 ? 6 : 2)}</div>
@@ -564,13 +575,13 @@ function NewsTab({ onLocateIncident }: { onLocateIncident?: (i: any) => void }) 
               <div style={{ width: '3px', borderRadius: '2px', background: sevColors[inc.severity] || P.dim, minHeight: '30px', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: P.text, fontWeight: 500, marginBottom: '3px', lineHeight: 1.4 }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
-                <div style={{ display: 'flex', gap: '8px', fontSize: '8px', color: P.dim }}>
+                <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: P.dim }}>
                   <span>{inc.source}</span>
                   <span>{inc.country}</span>
                   <span>{new Date(inc.timestamp).toLocaleString()}</span>
                 </div>
               </div>
-              <span style={{ fontSize: '7px', color: sevColors[inc.severity] || P.dim, fontWeight: 700, letterSpacing: '0.05em', flexShrink: 0 }}>{inc.severity}</span>
+              <span style={{ fontSize: '9px', color: sevColors[inc.severity] || P.dim, fontWeight: 700, letterSpacing: '0.05em', flexShrink: 0 }}>{inc.severity}</span>
             </div>
           )
         })}
@@ -590,6 +601,7 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
   const [error, setError] = useState<string | null>(null)
   const [baseCurrency, setBaseCurrency] = useState<string>(() => localStorage.getItem('argus-base-currency') || 'USD')
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ USD: 1 })
+  const [ratesFallback, setRatesFallback] = useState(false)
   const [watchlist, setWatchlist] = useState<WlItem[]>(() => {
     try { return JSON.parse(localStorage.getItem('argus-watchlist') || '[]') } catch { return [] }
   })
@@ -603,13 +615,15 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
   useEffect(() => { localStorage.setItem('argus-base-currency', baseCurrency) }, [baseCurrency])
 
   useEffect(() => {
-    if (baseCurrency === 'USD') { setExchangeRates({ USD: 1 }); return }
+    if (baseCurrency === 'USD') { setExchangeRates({ USD: 1 }); setRatesFallback(false); return }
+    setRatesFallback(false)
     fetch(`https://open.er-api.com/v6/latest/USD`)
       .then(r => r.json())
       .then(d => { if (d.rates) setExchangeRates(d.rates) })
       .catch(() => {
         const fallback: Record<string, number> = { USD: 1, EUR: 0.92, GBP: 0.79, TRY: 38.5, JPY: 149.5, CNY: 7.24, RUB: 96, INR: 83.5, BRL: 5.0, KRW: 1340, AUD: 1.53, CAD: 1.36, CHF: 0.88, SAR: 3.75, AED: 3.67 }
         setExchangeRates(fallback)
+        setRatesFallback(true)
       })
   }, [baseCurrency])
 
@@ -625,6 +639,29 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
   useEffect(() => { refresh(); const t = setInterval(refresh, 60000); return () => clearInterval(t) }, [refresh])
 
   useEffect(() => { localStorage.setItem('argus-watchlist', JSON.stringify(watchlist)) }, [watchlist])
+
+  // Update watchlist prices from live data on each refresh
+  useEffect(() => {
+    if (!data) return
+    setWatchlist(prev => {
+      let changed = false
+      const updated = prev.map(item => {
+        let price = item.price, change = item.change
+        if (item.type === 'crypto') {
+          const c = (data.crypto || []).find(x => x.symbol === item.symbol)
+          if (c && c.price > 0) { price = c.price; change = c.change24h; changed = true }
+        } else if (item.type === 'commodity') {
+          const c = (data.commodities || []).find(x => x.symbol === item.symbol)
+          if (c && c.price > 0) { price = c.price; change = c.change; changed = true }
+        } else if (item.type === 'index') {
+          const c = (data.indices || []).find(x => x.symbol === item.symbol)
+          if (c && c.value > 0) { price = c.value; change = c.changePercent; changed = true }
+        }
+        return { ...item, price, change }
+      })
+      return changed ? updated : prev
+    })
+  }, [data])
 
   const addToWatchlist = useCallback((symbol: string, name: string, type: WlItem['type'] = 'crypto') => {
     setWatchlist(prev => {
@@ -675,14 +712,14 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '14px', color: P.yellow }}>◈</span>
           <span style={{ fontSize: '12px', fontWeight: 700, color: P.text, letterSpacing: '0.12em' }}>FINANCE TERMINAL</span>
-          <InfoTip text="Real-time financial market dashboard. Data refreshes every 60 seconds from multiple APIs. Includes crypto, commodities, forex, indices, and market sentiment indicators." />
+          <InfoTip text="Financial market dashboard. Data refreshes every 60 seconds from multiple free APIs. Prices may be delayed 1-5 minutes depending on the data source." />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {data.sentiment && (
             <div style={{ display: 'flex', gap: '12px', fontSize: '9px' }}>
               <span style={{ color: P.dim }}>VIX <span style={{ color: (data.sentiment.vix || 0) > 25 ? P.red : P.green, fontWeight: 700 }}>{data.sentiment.vix ?? '--'}</span></span>
               <span style={{ color: P.dim }}>DXY <span style={{ color: P.text, fontWeight: 700 }}>{data.sentiment.dxy ?? '--'}</span></span>
-              <span style={{ color: P.dim }}>F&G <span style={{ color: (data.sentiment.fearGreed?.value ?? 50) <= 25 ? P.red : (data.sentiment.fearGreed?.value ?? 50) >= 75 ? P.green : P.yellow, fontWeight: 700 }}>{data.sentiment.fearGreed?.value ?? '--'}</span></span>
+              <span style={{ color: P.dim }}>F&G <span style={{ color: (() => { const v = data.sentiment?.fearGreed?.value; if (!v) return P.dim; return v <= 25 ? P.red : v >= 75 ? P.green : P.yellow })(), fontWeight: 700 }}>{data.sentiment.fearGreed?.value ?? '--'}</span></span>
             </div>
           )}
           <select value={baseCurrency} onChange={e => setBaseCurrency(e.target.value)} style={{
@@ -692,8 +729,8 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
           }}>
             {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>)}
           </select>
-          <button onClick={refresh} style={{ padding: '4px 10px', fontSize: '8px', background: `${P.accent}10`, border: `1px solid ${P.accent}30`, borderRadius: '4px', color: P.accent, cursor: 'pointer', fontFamily: P.font }}>↻ REFRESH</button>
-          <span style={{ fontSize: '8px', color: P.dim }}>{new Date(data.lastUpdated).toLocaleTimeString()}</span>
+          <button onClick={refresh} style={{ padding: '4px 10px', fontSize: '9px', background: `${P.accent}10`, border: `1px solid ${P.accent}30`, borderRadius: '4px', color: P.accent, cursor: 'pointer', fontFamily: P.font }}>↻ REFRESH</button>
+          <span style={{ fontSize: '9px', color: P.dim }}>{new Date(data.lastUpdated).toLocaleTimeString()}</span>
         </div>
       </div>
 
@@ -710,11 +747,18 @@ export function FinanceDeepPanel({ onLocateIncident }: { onLocateIncident?: (i: 
           }}>
             <span>{t.icon}</span> {t.label}
             {t.badge != null && t.badge > 0 && (
-              <span style={{ padding: '1px 5px', background: P.yellow, borderRadius: '8px', fontSize: '7px', color: '#000', fontWeight: 800 }}>{t.badge}</span>
+              <span style={{ padding: '1px 5px', background: P.yellow, borderRadius: '8px', fontSize: '9px', color: '#000', fontWeight: 800 }}>{t.badge}</span>
             )}
           </button>
         ))}
       </div>
+
+      {/* Fallback warning */}
+      {ratesFallback && baseCurrency !== 'USD' && (
+        <div style={{ margin: '0 20px', padding: '6px 12px', background: '#f5c54215', border: `1px solid #f5c54240`, borderRadius: '6px', fontSize: '9px', color: '#f5c542' }}>
+          Exchange rate API unreachable — using approximate fallback rates for {baseCurrency}
+        </div>
+      )}
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>

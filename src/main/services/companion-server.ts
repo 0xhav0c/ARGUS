@@ -32,9 +32,7 @@ export class CompanionServer {
 
   private isAuthorized(req: IncomingMessage): boolean {
     const authHeader = req.headers.authorization
-    if (authHeader === `Bearer ${this.authToken}`) return true
-    const url = new URL(req.url || '/', `http://localhost`)
-    return url.searchParams.get('token') === this.authToken
+    return authHeader === `Bearer ${this.authToken}`
   }
 
   start(): Promise<{ port: number; ip: string }> {
@@ -68,7 +66,7 @@ export class CompanionServer {
 
         if (req.url === '/status') {
           res.writeHead(200)
-          res.end(JSON.stringify({ app: 'Argus', version: '1.0.0', clients: this.clients.length }))
+          res.end(JSON.stringify({ app: 'Argus', status: 'running' }))
           return
         }
 
@@ -175,13 +173,13 @@ export class CompanionServer {
     return this.clients.length
   }
 
-  getConnectionInfo(): { ip: string; port: number; running: boolean; clients: number; token: string } {
+  getConnectionInfo(): { ip: string; port: number; running: boolean; clients: number; tokenPreview: string } {
     return {
       ip: this.getLocalIP(),
       port: this.port,
       running: this.running,
       clients: this.clients.length,
-      token: this.authToken,
+      tokenPreview: this.authToken ? `${this.authToken.slice(0, 6)}••••` : '',
     }
   }
 

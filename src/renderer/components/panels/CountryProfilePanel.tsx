@@ -165,7 +165,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
           </div>
         </div>
         <span style={{
-          fontSize: '8px', fontWeight: 700, letterSpacing: '0.1em',
+          fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em',
           padding: '3px 8px', borderRadius: '3px',
           background: RISK_COLORS[country.riskLevel] + '20',
           color: RISK_COLORS[country.riskLevel],
@@ -195,7 +195,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
             {country.flags.map(flag => (
               <span key={flag} style={{
-                fontSize: '8px', padding: '2px 6px', borderRadius: '3px',
+                fontSize: '9px', padding: '2px 6px', borderRadius: '3px',
                 background: '#1a2235', color: P.dim, border: `1px solid ${P.border}`,
                 letterSpacing: '0.05em',
               }}>{flag}</span>
@@ -205,7 +205,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
 
         {/* Domain Breakdown */}
         <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
             DOMAIN BREAKDOWN
           </div>
           {totalDomain > 0 ? (
@@ -244,7 +244,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
         {/* Severity */}
         {totalDomain > 0 && (
           <div style={{ marginBottom: '12px' }}>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
               SEVERITY
             </div>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -258,7 +258,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
                   <div style={{ fontSize: '12px', fontWeight: 700, color: severityBreakdown[sev] > 0 ? col : P.dim }}>
                     {severityBreakdown[sev]}
                   </div>
-                  <div style={{ fontSize: '7px', color: P.dim }}>{sev}</div>
+                  <div style={{ fontSize: '9px', color: P.dim }}>{sev}</div>
                 </div>
               ))}
             </div>
@@ -268,7 +268,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
         {/* Recent Incidents */}
         {recentIncidents.length > 0 && (
           <div>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
               RECENT INCIDENTS
             </div>
             {recentIncidents.map(inc => {
@@ -290,7 +290,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
                     fontSize: '9px', color: P.text, fontWeight: 500,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6 }}>◎</span>}</div>
-                  <div style={{ fontSize: '8px', color: P.dim, marginTop: '2px' }}>
+                  <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
                     {inc.domain} · {inc.severity} · {timeAgo(inc.timestamp)}
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
 
         {/* Threat Assessment */}
         <div style={{ marginTop: '14px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
             THREAT ASSESSMENT
           </div>
           <div style={{
@@ -340,7 +340,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
 
         {/* Activity Timeline */}
         <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
             ACTIVITY TIMELINE (24H)
           </div>
           <div style={{
@@ -353,7 +353,7 @@ export function CountryProfilePanel({ country, incidents, onClose, onFlyTo, onLo
 
         {/* Economic Indicators */}
         <div style={{ marginBottom: '4px' }}>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.2em', marginBottom: '6px' }}>
             ECONOMIC INDICATORS
           </div>
           {economic ? (
@@ -478,7 +478,7 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
       borderRadius: '4px', border: `1px solid ${P.border}`, textAlign: 'center',
     }}>
       <div style={{ fontSize: '11px', fontWeight: 700, color: color || P.text }}>{value}</div>
-      <div style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em', marginTop: '1px' }}>{label}</div>
+      <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginTop: '1px' }}>{label}</div>
     </div>
   )
 }

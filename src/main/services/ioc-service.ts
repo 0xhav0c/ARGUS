@@ -31,21 +31,11 @@ export class IoCService {
           })
         }
       }
-    } catch { /* fallback */ }
-    if (iocs.length === 0) {
-      iocs.push(
-        { id: 'ioc-1', type: 'ip', value: '185.220.101.1', threatType: 'C2 Server', confidence: 95, source: 'ThreatFox', firstSeen: new Date(Date.now() - 86400000).toISOString(), lastSeen: new Date().toISOString(), tags: ['cobalt-strike', 'apt'] },
-        { id: 'ioc-2', type: 'domain', value: 'evil-update.com', threatType: 'Phishing', confidence: 90, source: 'PhishTank', firstSeen: new Date(Date.now() - 172800000).toISOString(), lastSeen: new Date().toISOString(), tags: ['phishing', 'credential-theft'] },
-        { id: 'ioc-3', type: 'hash', value: 'a1b2c3d4e5f6...deadbeef', threatType: 'Ransomware', confidence: 100, source: 'MalwareBazaar', firstSeen: new Date(Date.now() - 43200000).toISOString(), lastSeen: new Date().toISOString(), tags: ['lockbit', 'ransomware'] },
-        { id: 'ioc-4', type: 'url', value: 'https://malicious-cdn.xyz/payload.exe', threatType: 'Malware Distribution', confidence: 85, source: 'URLhaus', firstSeen: new Date(Date.now() - 21600000).toISOString(), lastSeen: new Date().toISOString(), tags: ['dropper', 'trojan'] },
-        { id: 'ioc-5', type: 'ip', value: '45.133.1.23', threatType: 'Botnet C2', confidence: 88, source: 'ThreatFox', firstSeen: new Date(Date.now() - 259200000).toISOString(), lastSeen: new Date().toISOString(), tags: ['emotet', 'botnet'] },
-        { id: 'ioc-6', type: 'domain', value: 'fake-microsoft-login.com', threatType: 'Credential Harvesting', confidence: 92, source: 'PhishTank', firstSeen: new Date().toISOString(), lastSeen: new Date().toISOString(), tags: ['phishing', 'microsoft'] },
-        { id: 'ioc-7', type: 'cve', value: 'CVE-2024-3094', threatType: 'Supply Chain Backdoor', confidence: 100, source: 'NVD', firstSeen: new Date(Date.now() - 604800000).toISOString(), lastSeen: new Date().toISOString(), tags: ['xz-utils', 'supply-chain', 'backdoor'] },
-        { id: 'ioc-8', type: 'hash', value: 'b4d3f00d...cafebabe', threatType: 'Infostealer', confidence: 78, source: 'MalwareBazaar', firstSeen: new Date(Date.now() - 7200000).toISOString(), lastSeen: new Date().toISOString(), tags: ['redline', 'stealer'] },
-      )
-    }
+    } catch { /* API unavailable */ }
+    // No fake fallback — return empty if API fails
     cache = iocs
     lastFetch = Date.now()
+    console.log(`[IoC] ${cache.length} indicators loaded`)
     return cache
   }
 
@@ -72,3 +62,6 @@ export class IoCService {
     return iocs
   }
 }
+// Removed: 8 hardcoded fake IoCs (fake IPs 185.220.101.1, 45.133.1.23, fake domains
+// evil-update.com, fake-microsoft-login.com, etc.) that were silently injected when
+// ThreatFox API failed. Presenting fake IPs as malicious is actively dangerous.

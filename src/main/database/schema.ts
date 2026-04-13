@@ -30,7 +30,8 @@ export function getDatabase(): any {
     console.log('[DB] SQLite initialized at', dbPath)
     return db
   } catch (err) {
-    console.warn('[DB] SQLite unavailable, using in-memory fallback:', (err as Error).message)
+    console.error('[DB] SQLite unavailable, using in-memory fallback:', (err as Error).message)
+    console.error('[DB] WARNING: Data will NOT be persisted. All data will be lost on restart.')
     useFallback = true
     return null
   }

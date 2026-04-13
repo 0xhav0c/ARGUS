@@ -41,8 +41,29 @@ export interface VirusTotalResult {
 export class CyberThreatService {
   async getThreats(): Promise<CyberThreat[]> {
     if (cache.length > 0 && Date.now() - lastFetch < TTL) return cache
-    const [cves, ransom] = await Promise.all([this.fetchCVEs(), this.fetchRansomwareTracker()])
-    cache = [...cves, ...ransom, ...KNOWN_APT_ACTIVITY].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    const [cves, ransom, kev, ghsa] = await Promise.all([
+      this.fetchCVEs(),
+      this.fetchRansomwareTracker(),
+      this.fetchCISAKEV(),
+      this.fetchGitHubAdvisories(),
+    ])
+
+    const merged = [...kev, ...cves, ...ransom, ...ghsa]
+    const seen = new Map<string, CyberThreat>()
+    for (const threat of merged) {
+      if (threat.cveId) {
+        const existing = seen.get(threat.cveId)
+        if (!existing || threat.source === 'CISA KEV') {
+          seen.set(threat.cveId, threat)
+        }
+      } else {
+        seen.set(threat.id, threat)
+      }
+    }
+
+    cache = Array.from(seen.values()).sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+    )
     lastFetch = Date.now()
     console.log(`[CTI] ${cache.length} cyber threats loaded`)
     return cache
@@ -138,7 +159,12 @@ export class CyberThreatService {
       const nvdHeaders: Record<string, string> = { Accept: 'application/json' }
       const nvdKey = getApiKeyManager().get('nvd')
       if (nvdKey) nvdHeaders['apiKey'] = nvdKey
-      const res = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30', { headers: nvdHeaders, signal: AbortSignal.timeout(10000) })
+      const now = new Date()
+      const weekAgo = new Date(Date.now() - 7 * 86400000)
+      const start = weekAgo.toISOString()
+      const end = now.toISOString()
+      const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=${start}&pubEndDate=${end}&resultsPerPage=30`
+      const res = await fetch(url, { headers: nvdHeaders, signal: AbortSignal.timeout(10000) })
       if (!res.ok) return []
       const data: any = await res.json()
       return (data.vulnerabilities || []).slice(0, 30).map((v: any) => {
@@ -179,11 +205,56 @@ export class CyberThreatService {
       }))
     } catch { return [] }
   }
+
+  private async fetchCISAKEV(): Promise<CyberThreat[]> {
+    try {
+      const res = await fetch(
+        'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
+        { signal: AbortSignal.timeout(10000) },
+      )
+      if (!res.ok) return []
+      const data: any = await res.json()
+      const vulns: any[] = (data.vulnerabilities || [])
+        .sort((a: any, b: any) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+        .slice(0, 15)
+      return vulns.map((vuln: any) => ({
+        id: `kev-${vuln.cveID}`,
+        type: 'exploit' as const,
+        title: `🔴 Actively Exploited: ${vuln.cveID} — ${vuln.vendorProject} ${vuln.product}`,
+        severity: 'CRITICAL' as const,
+        source: 'CISA KEV',
+        publishedAt: vuln.dateAdded,
+        description: `${vuln.shortDescription}. Required action: ${vuln.requiredAction}. Deadline: ${vuln.dueDate}.`,
+        cveId: vuln.cveID,
+        sourceUrl: `https://nvd.nist.gov/vuln/detail/${vuln.cveID}`,
+        attackerGroup: vuln.knownRansomwareCampaignUse === 'Known' ? 'Ransomware Campaign' : undefined,
+      }))
+    } catch { return [] }
+  }
+
+  private async fetchGitHubAdvisories(): Promise<CyberThreat[]> {
+    try {
+      const res = await fetch(
+        'https://api.github.com/advisories?per_page=15&type=reviewed&severity=critical,high',
+        { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) },
+      )
+      if (!res.ok) return []
+      const data: any[] = await res.json()
+      return (Array.isArray(data) ? data : []).map((adv: any) => ({
+        id: `ghsa-${adv.ghsa_id}`,
+        type: 'cve' as const,
+        title: `${adv.cve_id || adv.ghsa_id}: ${adv.summary?.substring(0, 120)}`,
+        severity: adv.severity === 'critical' ? ('CRITICAL' as const) : ('HIGH' as const),
+        source: 'GitHub Advisory',
+        publishedAt: adv.published_at,
+        description: adv.description?.substring(0, 500) || adv.summary || '',
+        cveId: adv.cve_id,
+        cvssScore: adv.cvss?.score,
+        sourceUrl: adv.html_url,
+      }))
+    } catch { return [] }
+  }
 }
 
-const KNOWN_APT_ACTIVITY: CyberThreat[] = [
-  { id: 'apt-1', type: 'apt', title: 'APT28 (Fancy Bear) - Active phishing campaigns targeting NATO allies', severity: 'CRITICAL', source: 'OSINT', publishedAt: new Date(Date.now() - 86400000).toISOString(), description: 'Russian GRU-linked APT28 conducting credential harvesting against defense sector.', attackerGroup: 'APT28', targetCountry: 'EU/NATO', targetSector: 'Defense' },
-  { id: 'apt-2', type: 'apt', title: 'Lazarus Group - Cryptocurrency exchange targeting', severity: 'HIGH', source: 'OSINT', publishedAt: new Date(Date.now() - 172800000).toISOString(), description: 'DPRK-linked Lazarus group targeting DeFi platforms and crypto exchanges.', attackerGroup: 'Lazarus', targetSector: 'Finance' },
-  { id: 'apt-3', type: 'apt', title: 'Volt Typhoon - Critical infrastructure pre-positioning', severity: 'CRITICAL', source: 'CISA', publishedAt: new Date(Date.now() - 259200000).toISOString(), description: 'PRC state-sponsored actor maintaining access to US critical infrastructure networks.', attackerGroup: 'Volt Typhoon', targetCountry: 'US', targetSector: 'Infrastructure' },
-  { id: 'apt-4', type: 'apt', title: 'Sandworm - Energy sector ICS/SCADA targeting', severity: 'CRITICAL', source: 'OSINT', publishedAt: new Date(Date.now() - 345600000).toISOString(), description: 'Russian GRU Unit 74455 targeting energy infrastructure in Ukraine and Europe.', attackerGroup: 'Sandworm', targetCountry: 'Ukraine/EU', targetSector: 'Energy' },
-]
+// Removed: KNOWN_APT_ACTIVITY — hardcoded fake APT entries that were presented as live intelligence.
+// APT data should come from real threat intelligence feeds (MISP, OpenCTI, MITRE ATT&CK, etc.)

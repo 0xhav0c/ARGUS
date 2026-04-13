@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom'
 
+// Skip window setup for node-environment tests
+if (typeof window !== 'undefined') {
+
 Object.defineProperty(window, 'argus', {
   value: {
     getIncidents: vi.fn().mockResolvedValue([]),
@@ -37,3 +40,5 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 })
+
+} // end if (typeof window !== 'undefined')

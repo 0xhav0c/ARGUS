@@ -111,7 +111,7 @@ export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: I
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '10px' }}>
             {incident.tags.map(tag => (
               <span key={tag} style={{
-                padding: '2px 6px', fontSize: '8px',
+                padding: '2px 6px', fontSize: '9px',
                 background: '#0d1220', border: `1px solid ${P.border}`,
                 borderRadius: '3px', color: P.dim,
               }}>{tag}</span>
@@ -176,9 +176,9 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
   return (
     <div style={{ marginTop: '10px', borderTop: `1px solid ${P.border}`, paddingTop: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-        <span style={{ fontSize: '8px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>AI ANALYSIS</span>
+        <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>AI ANALYSIS</span>
         <button onClick={handleAnalyze} disabled={loading} style={{
-          padding: '2px 8px', fontSize: '8px', fontWeight: 600,
+          padding: '2px 8px', fontSize: '9px', fontWeight: 600,
           background: loading ? 'transparent' : '#a855f715',
           border: `1px solid ${loading ? P.border : '#a855f740'}`,
           borderRadius: '3px', color: loading ? P.dim : '#a855f7',
@@ -186,7 +186,7 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
         }}>{loading ? 'ANALYZING...' : analysis ? 'RE-ANALYZE' : 'ANALYZE'}</button>
         {analysis && (
           <button onClick={() => setExpanded(e => !e)} style={{
-            padding: '2px 6px', fontSize: '8px', background: 'transparent',
+            padding: '2px 6px', fontSize: '9px', background: 'transparent',
             border: `1px solid ${P.border}`, borderRadius: '3px',
             color: P.dim, cursor: 'pointer', fontFamily: P.font,
           }}>{expanded ? '\u25BC' : '\u25B6'}</button>
@@ -197,7 +197,7 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
         <div style={{ marginTop: '4px' }}>
           <MarkdownText text={analysis} style={{ fontSize: '10px', color: P.text, background: '#0d1220', padding: '8px', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }} />
           {model && model !== 'error' && (
-            <div style={{ fontSize: '7px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
           )}
         </div>
       )}
@@ -221,7 +221,7 @@ function NotesSection({ incidentId }: { incidentId: string }) {
 
   return (
     <div style={{ marginTop: '10px', borderTop: `1px solid ${P.border}`, paddingTop: '8px' }}>
-      <span style={{ fontSize: '8px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>ANALYST NOTES ({notes.length})</span>
+      <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>ANALYST NOTES ({notes.length})</span>
       <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdd()}
           placeholder="Add a note..."
@@ -235,7 +235,7 @@ function NotesSection({ incidentId }: { incidentId: string }) {
         <div key={n.id} style={{ display: 'flex', alignItems: 'start', gap: '6px', marginTop: '4px', padding: '4px 6px', background: '#0d1220', borderRadius: '4px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '10px', color: P.text, lineHeight: 1.4 }}>{n.content}</div>
-            <div style={{ fontSize: '7px', color: P.dim, marginTop: '2px' }}>{new Date(n.createdAt).toLocaleString()}</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>{new Date(n.createdAt).toLocaleString()}</div>
           </div>
           <button onClick={() => deleteNote(n.id)} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '10px', padding: '0 2px', flexShrink: 0 }}>{'\u2715'}</button>
         </div>

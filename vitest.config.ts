@@ -7,6 +7,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    environmentMatchGlobs: [
+      // Live service tests run in node environment (no window/DOM needed)
+      ['src/__tests__/live-services.test.ts', 'node'],
+    ],
   },
   resolve: {
     alias: {

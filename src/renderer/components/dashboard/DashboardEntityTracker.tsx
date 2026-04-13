@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Incident } from '../../../shared/types'
 import { useEntityStore, type TrackedEntity } from '../../stores/entity-store'
 import { InfoTip } from '../ui/InfoTip'
@@ -46,24 +46,6 @@ function lastSeenForEntity(entity: TrackedEntity, incidents: Incident[]): string
   return best ? new Date(best).toISOString() : ''
 }
 
-function hourlyBuckets24h(entity: TrackedEntity, incidents: Incident[]): number[] {
-  const now = Date.now()
-  const hourMs = 3600000
-  const buckets: number[] = []
-  for (let i = 23; i >= 0; i--) {
-    const start = now - (i + 1) * hourMs
-    const end = now - i * hourMs
-    let c = 0
-    for (const inc of incidents) {
-      if (!incidentMatchesEntity(inc, entity)) continue
-      const t = new Date(inc.timestamp).getTime()
-      if (t >= start && t < end) c++
-    }
-    buckets.push(c)
-  }
-  return buckets
-}
-
 function formatLastSeen(iso: string): string {
   if (!iso) return '—'
   const d = Date.now() - new Date(iso).getTime()
@@ -88,36 +70,6 @@ function matchBadgeStyle(count: number): CSSProperties {
   return { background: '#ff6b3522', color: '#ff6b35', border: '1px solid #ff6b3555' }
 }
 
-function EntitySparkline({ buckets, color }: { buckets: number[]; color: string }) {
-  const max = Math.max(1, ...buckets)
-  const w = 72
-  const h = 22
-  const n = buckets.length
-  const gap = 1
-  const barW = Math.max(1, (w - gap * (n - 1)) / n)
-  return (
-    <svg width={w} height={h} style={{ display: 'block', flexShrink: 0 }} aria-hidden>
-      {buckets.map((v, i) => {
-        const bh = Math.max(1, (v / max) * (h - 2))
-        const x = i * (barW + gap)
-        const y = h - bh
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={y}
-            width={barW}
-            height={bh}
-            rx={1}
-            fill={v > 0 ? color : P.border}
-            opacity={v > 0 ? 0.85 : 0.35}
-          />
-        )
-      })}
-    </svg>
-  )
-}
-
 interface Props {
   incidents: Incident[]
 }
@@ -127,7 +79,6 @@ export function DashboardEntityTracker({ incidents }: Props) {
   const addEntity = useEntityStore((s) => s.addEntity)
   const removeEntity = useEntityStore((s) => s.removeEntity)
   const toggleEntity = useEntityStore((s) => s.toggleEntity)
-  const updateMatchCount = useEntityStore((s) => s.updateMatchCount)
 
   const [name, setName] = useState('')
   const [type, setType] = useState<TrackedEntity['type']>('person')
@@ -362,10 +313,15 @@ export function DashboardEntityTracker({ incidents }: Props) {
           marginBottom: '20px',
         }}
       >
+        {entities.length === 0 && (
+          <div style={{ padding: '32px 20px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>
+            No entities tracked yet. Add one above to start monitoring.
+          </div>
+        )}
         {entities.map((entity) => {
           const liveCount = entity.matchCount ?? 0
           const liveLast = entity.lastSeen || ''
-          const total24h = liveCount
+          const totalMatches = liveCount
           return (
             <div
               key={entity.id}
@@ -397,7 +353,7 @@ export function DashboardEntityTracker({ incidents }: Props) {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                     <span
                       style={{
-                        fontSize: '7px',
+                        fontSize: '9px',
                         fontWeight: 700,
                         letterSpacing: '0.1em',
                         padding: '3px 6px',
@@ -412,7 +368,7 @@ export function DashboardEntityTracker({ incidents }: Props) {
                     </span>
                     <span
                       style={{
-                        fontSize: '8px',
+                        fontSize: '9px',
                         fontWeight: 700,
                         fontFamily: P.font,
                         padding: '3px 8px',
@@ -434,7 +390,7 @@ export function DashboardEntityTracker({ incidents }: Props) {
                       color: entity.enabled ? P.accent : P.dim,
                       cursor: 'pointer',
                       fontFamily: P.font,
-                      fontSize: '7px',
+                      fontSize: '9px',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
                       padding: '5px 10px',
@@ -452,7 +408,7 @@ export function DashboardEntityTracker({ incidents }: Props) {
                       color: '#ff3b5c',
                       cursor: 'pointer',
                       fontFamily: P.font,
-                      fontSize: '7px',
+                      fontSize: '9px',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
                       padding: '5px 10px',
@@ -469,8 +425,8 @@ export function DashboardEntityTracker({ incidents }: Props) {
                   Last seen:{' '}
                   <span style={{ color: P.text }}>{formatLastSeen(liveLast)}</span>
                 </div>
-                <div style={{ fontSize: '8px', color: P.dim, fontFamily: P.font }}>
-                  24h: <span style={{ color: entity.color }}>{total24h}</span>
+                <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
+                  Total: <span style={{ color: entity.color }}>{totalMatches}</span>
                 </div>
               </div>
 
@@ -484,8 +440,8 @@ export function DashboardEntityTracker({ incidents }: Props) {
                   borderTop: `1px solid ${P.border}`,
                 }}
               >
-                <span style={{ fontSize: '7px', color: P.dim, fontFamily: P.font, letterSpacing: '0.06em' }}>
-                  24H TIMELINE
+                <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font, letterSpacing: '0.06em' }}>
+                  MATCHES
                 </span>
                 <div style={{ fontSize: '9px', fontWeight: 700, color: entity.color, fontFamily: P.font }}>{liveCount}</div>
               </div>

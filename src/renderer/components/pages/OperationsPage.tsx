@@ -26,7 +26,7 @@ export function OperationsPage({ incidents, onLocateIncident }: Props) {
     { id: 'hotspots', label: 'HOTSPOTS', icon: '🔥', featureKey: 'opsHotspots' },
     { id: 'reliability', label: 'SOURCE SCORE', icon: '✓', featureKey: 'opsReliability' },
     { id: 'alertrules', label: 'SMART ALERTS', icon: '⚡', featureKey: 'opsAlertRules' },
-    { id: 'predictions', label: 'PREDICTIONS', icon: '📈', featureKey: 'opsPredictions' },
+    { id: 'predictions', label: 'TREND HEURISTICS', icon: '📈', featureKey: 'opsPredictions' },
     { id: 'timemachine', label: 'TIME MACHINE', icon: '⏳', featureKey: 'opsTimeMachine' },
   ]
   const tabs = useMemo(() => allTabs.filter(t => features?.[t.featureKey] ?? true), [features])
@@ -60,9 +60,15 @@ export function OperationsPage({ incidents, onLocateIncident }: Props) {
 
 function QuerySection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250)
+    return () => clearTimeout(timer)
+  }, [query])
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = debouncedQuery.trim().toLowerCase()
     if (!q) return []
     const terms = q.split(/\s+/).filter(t => t.length > 1)
     if (terms.length === 0) return []
@@ -71,7 +77,7 @@ function QuerySection({ incidents, onLocateIncident }: { incidents: Incident[]; 
       const text = `${inc.title} ${inc.description || ''} ${inc.country || ''} ${inc.domain} ${inc.severity} ${inc.source}`.toLowerCase()
       return terms.every(term => text.includes(term))
     }).slice(0, 50)
-  }, [query, incidents])
+  }, [debouncedQuery, incidents])
 
   const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff' }[s] || P.dim)
 
@@ -96,7 +102,7 @@ function QuerySection({ incidents, onLocateIncident }: { incidents: Incident[]; 
               onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
               onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = P.card } : undefined}
             >
-              <span style={{ fontSize: '8px', padding: '2px 6px', background: sevColor(r.severity) + '20', color: sevColor(r.severity), borderRadius: '3px', fontWeight: 700, flexShrink: 0 }}>{r.severity}</span>
+              <span style={{ fontSize: '9px', padding: '2px 6px', background: sevColor(r.severity) + '20', color: sevColor(r.severity), borderRadius: '3px', fontWeight: 700, flexShrink: 0 }}>{r.severity}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '11px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>{r.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
                 <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>{r.domain} · {r.country || 'Global'} · {r.source} · {new Date(r.timestamp).toLocaleDateString()}</div>
@@ -150,7 +156,7 @@ function BookmarkSection({ incidents, onLocateIncident }: { incidents: Incident[
           >
             <div>
               <div style={{ fontSize: '11px', color: P.text }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>{pin.group} • {new Date(pin.pinnedAt).toLocaleDateString()}{pin.note ? ` • ${pin.note}` : ''}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{pin.group} • {new Date(pin.pinnedAt).toLocaleDateString()}{pin.note ? ` • ${pin.note}` : ''}</div>
             </div>
             <button onClick={(e) => { e.stopPropagation(); removePin(pin.id) }} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '12px' }}>✕</button>
           </div>
@@ -180,7 +186,7 @@ function ThreadSection({ incidents, onLocateIncident }: { incidents: Incident[];
           <div onClick={() => setExpanded(expanded === t.id ? null : t.id)} style={{ padding: '10px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '11px', color: P.text, fontWeight: 600 }}>⛓ {t.title}</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>{t.incidentIds.length} events • {new Date(t.updatedAt).toLocaleDateString()}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{t.incidentIds.length} events • {new Date(t.updatedAt).toLocaleDateString()}</div>
             </div>
             <button onClick={e => { e.stopPropagation(); deleteThread(t.id) }} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '10px' }}>✕</button>
           </div>
@@ -211,7 +217,7 @@ function ProfileSection() {
           <div key={p.id} onClick={() => setActive(p.id)} style={{ padding: '14px', background: p.id === activeId ? `${P.accent}08` : P.card, border: `1px solid ${p.id === activeId ? P.accent + '40' : P.border}`, borderRadius: '6px', cursor: 'pointer' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '14px' }}>{p.icon} <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{p.name}</span></span>
-              {p.id === activeId && <span style={{ fontSize: '8px', padding: '2px 6px', background: `${P.accent}20`, color: P.accent, borderRadius: '3px', fontWeight: 700 }}>ACTIVE</span>}
+              {p.id === activeId && <span style={{ fontSize: '9px', padding: '2px 6px', background: `${P.accent}20`, color: P.accent, borderRadius: '3px', fontWeight: 700 }}>ACTIVE</span>}
             </div>
             <div style={{ fontSize: '9px', color: P.dim }}>
               Domains: {p.rules.domains.join(', ')}<br/>
@@ -229,48 +235,173 @@ function ProfileSection() {
 
 
 function TimeMachineSection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const today = new Date().toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState(today)
+
   const dayIncidents = useMemo(() => {
     const start = new Date(selectedDate).getTime()
     const end = start + 86400000
     return incidents.filter(i => { const t = new Date(i.timestamp).getTime(); return t >= start && t < end })
   }, [incidents, selectedDate])
 
-  const domainCounts: Record<string, number> = {}
-  for (const i of dayIncidents) domainCounts[i.domain] = (domainCounts[i.domain] || 0) + 1
+  const domainCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const i of dayIncidents) counts[i.domain] = (counts[i.domain] || 0) + 1
+    return counts
+  }, [dayIncidents])
+
+  // Date helpers
+  const shiftDate = useCallback((days: number) => {
+    const d = new Date(selectedDate)
+    d.setDate(d.getDate() + days)
+    const iso = d.toISOString().split('T')[0]
+    if (iso <= today) setSelectedDate(iso)
+  }, [selectedDate, today])
+
+  const goToday = useCallback(() => setSelectedDate(today), [today])
+
+  // Oldest incident date (for min boundary)
+  const minDate = useMemo(() => {
+    if (!incidents.length) return today
+    const oldest = incidents.reduce((min, i) => { const t = i.timestamp; return t < min ? t : min }, incidents[0].timestamp)
+    return new Date(oldest).toISOString().split('T')[0]
+  }, [incidents, today])
+
+  const isToday = selectedDate === today
+  const selectedDateObj = new Date(selectedDate)
+  const formattedDate = selectedDateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+
+  // Quick presets
+  const presets: { label: string; days: number }[] = [
+    { label: 'Today', days: 0 },
+    { label: 'Yesterday', days: -1 },
+    { label: '3 Days Ago', days: -3 },
+    { label: '1 Week Ago', days: -7 },
+  ]
+
+  const btnBase: React.CSSProperties = {
+    padding: '4px 10px', fontSize: '9px', fontFamily: P.font, fontWeight: 600,
+    border: `1px solid ${P.border}`, borderRadius: '4px', cursor: 'pointer',
+    transition: 'all 0.15s', letterSpacing: '0.05em',
+  }
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: P.accent, fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>⏳ TIME MACHINE <InfoTip text="Browse historical incident data by selecting a specific date. Shows incident breakdown by domain for the selected day. Useful for retrospective analysis." size={11} /></div>
-      <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ padding: '8px 12px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontSize: '12px', fontFamily: P.font, marginBottom: '12px' }} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '12px' }}>
-        <div style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: P.accent }}>{dayIncidents.length}</div>
-          <div style={{ fontSize: '8px', color: P.dim }}>TOTAL</div>
-        </div>
-        {Object.entries(domainCounts).map(([d, c]) => (
-          <div key={d} style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: P.text }}>{c}</div>
-            <div style={{ fontSize: '8px', color: P.dim }}>{d}</div>
-          </div>
-        ))}
+      <div style={{ fontSize: '10px', color: P.accent, fontWeight: 700, marginBottom: '12px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        ⏳ TIME MACHINE <InfoTip text="Browse historical incident data by selecting a specific date. Use the arrow buttons or quick presets to navigate. Shows incident breakdown by domain for the selected day." size={11} />
       </div>
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-        {dayIncidents.slice(0, 30).map(i => {
-          const clickable = !!onLocateIncident && i.latitude != null && i.longitude != null
+
+      {/* Navigation bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+        {/* Prev day */}
+        <button onClick={() => shiftDate(-1)} title="Previous day"
+          style={{ ...btnBase, background: P.card, color: P.accent, width: '32px', padding: '6px 0', textAlign: 'center' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.08)'; e.currentTarget.style.borderColor = P.accent }}
+          onMouseLeave={e => { e.currentTarget.style.background = P.card; e.currentTarget.style.borderColor = P.border }}
+        >◀</button>
+
+        {/* Date picker */}
+        <div style={{ position: 'relative' }}>
+          <input type="date" value={selectedDate} min={minDate} max={today}
+            onChange={e => { if (e.target.value) setSelectedDate(e.target.value) }}
+            style={{
+              padding: '6px 10px', background: P.card, border: `1px solid ${P.border}`,
+              borderRadius: '4px', color: P.text, fontSize: '11px', fontFamily: P.font,
+              cursor: 'pointer', width: '150px',
+            }}
+          />
+        </div>
+
+        {/* Next day */}
+        <button onClick={() => shiftDate(1)} disabled={isToday} title="Next day"
+          style={{ ...btnBase, background: P.card, color: isToday ? P.dim : P.accent, width: '32px', padding: '6px 0', textAlign: 'center', opacity: isToday ? 0.4 : 1, cursor: isToday ? 'not-allowed' : 'pointer' }}
+          onMouseEnter={e => { if (!isToday) { e.currentTarget.style.background = 'rgba(0,212,255,0.08)'; e.currentTarget.style.borderColor = P.accent } }}
+          onMouseLeave={e => { e.currentTarget.style.background = P.card; e.currentTarget.style.borderColor = P.border }}
+        >▶</button>
+
+        {/* Today button */}
+        <button onClick={goToday} disabled={isToday}
+          style={{ ...btnBase, background: isToday ? 'rgba(0,212,255,0.1)' : P.card, color: isToday ? P.accent : P.dim, opacity: isToday ? 0.5 : 1, cursor: isToday ? 'default' : 'pointer' }}
+        >TODAY</button>
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Incident count badge */}
+        <div style={{ fontSize: '10px', color: dayIncidents.length > 0 ? P.accent : P.dim, fontFamily: P.font, fontWeight: 600 }}>
+          {dayIncidents.length} incident{dayIncidents.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      {/* Quick presets */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {presets.map(p => {
+          const target = new Date()
+          target.setDate(target.getDate() + p.days)
+          const targetStr = target.toISOString().split('T')[0]
+          const active = selectedDate === targetStr
           return (
-            <div key={i.id}
-              onClick={clickable ? () => onLocateIncident(i) : undefined}
-              style={{ padding: '6px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', marginBottom: '3px', cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s' }}
-              onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
-              onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = P.card } : undefined}
-            >
-              <div style={{ fontSize: '10px', color: P.text }}>{i.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>{i.domain} • {i.severity} • {new Date(i.timestamp).toLocaleTimeString()}</div>
-            </div>
+            <button key={p.label} onClick={() => setSelectedDate(targetStr)}
+              style={{
+                ...btnBase,
+                background: active ? 'rgba(0,212,255,0.12)' : P.card,
+                color: active ? P.accent : P.dim,
+                borderColor: active ? P.accent + '50' : P.border,
+              }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(0,212,255,0.05)' } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = P.card } }}
+            >{p.label}</button>
           )
         })}
       </div>
+
+      {/* Date display */}
+      <div style={{ fontSize: '11px', color: P.text, fontWeight: 600, marginBottom: '12px', fontFamily: P.font }}>
+        📅 {formattedDate}
+      </div>
+
+      {/* Domain stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '6px', marginBottom: '12px' }}>
+        <div style={{ padding: '10px', background: `${P.card}`, border: `1px solid ${P.accent}30`, borderRadius: '4px', textAlign: 'center' }}>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: P.accent }}>{dayIncidents.length}</div>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.05em' }}>TOTAL</div>
+        </div>
+        {Object.entries(domainCounts).sort((a, b) => b[1] - a[1]).map(([d, c]) => (
+          <div key={d} style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: P.text }}>{c}</div>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Incident list */}
+      {dayIncidents.length === 0 ? (
+        <div style={{ padding: '30px', textAlign: 'center', color: P.dim, fontSize: '10px', fontFamily: P.font }}>
+          No incidents recorded for this date
+        </div>
+      ) : (
+        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          {dayIncidents.slice(0, 50).map(i => {
+            const clickable = !!onLocateIncident && i.latitude != null && i.longitude != null
+            return (
+              <div key={i.id}
+                onClick={clickable ? () => onLocateIncident(i) : undefined}
+                style={{ padding: '6px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '4px', marginBottom: '3px', cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s' }}
+                onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = P.card } : undefined}
+              >
+                <div style={{ fontSize: '10px', color: P.text }}>{i.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
+                <div style={{ fontSize: '9px', color: P.dim }}>{i.domain} • {i.severity} • {new Date(i.timestamp).toLocaleTimeString()}</div>
+              </div>
+            )
+          })}
+          {dayIncidents.length > 50 && (
+            <div style={{ padding: '8px', textAlign: 'center', color: P.dim, fontSize: '9px' }}>
+              +{dayIncidents.length - 50} more incidents
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -328,7 +459,7 @@ function AnnotationSection() {
             }}>
             <span style={{ fontSize: '20px' }}>{t.icon}</span>
             <span style={{ fontSize: '9px', fontWeight: 700, fontFamily: P.font, letterSpacing: '0.06em' }}>{t.label}</span>
-            <span style={{ fontSize: '7px', color: P.dim }}>{t.desc}</span>
+            <span style={{ fontSize: '9px', color: P.dim }}>{t.desc}</span>
           </button>
         ))}
       </div>
@@ -345,20 +476,20 @@ function AnnotationSection() {
 
       {/* Manual Add */}
       <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
-        <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px', fontWeight: 700 }}>ADD BY COORDINATES</div>
+        <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px', fontWeight: 700 }}>ADD BY COORDINATES</div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'end' }}>
           <div>
-            <div style={{ fontSize: '8px', color: P.dim, marginBottom: '2px' }}>TITLE</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '2px' }}>TITLE</div>
             <input value={manualTitle} onChange={e => setManualTitle(e.target.value)} placeholder="Label..."
               style={{ width: '120px', padding: '6px 8px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontSize: '10px', fontFamily: P.font, outline: 'none' }} />
           </div>
           <div>
-            <div style={{ fontSize: '8px', color: P.dim, marginBottom: '2px' }}>LAT</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '2px' }}>LAT</div>
             <input value={manualLat} onChange={e => setManualLat(e.target.value)} placeholder="41.01"
               style={{ width: '70px', padding: '6px 8px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontSize: '10px', fontFamily: P.font, outline: 'none' }} />
           </div>
           <div>
-            <div style={{ fontSize: '8px', color: P.dim, marginBottom: '2px' }}>LNG</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '2px' }}>LNG</div>
             <input value={manualLng} onChange={e => setManualLng(e.target.value)} placeholder="28.97"
               style={{ width: '70px', padding: '6px 8px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontSize: '10px', fontFamily: P.font, outline: 'none' }} />
           </div>
@@ -371,12 +502,12 @@ function AnnotationSection() {
 
       {/* Annotations List */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em', fontWeight: 700 }}>
+        <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em', fontWeight: 700 }}>
           ANNOTATIONS ({annotations.length})
         </div>
         {annotations.length > 0 && (
           <button onClick={clearAll} style={{
-            padding: '4px 10px', fontSize: '8px', fontWeight: 700, fontFamily: P.font,
+            padding: '4px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
             background: '#ff3b5c10', border: '1px solid #ff3b5c30', borderRadius: '4px',
             color: '#ff3b5c', cursor: 'pointer',
           }}>CLEAR ALL</button>
@@ -401,7 +532,7 @@ function AnnotationSection() {
               <div style={{ fontSize: '11px', color: P.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {ann.title}
               </div>
-              <div style={{ fontSize: '8px', color: P.dim, marginTop: '1px' }}>
+              <div style={{ fontSize: '9px', color: P.dim, marginTop: '1px' }}>
                 {ann.type.toUpperCase()} • {ann.latitude.toFixed(3)}, {ann.longitude.toFixed(3)}
                 {ann.description && ` • ${ann.description}`}
               </div>
@@ -440,13 +571,14 @@ function HotspotsSection({ incidents }: { incidents: Incident[] }) {
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>GEOSPATIAL HOTSPOTS — Last 7 Days <InfoTip text="Geographic clusters of incidents detected in the last 7 days. Identifies areas with abnormally high event density. Click to locate the hotspot on the globe." size={11} color="#ff6b35" /></div>
+      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>GEOSPATIAL HOTSPOTS — Last 7 Days <InfoTip text="Geographic clusters of incidents detected in the last 7 days. Shows regions with the highest event density and week-over-week change percentage." size={11} color="#ff6b35" /></div>
       <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        {hotspots.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: P.dim, fontSize: '11px' }}>No hotspot data available for the last 7 days</div>}
         {hotspots.map(h => (
           <div key={h.region} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: P.text }}>{h.region}</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>{h.count} incidents • {h.topDomains.map(d => `${d.domain}(${d.count})`).join(', ')}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{h.count} incidents • {h.topDomains.map(d => `${d.domain}(${d.count})`).join(', ')}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '14px', fontWeight: 800, color: P.accent }}>{h.count}</div>
@@ -484,14 +616,14 @@ function ReliabilitySection({ incidents }: { incidents: Incident[] }) {
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#00e676', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>SOURCE RELIABILITY SCORING — NATO Scale <InfoTip text="Evaluates intelligence source reliability using the NATO Admiralty System (A-F for reliability, 1-6 for information credibility). Higher scores = more trustworthy sources." size={11} color="#00e676" /></div>
+      <div style={{ fontSize: '10px', color: '#00e676', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>SOURCE ACTIVITY SCORING <InfoTip text="Rates feed sources by volume, domain diversity, and severity distribution. Higher grade = more active and diverse source. This is NOT an intelligence reliability rating — it measures source activity, not accuracy." size={11} color="#00e676" /></div>
       <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
         {sourceStats.map(s => (
           <div key={s.source} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px' }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${gradeColor(s.grade)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: gradeColor(s.grade), flexShrink: 0 }}>{s.grade}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: P.text }}>{s.source}</div>
-              <div style={{ fontSize: '8px', color: P.dim }}>{s.count} reports • {s.domains.join(', ')}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{s.count} reports • {s.domains.join(', ')}</div>
             </div>
             <div style={{ fontSize: '10px', color: P.dim, fontWeight: 600 }}>{s.score}/5</div>
           </div>
@@ -515,23 +647,23 @@ function AlertRulesSection() {
   }
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#f5c542', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>SMART ALERTING RULES ENGINE <InfoTip text="Create custom alert rules based on domains, severities, keywords, and regions. When a new incident matches your rule conditions, you'll receive a notification." size={11} color="#f5c542" /></div>
+      <div style={{ fontSize: '10px', color: '#f5c542', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>ALERT RULES (BOOKMARKS) <InfoTip text="Save alert rule templates for future reference. Note: Automated rule evaluation is not yet implemented — rules are stored as bookmarks for manual tracking." size={11} color="#f5c542" /></div>
       <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
-        <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', marginBottom: '6px', fontWeight: 700 }}>CREATE RULE</div>
+        <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginBottom: '6px', fontWeight: 700 }}>CREATE RULE</div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Rule name..." style={{ flex: '1 1 120px', padding: '6px 8px', fontSize: '10px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontFamily: P.font, outline: 'none' }} />
           <input value={newCondition} onChange={e => setNewCondition(e.target.value)} placeholder="e.g. country:Turkey AND severity:CRITICAL AND count>5" style={{ flex: '2 1 200px', padding: '6px 8px', fontSize: '10px', background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontFamily: P.font, outline: 'none' }} />
           <button onClick={addRule} style={{ padding: '6px 14px', background: `${P.accent}15`, border: `1px solid ${P.accent}40`, borderRadius: '4px', color: P.accent, fontSize: '9px', fontWeight: 700, cursor: 'pointer', fontFamily: P.font }}>ADD</button>
         </div>
-        <div style={{ fontSize: '8px', color: P.dim, marginTop: '6px' }}>Syntax: country:XX, domain:CYBER, severity:CRITICAL, keyword:ransomware, count&gt;N</div>
+        <div style={{ fontSize: '9px', color: '#f5c54280', marginTop: '6px' }}>⚠ Rules are saved as reference notes — automated matching is not yet active.</div>
       </div>
       <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
         {rules.map(r => (
           <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px' }}>
-            <button onClick={() => saveRules(rules.map(x => x.id === r.id ? { ...x, active: !x.active } : x))} style={{ width: '14px', height: '14px', borderRadius: '3px', border: 'none', background: r.active ? '#00e67625' : '#0d1220', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: r.active ? '#00e676' : P.dim }}>{r.active ? '\u2713' : ''}</button>
+            <button onClick={() => saveRules(rules.map(x => x.id === r.id ? { ...x, active: !x.active } : x))} style={{ width: '14px', height: '14px', borderRadius: '3px', border: 'none', background: r.active ? '#00e67625' : '#0d1220', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: r.active ? '#00e676' : P.dim }}>{r.active ? '\u2713' : ''}</button>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: r.active ? P.text : P.dim }}>{r.name}</div>
-              <div style={{ fontSize: '8px', color: P.dim, fontFamily: P.font }}>{r.condition}</div>
+              <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>{r.condition}</div>
             </div>
             <button onClick={() => saveRules(rules.filter(x => x.id !== r.id))} style={{ background: 'none', border: 'none', color: '#ff3b5c', cursor: 'pointer', fontSize: '12px' }}>{'\u2715'}</button>
           </div>
@@ -562,7 +694,7 @@ function PredictionsSection({ incidents }: { incidents: Incident[] }) {
       if (data.critical > 3) factors.push('High critical incident rate')
       if (data.trend[0] > data.trend[1] * 2) factors.push('Rapidly accelerating')
       if (data.count > 20) factors.push('High volume')
-      return { country, riskScore, trend: recentAccel, factors, count: data.count, critical: data.critical, confidence: Math.min(95, 40 + data.count * 2) }
+      return { country, riskScore, trend: recentAccel, factors, count: data.count, critical: data.critical }
     }).sort((a, b) => b.riskScore - a.riskScore).slice(0, 15)
   }, [incidents])
   const trendColor = (t: string) => t === 'escalating' ? '#ff3b5c' : t === 'de-escalating' ? '#00e676' : '#f5c542'
@@ -570,7 +702,7 @@ function PredictionsSection({ incidents }: { incidents: Incident[] }) {
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>PREDICTIVE CONFLICT ESCALATION MODEL <InfoTip text="Statistical model that estimates conflict escalation probability based on incident frequency, severity trends, domain mix, and historical patterns. Risk levels: Low (<30%), Medium (30-60%), High (60-85%), Critical (>85%)." size={11} color="#ff6b35" /></div>
+      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>INCIDENT TREND ANALYSIS <InfoTip text="Ranks countries by incident activity. Risk score is based on incident volume, severity ratio (Critical/High), and recent acceleration. This is a volume-based heuristic, not a predictive model." size={11} color="#ff6b35" /></div>
       <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
         {predictions.map(p => (
           <div key={p.country} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderLeft: `3px solid ${p.riskScore > 70 ? '#ff3b5c' : p.riskScore > 40 ? '#ff6b35' : '#00d4ff'}`, borderRadius: '6px', marginBottom: '4px' }}>
@@ -579,12 +711,12 @@ function PredictionsSection({ incidents }: { incidents: Incident[] }) {
                 <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{p.country}</span>
                 <span style={{ fontSize: '9px', fontWeight: 700, color: trendColor(p.trend) }}>{trendIcon(p.trend)} {p.trend.toUpperCase()}</span>
               </div>
-              <div style={{ fontSize: '8px', color: P.dim, marginTop: '2px' }}>{p.count} incidents • {p.critical} critical • Confidence: {p.confidence}%</div>
-              {p.factors.length > 0 && <div style={{ fontSize: '8px', color: '#ff6b35', marginTop: '3px' }}>{p.factors.join(' \u2022 ')}</div>}
+              <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>{p.count} incidents • {p.critical} critical/high</div>
+              {p.factors.length > 0 && <div style={{ fontSize: '9px', color: '#ff6b35', marginTop: '3px' }}>{p.factors.join(' \u2022 ')}</div>}
             </div>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
               <div style={{ fontSize: '18px', fontWeight: 800, color: p.riskScore > 70 ? '#ff3b5c' : p.riskScore > 40 ? '#ff6b35' : '#00d4ff' }}>{p.riskScore}</div>
-              <div style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.1em' }}>RISK</div>
+              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>RISK</div>
             </div>
           </div>
         ))}

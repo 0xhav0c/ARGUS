@@ -1,3 +1,4 @@
+import { safeStorage } from 'electron'
 import { CacheManager } from './cache-manager'
 
 export interface ApiKeyDefinition {
@@ -42,9 +43,12 @@ const API_KEY_DEFINITIONS: ApiKeyDefinition[] = [
   { id: 'custom_ai_key', label: 'Custom AI Key', category: 'ai', description: 'API key for custom AI endpoint', docsUrl: 'https://platform.openai.com/docs/api-reference', isPassword: true },
   { id: 'openai', label: 'OpenAI API Key', category: 'ai', description: 'GPT-based threat analysis & summarization', docsUrl: 'https://platform.openai.com/api-keys' },
   { id: 'ollama_url', label: 'Ollama URL', category: 'ai', description: 'Local LLM endpoint', docsUrl: 'https://ollama.com/', placeholder: 'http://localhost:11434' },
+  { id: 'acled', label: 'ACLED API Key', category: 'intelligence', description: 'Armed Conflict Location & Event Data — battles, explosions, strategic events', docsUrl: 'https://apidocs.acleddata.com/' },
+  { id: 'acled_email', label: 'ACLED Email', category: 'intelligence', description: 'Email registered with your ACLED account', docsUrl: 'https://apidocs.acleddata.com/' },
 ]
 
 const DB_PREFIX = 'api_key_'
+const VALID_KEY_IDS = new Set(API_KEY_DEFINITIONS.map(d => d.id))
 
 export class ApiKeyManager {
   private cache: CacheManager
@@ -53,16 +57,42 @@ export class ApiKeyManager {
     this.cache = new CacheManager()
   }
 
+  private encrypt(value: string): string {
+    if (!value) return ''
+    try {
+      if (safeStorage.isEncryptionAvailable()) {
+        return safeStorage.encryptString(value).toString('base64')
+      }
+    } catch {}
+    return value // fallback to plaintext if encryption unavailable
+  }
+
+  private decrypt(stored: string): string {
+    if (!stored) return ''
+    try {
+      if (safeStorage.isEncryptionAvailable()) {
+        return safeStorage.decryptString(Buffer.from(stored, 'base64'))
+      }
+    } catch {
+      // Value may be plaintext from before encryption was enabled
+    }
+    return stored
+  }
+
   get(keyId: string): string | undefined {
-    return this.cache.getSetting(`${DB_PREFIX}${keyId}`)
+    const raw = this.cache.getSetting(`${DB_PREFIX}${keyId}`)
+    if (!raw) return undefined
+    return this.decrypt(raw)
   }
 
   set(keyId: string, value: string): void {
-    this.cache.setSetting(`${DB_PREFIX}${keyId}`, value)
+    if (!VALID_KEY_IDS.has(keyId)) return // only allow known key IDs
+    this.cache.setSetting(`${DB_PREFIX}${keyId}`, this.encrypt(value))
   }
 
   delete(keyId: string): void {
-    this.cache.setSetting(`${DB_PREFIX}${keyId}`, '')
+    if (!VALID_KEY_IDS.has(keyId)) return
+    this.cache.deleteSetting(`${DB_PREFIX}${keyId}`)
   }
 
   private mask(value: string): string {

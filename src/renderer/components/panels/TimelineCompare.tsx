@@ -4,7 +4,7 @@ import { InfoTip } from '../ui/InfoTip'
 
 const P = { bg: '#0a0e17', card: '#0d1220', border: '#141c2e', accent: '#00d4ff', dim: '#4a5568', text: '#c8d6e5', font: "'JetBrains Mono', monospace" }
 
-const DOMAIN_COLORS: Record<string, string> = { CONFLICT: '#ff3b5c', CYBER: '#00d4ff', INTEL: '#a78bfa', FINANCE: '#f5c542' }
+const DOMAIN_COLORS: Record<string, string> = { CONFLICT: '#ff3b5c', CYBER: '#00d4ff', INTEL: '#a78bfa', FINANCE: '#f5c542', MILITARY: '#7c3aed', ENVIRONMENT: '#10b981' }
 
 interface Props {
   incidents: Incident[]
@@ -12,15 +12,15 @@ interface Props {
 
 type Period = '24h' | '7d' | '30d'
 
+const PERIOD_MS: Record<Period, number> = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 }
+
 export function TimelineCompare({ incidents }: Props) {
   const [period, setPeriod] = useState<Period>('7d')
   const [selectedRegion, setSelectedRegion] = useState<string>('all')
 
-  const periodMs: Record<Period, number> = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 }
-
   const analysis = useMemo(() => {
     const now = Date.now()
-    const ms = periodMs[period]
+    const ms = PERIOD_MS[period]
     const currentStart = now - ms
     const prevStart = now - 2 * ms
 
@@ -34,13 +34,13 @@ export function TimelineCompare({ incidents }: Props) {
     })
 
     const domainBreakdown = (list: Incident[]) => {
-      const counts: Record<string, number> = { CONFLICT: 0, CYBER: 0, INTEL: 0, FINANCE: 0 }
+      const counts: Record<string, number> = { CONFLICT: 0, CYBER: 0, INTEL: 0, FINANCE: 0, MILITARY: 0, ENVIRONMENT: 0 }
       for (const i of list) counts[i.domain] = (counts[i.domain] || 0) + 1
       return counts
     }
 
     const sevBreakdown = (list: Incident[]) => {
-      const counts: Record<string, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 }
+      const counts: Record<string, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0 }
       for (const i of list) counts[i.severity] = (counts[i.severity] || 0) + 1
       return counts
     }
@@ -75,6 +75,15 @@ export function TimelineCompare({ incidents }: Props) {
   }
 
   const changeColor = (cur: number, prev: number) => cur > prev ? '#ff3b5c' : cur < prev ? '#00e676' : P.dim
+
+  if (incidents.length === 0) {
+    return (
+      <div style={{ fontFamily: P.font, padding: '40px 20px', textAlign: 'center' }}>
+        <div style={{ fontSize: '20px', marginBottom: '12px', opacity: 0.3 }}>◉</div>
+        <div style={{ fontSize: '11px', color: P.dim }}>No incidents available for timeline comparison</div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: P.font, padding: '16px' }}>
@@ -114,13 +123,13 @@ export function TimelineCompare({ incidents }: Props) {
         </div>
       </div>
 
-      <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>DOMAIN COMPARISON <InfoTip text="Incident count per domain (Conflict, Cyber, Intel, Finance) for the current vs previous period. Green = increase, Red = decrease." size={11} /></div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '16px' }}>
+      <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>DOMAIN COMPARISON <InfoTip text="Incident count per domain (Conflict, Cyber, Intel, Finance) for the current vs previous period. Red = increase (more incidents), Green = decrease (fewer incidents)." size={11} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '6px', marginBottom: '16px' }}>
         {Object.entries(analysis.curDomains).map(([domain, count]) => {
           const prev = analysis.prevDomains[domain] || 0
           return (
             <div key={domain} style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '8px', color: DOMAIN_COLORS[domain] || P.dim, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '4px' }}>{domain}</div>
+              <div style={{ fontSize: '9px', color: DOMAIN_COLORS[domain] || P.dim, fontWeight: 700, letterSpacing: '0.08em', marginBottom: '4px' }}>{domain}</div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: P.text }}>{count}</div>
               <div style={{ fontSize: '9px', color: changeColor(count, prev) }}>{pctChange(count, prev)}</div>
             </div>
@@ -129,13 +138,13 @@ export function TimelineCompare({ incidents }: Props) {
       </div>
 
       <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>SEVERITY COMPARISON <InfoTip text="Severity distribution comparison between periods. Shows how the proportion of Critical, High, Medium, and Low incidents has shifted." size={11} /></div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '6px' }}>
         {Object.entries(analysis.curSev).map(([sev, count]) => {
           const prev = analysis.prevSev[sev] || 0
           const colors: Record<string, string> = { CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff' }
           return (
             <div key={sev} style={{ padding: '10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '8px', color: colors[sev] || P.dim, fontWeight: 700, marginBottom: '4px' }}>{sev}</div>
+              <div style={{ fontSize: '9px', color: colors[sev] || P.dim, fontWeight: 700, marginBottom: '4px' }}>{sev}</div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: P.text }}>{count}</div>
               <div style={{ fontSize: '9px', color: changeColor(count, prev) }}>{pctChange(count, prev)}</div>
             </div>

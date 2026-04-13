@@ -1,4 +1,4 @@
-export type IncidentDomain = 'CONFLICT' | 'CYBER' | 'INTEL' | 'FINANCE'
+export type IncidentDomain = 'CONFLICT' | 'CYBER' | 'INTEL' | 'FINANCE' | 'MILITARY' | 'ENVIRONMENT'
 
 export type IncidentSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO'
 

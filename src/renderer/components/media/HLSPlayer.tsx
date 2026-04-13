@@ -45,6 +45,7 @@ export const HLSPlayer = memo(function HLSPlayer({
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Attach / detach HLS
   useEffect(() => {
@@ -55,7 +56,11 @@ export const HLSPlayer = memo(function HLSPlayer({
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src
       video.play().catch(() => {})
-      return
+      return () => {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+      }
     }
 
     if (!Hls.isSupported()) return
@@ -94,7 +99,7 @@ export const HLSPlayer = memo(function HLSPlayer({
       if (data.fatal) {
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           console.warn(`[HLS] ${channelName}: network error, retrying...`)
-          setTimeout(() => hls.startLoad(), 3000)
+          retryTimerRef.current = setTimeout(() => hls.startLoad(), 3000)
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           console.warn(`[HLS] ${channelName}: media error, recovering...`)
           hls.recoverMediaError()
@@ -106,6 +111,7 @@ export const HLSPlayer = memo(function HLSPlayer({
     })
 
     return () => {
+      if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null }
       hls.destroy()
       hlsRef.current = null
     }
@@ -173,7 +179,7 @@ export const HLSPlayer = memo(function HLSPlayer({
         <span style={{ fontSize: '9px', color: '#ff6b7a', fontFamily: P.font, textAlign: 'center', padding: '0 12px' }}>
           {error || 'No live stream available'}
         </span>
-        <span style={{ fontSize: '7px', color: P.dim, fontFamily: P.font }}>
+        <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
           {channelName}
         </span>
       </div>

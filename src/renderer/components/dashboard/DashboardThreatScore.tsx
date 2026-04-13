@@ -219,7 +219,7 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
         <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>
           COUNTRY THREAT SCORE
         </span>
-        <InfoTip text="Composite threat score per country weighted by: incident count, severity (Critical=5, High=3, Medium=2, Low=1), domain diversity bonus, and recency decay. Higher scores indicate more active and severe threat environments." />
+        <InfoTip text="Composite threat score per country weighted by: incident count, severity (Critical=5, High=4, Medium=3, Low=2, Info=1), domain diversity bonus, and recency decay. Higher scores indicate more active and severe threat environments." />
         <span style={{ fontSize: '9px', color: P.dim }}>weighted: count · severity · domains · recency</span>
       </div>
 
@@ -233,19 +233,19 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
         }}
       >
         <div>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
             COUNTRIES AFFECTED
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: P.accent }}>{summary.countriesAffected}</div>
         </div>
         <div>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
             AVG THREAT (TOP 15)
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#f5c542' }}>{summary.avgScore}</div>
         </div>
         <div>
-          <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
             PEAK RISK
           </div>
           {summary.highest ? (
@@ -262,7 +262,7 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
         </div>
       </div>
 
-      <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         TOP 15 BY THREAT SCORE <InfoTip text="Countries ranked by threat score. Click any row to expand and see domain breakdown, severity distribution, and trend indicators (↑ rising, ↓ declining)." size={11} />
       </div>
 
@@ -379,7 +379,7 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                     />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-                    <span style={{ fontSize: '8px', color: P.dim, fontFamily: P.font }}>threat score</span>
+                    <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>threat score</span>
                     <span style={{ fontSize: '9px', fontWeight: 700, color: threatBarColor(row.score), fontFamily: P.font }}>
                       {row.score}
                     </span>
@@ -396,7 +396,7 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                     borderLeft: `3px solid ${P.accent}`,
                   }}
                 >
-                  <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px' }}>
                     LAST 5 INCIDENTS
                   </div>
                   {[...row.incidents]
@@ -420,7 +420,7 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                           onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' } : undefined}
                         >
                           <div style={{ color: DOMAIN_COLOR[inc.domain], marginBottom: '2px' }}>{inc.domain}</div>
-                          <div style={{ color: P.text }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '8px' }}>◎</span>}</div>
+                          <div style={{ color: P.text }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
                           <div style={{ color: P.dim, marginTop: '2px' }}>
                             {new Date(inc.timestamp).toISOString().replace('T', ' ').slice(0, 19)} · {inc.severity}
                           </div>
@@ -434,8 +434,13 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
         })}
       </div>
 
-      <div style={{ fontSize: '8px', color: P.dim, marginTop: '12px', fontFamily: P.font }}>
+      <div style={{ fontSize: '9px', color: P.dim, marginTop: '12px', fontFamily: P.font }}>
         Trend: last 12h vs previous 12h incident count (↑ more · ↓ fewer · → same)
+      </div>
+
+      <div style={{ padding: '8px 16px', fontSize: '9px', color: P.dim, borderTop: `1px solid ${P.border}`, display: 'flex', justifyContent: 'space-between' }}>
+        <span>Based on {incidents.length} incidents from {new Set(incidents.map(i => i.source)).size} sources</span>
+        <span>Scores are heuristic estimates, not validated intelligence assessments</span>
       </div>
     </section>
   )

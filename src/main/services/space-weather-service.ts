@@ -28,13 +28,11 @@ export class SpaceWeatherService {
     if (neos.status === 'fulfilled') results.push(...neos.value)
     if (fireballs.status === 'fulfilled') results.push(...fireballs.value)
 
-    if (results.length === 0) {
-      results.push(...FALLBACK)
-    }
-
+    // No fake fallback — return empty if all APIs fail
     results.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
     cache = results
     lastFetch = Date.now()
+    console.log(`[SpaceWeather] ${cache.length} events loaded`)
     return cache
   }
 
@@ -148,10 +146,6 @@ export class SpaceWeatherService {
     } catch { return [] }
   }
 }
-
-const FALLBACK: SpaceWeatherEvent[] = [
-  { id: 'sw-1', type: 'solar_flare', title: 'M-class Solar Flare', severity: 'MODERATE', startTime: new Date().toISOString(), description: 'M2.5 class solar flare from AR3664 active region', source: 'NOAA SWPC', kpIndex: 5, affectedSystems: ['HF Radio', 'GPS'] },
-  { id: 'sw-2', type: 'geomagnetic_storm', title: 'G2 Geomagnetic Storm Watch', severity: 'MODERATE', startTime: new Date().toISOString(), description: 'G2 geomagnetic storm watch due to CME arrival expected', source: 'NOAA SWPC', kpIndex: 6, affectedSystems: ['Satellite Operations', 'Power Grids'] },
-  { id: 'sw-3', type: 'asteroid', title: '⚠ (2024 PT5)', severity: 'SEVERE', startTime: new Date().toISOString(), description: 'Near-Earth hazardous asteroid approaching Earth. Estimated diameter: 45–100 m. Relative velocity: 28,400 km/h. Miss distance: 3.2M km.', source: 'NASA NeoWs', isHazardous: true, estimatedDiameter: '45–100 m', velocity: '28,400 km/h', missDistance: '3.2M km', closestApproachDate: new Date().toISOString().split('T')[0] },
-  { id: 'sw-4', type: 'fireball', title: 'Fireball Event (35.2°, -120.5°)', severity: 'MINOR', startTime: new Date(Date.now() - 43200000).toISOString(), description: 'Atmospheric fireball detected. Total radiated energy: 0.3 × 10¹⁰ J. Entry velocity: 18.2 km/s.', source: 'NASA CNEOS', velocity: '18.2 km/s' },
-]
+// Removed: FALLBACK array — 4 hardcoded fake space weather events (fake solar flare,
+// fake geomagnetic storm, fake hazardous asteroid "(2024 PT5)", fake fireball)
+// that were silently injected with new Date().toISOString() when all NASA APIs failed.

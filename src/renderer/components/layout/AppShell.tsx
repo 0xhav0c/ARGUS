@@ -35,6 +35,7 @@ import type { Incident, CountryProfile, VIPTweet, GlobeVisualMode, FeatureFlags,
 import { InfoTip } from '@/components/ui/InfoTip'
 import { VoiceControl } from '@/components/panels/VoiceControl'
 import { MarkdownText } from '@/components/ui/MarkdownText'
+import { AnomalyRiskPanel } from '@/components/panels/AnomalyRiskPanel'
 
 const DashboardTimeAnalysis = lazy(() => import('@/components/dashboard/DashboardTimeAnalysis').then(m => ({ default: m.DashboardTimeAnalysis })))
 const DashboardEntityTracker = lazy(() => import('@/components/dashboard/DashboardEntityTracker').then(m => ({ default: m.DashboardEntityTracker })))
@@ -288,7 +289,7 @@ const InlineTimeline = React.memo(function InlineTimeline({ incidents }: { incid
         <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
           {PRESETS.map(pr => (
             <button key={pr.id} onClick={() => handlePreset(pr.id)} style={{
-              padding: '2px 6px', fontSize: '8px', fontFamily: P.font,
+              padding: '2px 6px', fontSize: '9px', fontFamily: P.font,
               background: activePreset === pr.id ? P.accent + '20' : 'transparent',
               border: `1px solid ${activePreset === pr.id ? P.accent + '60' : P.border}`,
               borderRadius: '3px', cursor: 'pointer',
@@ -297,7 +298,7 @@ const InlineTimeline = React.memo(function InlineTimeline({ incidents }: { incid
           ))}
         </div>
 
-        <span style={{ fontSize: '8px', color: P.dim, marginLeft: 'auto', flexShrink: 0 }}>
+        <span style={{ fontSize: '9px', color: P.dim, marginLeft: 'auto', flexShrink: 0 }}>
           <span style={{ color: P.accent }}>{incidents.length}</span> events
         </span>
       </div>
@@ -329,8 +330,8 @@ const InlineTimeline = React.memo(function InlineTimeline({ incidents }: { incid
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-        <span style={{ fontSize: '7px', color: P.dim }}>{rangeStart.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-        <span style={{ fontSize: '7px', color: P.dim }}>{rangeEnd.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        <span style={{ fontSize: '9px', color: P.dim }}>{rangeStart.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        <span style={{ fontSize: '9px', color: P.dim }}>{rangeEnd.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
       </div>
     </div>
   )
@@ -366,18 +367,16 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
     }> = {}
 
     for (const inc of incidents) {
-      const lower = `${inc.title} ${inc.description}`.toLowerCase()
-      let country: string | null = null
-      for (const [name] of Object.entries(RISK_COUNTRY_MAP)) {
-        if (lower.includes(name)) { country = name; break }
-      }
-      if (!country) continue
+      // Use the incident's country field (from feed classification) — much more reliable than keyword matching
+      const rawCountry = inc.country?.trim()
+      if (!rawCountry || rawCountry.length < 2) continue
+      const country = rawCountry.toLowerCase()
 
       if (!countryData[country]) countryData[country] = { conflict: 0, cyber: 0, intel: 0, finance: 0, total: 0, severityWeight: 0 }
       const d = countryData[country]
       d.total++
       d[inc.domain.toLowerCase() as 'conflict' | 'cyber' | 'intel' | 'finance']++
-      const w: Record<string, number> = { CRITICAL: 5, HIGH: 3, MEDIUM: 2, LOW: 1, INFO: 0.5 }
+      const w: Record<string, number> = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }
       d.severityWeight += w[inc.severity] ?? 1
     }
 
@@ -387,14 +386,14 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
         const maxDomain = Math.max(data.conflict, data.cyber, data.intel, data.finance, 1)
         return {
           country: country.charAt(0).toUpperCase() + country.slice(1),
-          countryCode: RISK_COUNTRY_MAP[country] ?? '??',
+          countryCode: RISK_COUNTRY_MAP[country] ?? country.slice(0, 2).toUpperCase(),
           overall,
           conflict: Math.round((data.conflict / maxDomain) * 100),
           cyber: Math.round((data.cyber / maxDomain) * 100),
           intel: Math.round((data.intel / maxDomain) * 100),
           finance: Math.round((data.finance / maxDomain) * 100),
           incidentCount: data.total,
-          trend: data.severityWeight > 15 ? 'rising' : data.severityWeight > 5 ? 'stable' : 'falling',
+          trend: data.severityWeight > 15 ? 'high' : data.severityWeight > 5 ? 'medium' : 'low',
         }
       })
       .sort((a, b) => b.overall - a.overall)
@@ -415,7 +414,7 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
         background: `linear-gradient(135deg, ${getRiskColor(topRisk.overall)}10, transparent)`,
         border: `1px solid ${getRiskColor(topRisk.overall)}30`,
       }}>
-        <div style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>HIGHEST RISK <InfoTip text="Country with the highest composite risk score based on incident frequency, severity distribution, and domain diversity." size={11} /></div>
+        <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>HIGHEST RISK <InfoTip text="Country with the highest composite risk score based on incident frequency, severity distribution, and domain diversity." size={11} /></div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <span style={{ fontSize: '14px', fontWeight: 800, color: '#e2e8f0' }}>{topRisk.country}</span>
@@ -423,13 +422,13 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '24px', fontWeight: 800, color: getRiskColor(topRisk.overall), lineHeight: 1 }}>{topRisk.overall}</div>
-            <div style={{ fontSize: '7px', color: P.dim }}>{topRisk.incidentCount} incidents</div>
+            <div style={{ fontSize: '9px', color: P.dim }}>{topRisk.incidentCount} incidents</div>
           </div>
         </div>
       </div>
 
       {/* Risk Table */}
-      <div style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.15em', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>RISK INDEX BY COUNTRY <InfoTip text="Risk score per country. Calculated from incident count, severity weights (Critical=5, High=3, Medium=2, Low=1), domain diversity, and recency. Bars show domain breakdown: orange=Conflict, green=Cyber, blue=Intel, yellow=Finance." size={11} /></div>
+      <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>RISK INDEX BY COUNTRY <InfoTip text="Risk score per country. Calculated from incident count, severity weights (Critical=5, High=3, Medium=2, Low=1), domain diversity, and recency. Bars show domain breakdown: orange=Conflict, green=Cyber, blue=Intel, yellow=Finance." size={11} /></div>
       {riskScores.map((score, idx) => (
         <div key={score.country} style={{
           display: 'flex', alignItems: 'center', gap: '8px',
@@ -449,8 +448,8 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
           </div>
           <div style={{ textAlign: 'right', minWidth: '44px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: getRiskColor(score.overall) }}>{score.overall}</div>
-            <div style={{ fontSize: '7px', color: P.dim }}>
-              {score.trend === 'rising' ? '▲' : score.trend === 'falling' ? '▼' : '●'} {score.incidentCount}
+            <div style={{ fontSize: '9px', color: P.dim }}>
+              {score.trend === 'high' ? '●' : score.trend === 'low' ? '○' : '◐'} {score.incidentCount}
             </div>
           </div>
         </div>
@@ -464,7 +463,7 @@ const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { inc
         ].map(l => (
           <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: l.color }} />
-            <span style={{ fontSize: '7px', color: P.dim, letterSpacing: '0.05em' }}>{l.label}</span>
+            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.05em' }}>{l.label}</span>
           </div>
         ))}
       </div>
@@ -500,14 +499,14 @@ function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident
 
   return (
     <div style={{ padding: '12px' }}>
-      <div style={{ fontSize: '10px', color: '#06b6d4', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>AI INCIDENT CLUSTERING — {clusters.length} clusters detected <InfoTip text="Groups similar incidents together using keyword matching and domain/region proximity. Each cluster represents a related set of events. The count shows how many incidents are in each group." size={11} color="#06b6d4" /></div>
+      <div style={{ fontSize: '10px', color: '#06b6d4', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>AUTO INCIDENT CLUSTERING — {clusters.length} clusters detected <InfoTip text="Groups similar incidents together using keyword matching and domain/region proximity. This is a heuristic grouping based on title keywords — not AI-powered. Each cluster represents potentially related events." size={11} color="#06b6d4" /></div>
       {clusters.map(c => (
         <div key={c.id} style={{ padding: '10px', background: '#0d1220', border: '1px solid #141c2e', borderLeft: `3px solid ${c.severity === 'CRITICAL' ? '#ff3b5c' : c.severity === 'HIGH' ? '#ff6b35' : '#00d4ff'}`, borderRadius: '6px', marginBottom: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#c8d6e5' }}>{c.title.substring(0, 60)}...</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#c8d6e5' }}>{c.title.length > 60 ? c.title.substring(0, 60) + '...' : c.title}</span>
             <span style={{ fontSize: '12px', fontWeight: 800, color: '#00d4ff' }}>{c.count}</span>
           </div>
-          <div style={{ fontSize: '8px', color: '#4a5568', marginBottom: '6px' }}>{c.domain} • {c.country || 'Global'} • Max severity: {c.severity}</div>
+          <div style={{ fontSize: '9px', color: '#4a5568', marginBottom: '6px' }}>{c.domain} • {c.country || 'Global'} • Max severity: {c.severity}</div>
           {c.members.map(m => {
             const clickable = !!onLocateIncident && m.latitude != null && m.longitude != null
             return (
@@ -523,7 +522,7 @@ function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident
               </div>
             )
           })}
-          {c.count > 5 && <div style={{ fontSize: '8px', color: '#4a5568', fontStyle: 'italic' }}>+{c.count - 5} more sources...</div>}
+          {c.count > 5 && <div style={{ fontSize: '9px', color: '#4a5568', fontStyle: 'italic' }}>+{c.count - 5} more sources...</div>}
         </div>
       ))}
       {clusters.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: '#4a5568', fontSize: '11px' }}>No clusters detected yet. Need more incident data.</div>}
@@ -531,47 +530,60 @@ function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident
   )
 }
 
+type IntelTab = 'overview' | 'timeline' | 'anomaly' | 'briefing'
+
+const INTEL_TABS: { id: IntelTab; label: string; icon: string; color: string }[] = [
+  { id: 'overview', label: 'OVERVIEW', icon: '◉', color: '#00d4ff' },
+  { id: 'timeline', label: 'TIME ANALYSIS', icon: '📊', color: '#a78bfa' },
+  { id: 'anomaly', label: 'ANOMALY & RISK', icon: '⚠', color: '#ff6b35' },
+  { id: 'briefing', label: 'DAILY BRIEFING', icon: '📋', color: '#00e676' },
+]
+
 const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
-
-  const { widgets, editMode, toggleWidget, moveWidget, setEditMode, resetLayout } = useDashboardLayoutStore()
-  const visibleIds = useMemo(() => new Set(widgets.filter(w => w.visible).sort((a, b) => a.order - b.order).map(w => w.id)), [widgets])
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowAdvanced(true), 100)
-    return () => clearTimeout(t)
-  }, [])
+  const [activeIntelTab, setActiveIntelTab] = useState<IntelTab>('overview')
 
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, overflowX: 'hidden' }}>
-      {editMode && (
-        <div style={{ padding: '8px 24px', background: `${P.accent}08`, borderBottom: `1px solid ${P.accent}30`, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '9px', color: P.accent, fontWeight: 700, letterSpacing: '0.1em' }}>LAYOUT EDITOR</span>
-          {[...widgets].sort((a, b) => a.order - b.order).map(w => (
-            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: w.visible ? `${P.accent}15` : `${P.dim}15`, border: `1px solid ${w.visible ? P.accent + '30' : P.border}`, borderRadius: '4px' }}>
-              <button onClick={() => toggleWidget(w.id)} style={{ background: 'none', border: 'none', color: w.visible ? P.accent : P.dim, cursor: 'pointer', fontSize: '10px', fontFamily: P.font, padding: 0 }}>{w.visible ? '✓' : '○'} {w.label}</button>
-              <button onClick={() => moveWidget(w.id, 'up')} style={{ background: 'none', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', padding: '0 2px' }}>▲</button>
-              <button onClick={() => moveWidget(w.id, 'down')} style={{ background: 'none', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', padding: '0 2px' }}>▼</button>
-            </div>
-          ))}
-          <button onClick={resetLayout} style={{ padding: '3px 8px', fontSize: '8px', background: '#ff3b5c10', border: '1px solid #ff3b5c30', borderRadius: '4px', color: '#ff6b7a', cursor: 'pointer', fontFamily: P.font, fontWeight: 600 }}>RESET</button>
-          <button onClick={() => setEditMode(false)} style={{ padding: '3px 8px', fontSize: '8px', background: `${P.accent}15`, border: `1px solid ${P.accent}40`, borderRadius: '4px', color: P.accent, cursor: 'pointer', fontFamily: P.font, fontWeight: 600, marginLeft: 'auto' }}>DONE</button>
-        </div>
-      )}
-      {!editMode && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 24px 0' }}>
-          <button onClick={() => setEditMode(true)} style={{ padding: '2px 8px', fontSize: '8px', background: 'transparent', border: `1px solid ${P.border}`, borderRadius: '3px', color: P.dim, cursor: 'pointer', fontFamily: P.font }}>⚙ CUSTOMIZE</button>
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: '4px', padding: '10px 24px 6px', flexWrap: 'wrap' }}>
+        {INTEL_TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveIntelTab(t.id)} style={{
+            padding: '6px 14px', background: activeIntelTab === t.id ? `${t.color}15` : 'transparent',
+            border: `1px solid ${activeIntelTab === t.id ? t.color + '50' : P.border}`,
+            borderRadius: '4px', color: activeIntelTab === t.id ? t.color : P.dim,
+            fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: P.font, letterSpacing: '0.06em',
+            transition: 'all 0.15s',
+          }}>{t.icon} {t.label}</button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeIntelTab === 'overview' && (
+        <div>
+          <InlineTimeline incidents={incidents} />
+          <DashboardStats incidents={incidents} />
         </div>
       )}
 
-      {visibleIds.has('timeline') && <InlineTimeline incidents={incidents} />}
-      {visibleIds.has('stats') && <DashboardStats incidents={incidents} />}
+      {activeIntelTab === 'timeline' && (
+        <div style={{ padding: '8px 0' }}>
+          <Suspense fallback={<div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: P.dim, fontSize: '11px', fontFamily: P.font }}>Loading...</div>}>
+            <DashboardTimeAnalysis incidents={incidents} />
+          </Suspense>
+          <Suspense fallback={<div style={{ height: '300px' }} />}>
+            <DashboardEntityTracker incidents={incidents} />
+          </Suspense>
+        </div>
+      )}
 
-      {showAdvanced && (
-        <>
-          {visibleIds.has('time-analysis') && <Suspense fallback={<div style={{ height: '200px' }} />}><DashboardTimeAnalysis incidents={incidents} /></Suspense>}
-          {visibleIds.has('entity-tracker') && <Suspense fallback={<div style={{ height: '300px' }} />}><DashboardEntityTracker incidents={incidents} /></Suspense>}
-        </>
+      {activeIntelTab === 'anomaly' && (
+        <div style={{ padding: '12px 24px' }}>
+          <AnomalyRiskPanel onLocateIncident={onLocateIncident} />
+        </div>
+      )}
+
+      {activeIntelTab === 'briefing' && (
+        <BriefingSummary incidents={incidents} onLocateIncident={onLocateIncident} />
       )}
     </div>
   )
@@ -611,7 +623,6 @@ const BriefingSummary = React.memo(function BriefingSummary({ incidents, onLocat
   )
 
   const DC: Record<string, string> = { CONFLICT: '#ff6b35', CYBER: '#00ff87', INTEL: '#4a9eff', FINANCE: '#f5c542' }
-  const SC: Record<string, string> = { CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#3fb950', INFO: '#4a5568' }
   const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', EXTREME: '#ff3b5c', SEVERE: '#ff6b35', MODERATE: '#f5c542', MINOR: '#64c8ff', EMERGENCY: '#ff3b5c' }[s] || P.dim)
 
   // Voice control briefing text
@@ -647,7 +658,7 @@ const BriefingSummary = React.memo(function BriefingSummary({ incidents, onLocat
         ].map(m => (
           <div key={m.l} style={{ padding: '12px 14px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', textAlign: 'center' }}>
             <div style={{ fontSize: '20px', fontWeight: 700, color: m.c, lineHeight: 1.2 }}>{m.v}</div>
-            <div style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.08em', marginTop: '4px', fontWeight: 600 }}>{m.l}</div>
+            <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.08em', marginTop: '4px', fontWeight: 600 }}>{m.l}</div>
           </div>
         ))}
       </div>
@@ -655,7 +666,7 @@ const BriefingSummary = React.memo(function BriefingSummary({ incidents, onLocat
       {/* Trending topics */}
       {backendBriefing?.stats?.trending && backendBriefing.stats.trending.length > 0 && (
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px', alignItems: 'center' }}>
-          <span style={{ fontSize: '8px', color: '#a78bfa', fontWeight: 700, letterSpacing: '0.1em' }}>TRENDING</span>
+          <span style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 700, letterSpacing: '0.1em' }}>TRENDING</span>
           {backendBriefing.stats.trending.map(t => (
             <span key={t} style={{ fontSize: '9px', color: '#a78bfa', padding: '2px 8px', background: '#a78bfa12', border: '1px solid #a78bfa25', borderRadius: '10px' }}>{t}</span>
           ))}
@@ -693,7 +704,7 @@ const BriefingSummary = React.memo(function BriefingSummary({ incidents, onLocat
               <div key={i} style={{ padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', borderLeft: `3px solid ${sevColor(r.riskLevel)}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <span style={{ fontSize: '10px', fontWeight: 700, color: P.text }}>{r.region}</span>
-                  <span style={{ fontSize: '8px', color: sevColor(r.riskLevel), fontWeight: 700, padding: '1px 5px', background: sevColor(r.riskLevel) + '15', borderRadius: '3px' }}>{r.riskLevel}</span>
+                  <span style={{ fontSize: '9px', color: sevColor(r.riskLevel), fontWeight: 700, padding: '1px 5px', background: sevColor(r.riskLevel) + '15', borderRadius: '3px' }}>{r.riskLevel}</span>
                 </div>
                 <div style={{ fontSize: '9px', color: P.dim, lineHeight: 1.4 }}>{r.summary}</div>
               </div>
@@ -718,7 +729,7 @@ const BriefingSummary = React.memo(function BriefingSummary({ incidents, onLocat
                 {hasCoords && <span style={{ fontSize: '10px', color: P.dim, flexShrink: 0 }}>📍</span>}
               </div>
               <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>
-                <span style={{ color: SC[inc.severity] || P.dim, fontWeight: 600 }}>{inc.severity}</span>
+                <span style={{ color: sevColor(inc.severity), fontWeight: 600 }}>{inc.severity}</span>
                 {' · '}{inc.country || 'Unknown'}
               </div>
             </div>
@@ -762,7 +773,7 @@ function AIBriefingCard() {
         <div style={{ flex: 1 }} />
         {briefing && (
           <button onClick={() => setExpanded(e => !e)} style={{
-            padding: '2px 6px', fontSize: '8px', background: 'transparent',
+            padding: '2px 6px', fontSize: '9px', background: 'transparent',
             border: `1px solid ${P.border}`, borderRadius: '3px',
             color: P.dim, cursor: 'pointer', fontFamily: P.font,
           }}>{expanded ? '\u25BC' : '\u25B6'}</button>
@@ -784,7 +795,7 @@ function AIBriefingCard() {
         <div>
           <MarkdownText text={briefing} style={{ fontSize: '11px', color: P.text, background: P.bg, padding: '12px', borderRadius: '6px', maxHeight: '400px', overflowY: 'auto' }} />
           {model && model !== 'error' && model !== 'none' && (
-            <div style={{ fontSize: '7px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
           )}
         </div>
       )}
@@ -834,7 +845,7 @@ const ANALYSIS_TABS: { id: 'briefing' | 'risk' | 'threats' | 'clusters'; label: 
   { id: 'briefing', label: 'BRIEFING', color: '#00d4ff', featureKey: 'analysisBriefing' },
   { id: 'risk', label: 'RISK INDEX', color: '#ff3b5c', featureKey: 'analysisRiskIndex' },
   { id: 'threats', label: 'THREATS', color: '#ff6b35', featureKey: 'analysisThreats' },
-  { id: 'clusters', label: 'AI CLUSTERS', color: '#06b6d4', featureKey: 'analysisClusters' },
+  { id: 'clusters', label: 'AUTO CLUSTERS', color: '#06b6d4', featureKey: 'analysisClusters' },
 ]
 
 type AnalysisTabId = 'briefing' | 'risk' | 'threats' | 'clusters'
@@ -1668,7 +1679,7 @@ function AppShellContent() {
       onMouseLeave={e => { if (!aiPanelOpen) { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dim } }}
       >
         <span style={{ fontSize: '12px' }}>🤖</span>
-        <span style={{ fontSize: '8px', letterSpacing: '0.08em' }}>AI</span>
+        <span style={{ fontSize: '9px', letterSpacing: '0.08em' }}>AI</span>
       </button>}
       {!isPanelsOnlyWindow && !panelsDetached && (
         <button onClick={handleDetachPanels} title="Detach panels to separate window" style={{
@@ -1681,24 +1692,26 @@ function AppShellContent() {
         onMouseLeave={e => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dim }}
         >
           <span style={{ fontSize: '12px' }}>⧉</span>
-          <span style={{ fontSize: '8px', letterSpacing: '0.08em' }}>DETACH</span>
+          <span style={{ fontSize: '9px', letterSpacing: '0.08em' }}>DETACH</span>
         </button>
       )}
     </div>
   )
 
+  const loadingFallback = <div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>
+
   const tabContent = (
     <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, minWidth: 0 }}>
-      {activeTab === 'intelligence' && ff('tabIntelligence') && <IntelligencePage incidents={allIncidents} onLocateIncident={handleLocateIncident} />}
-      {activeTab === 'analysis' && ff('tabAnalysis') && <AnalysisPage incidents={allIncidents} onLocateIncident={handleLocateIncident} />}
-      {activeTab === 'finance' && ff('tabFinance') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><FinanceDeepPanel onLocateIncident={handleLocateIncident} /></Suspense>}
-      {activeTab === 'entities' && ff('tabEntities') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><EntityGraphPanel /></Suspense>}
-      {activeTab === 'compare' && ff('tabCompare') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><TimelineCompare incidents={allIncidents} /></Suspense>}
-      {activeTab === 'security' && ff('tabSecurity') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><SecurityIntelPage onLocateIncident={handleLocateIncident} /></Suspense>}
-      {activeTab === 'operations' && ff('tabOperations') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><OperationsPage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></Suspense>}
-      {activeTab === 'media' && ff('tabMedia') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><MediaPage onOpenSettings={() => openSettings('tv')} /></Suspense>}
-      {activeTab === 'feed' && ff('tabLiveFeed') && <DashboardFeed incidents={incidents} onLocateIncident={handleLocateIncident} />}
-      {activeTab === 'logs' && ff('tabLogs') && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><LogPage /></Suspense>}
+      {activeTab === 'intelligence' && ff('tabIntelligence') && <AppErrorBoundary><IntelligencePage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></AppErrorBoundary>}
+      {activeTab === 'analysis' && ff('tabAnalysis') && <AppErrorBoundary><AnalysisPage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></AppErrorBoundary>}
+      {activeTab === 'finance' && ff('tabFinance') && <AppErrorBoundary><Suspense fallback={loadingFallback}><FinanceDeepPanel onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
+      {activeTab === 'entities' && ff('tabEntities') && <AppErrorBoundary><Suspense fallback={loadingFallback}><EntityGraphPanel /></Suspense></AppErrorBoundary>}
+      {activeTab === 'compare' && ff('tabCompare') && <AppErrorBoundary><Suspense fallback={loadingFallback}><TimelineCompare incidents={allIncidents} /></Suspense></AppErrorBoundary>}
+      {activeTab === 'security' && ff('tabSecurity') && <AppErrorBoundary><Suspense fallback={loadingFallback}><SecurityIntelPage onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
+      {activeTab === 'operations' && ff('tabOperations') && <AppErrorBoundary><Suspense fallback={loadingFallback}><OperationsPage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
+      {activeTab === 'media' && ff('tabMedia') && <AppErrorBoundary><Suspense fallback={loadingFallback}><MediaPage onOpenSettings={() => openSettings('tv')} /></Suspense></AppErrorBoundary>}
+      {activeTab === 'feed' && ff('tabLiveFeed') && <AppErrorBoundary><DashboardFeed incidents={incidents} onLocateIncident={handleLocateIncident} /></AppErrorBoundary>}
+      {activeTab === 'logs' && ff('tabLogs') && <AppErrorBoundary><Suspense fallback={loadingFallback}><LogPage /></Suspense></AppErrorBoundary>}
     </div>
   )
 

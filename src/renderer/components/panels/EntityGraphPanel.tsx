@@ -127,7 +127,7 @@ function ForceGraph({ entities, onSelect, selectedId }: { entities: ExtractedEnt
         ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(tgt.x, tgt.y)
         ctx.strokeStyle = '#141c2e'; ctx.lineWidth = 1; ctx.stroke()
         const mx = (src.x + tgt.x) / 2; const my = (src.y + tgt.y) / 2
-        ctx.fillStyle = '#4a556880'; ctx.font = '7px JetBrains Mono, monospace'; ctx.textAlign = 'center'
+        ctx.fillStyle = '#4a556880'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center'
         ctx.fillText(edge.relation, mx, my - 3)
       }
 
@@ -142,9 +142,9 @@ function ForceGraph({ entities, onSelect, selectedId }: { entities: ExtractedEnt
         ctx.fillStyle = '#c8d6e5'; ctx.font = `${Math.max(8, n.radius * 0.6)}px JetBrains Mono, monospace`
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         ctx.fillText(t.icon, n.x, n.y)
-        ctx.fillStyle = isHovered ? '#c8d6e5' : '#8a9ab5'; ctx.font = '8px JetBrains Mono, monospace'
+        ctx.fillStyle = isHovered ? '#c8d6e5' : '#8a9ab5'; ctx.font = '9px JetBrains Mono, monospace'
         ctx.fillText(n.name.length > 12 ? n.name.slice(0, 11) + '…' : n.name, n.x, n.y + n.radius + 10)
-        ctx.fillStyle = '#4a5568'; ctx.font = '7px JetBrains Mono, monospace'
+        ctx.fillStyle = '#4a5568'; ctx.font = '9px JetBrains Mono, monospace'
         ctx.fillText(`${n.mentions}x`, n.x, n.y + n.radius + 19)
       }
       ctx.restore()
@@ -234,10 +234,10 @@ function ForceGraph({ entities, onSelect, selectedId }: { entities: ExtractedEnt
   return (
     <div ref={containerRef} style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderBottom: `1px solid ${P.border}` }}>
-        <span style={{ fontSize: '8px', color: P.dim, letterSpacing: '0.1em', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>MIN MENTIONS <InfoTip text="Filter graph nodes by minimum mention count. Increase to reduce noise and show only frequently referenced entities." size={10} /></span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>MIN MENTIONS <InfoTip text="Filter graph nodes by minimum mention count. Increase to reduce noise and show only frequently referenced entities." size={10} /></span>
         <input type="range" min={1} max={Math.max(maxMentions, 2)} value={minMentions} onChange={e => setMinMentions(Number(e.target.value))} style={{ flex: 1, maxWidth: '150px', accentColor: P.accent }} />
         <span style={{ fontSize: '9px', color: P.accent, fontWeight: 700 }}>{minMentions}</span>
-        <span style={{ fontSize: '8px', color: P.dim, marginLeft: '8px' }}>{graphEntities.length} nodes</span>
+        <span style={{ fontSize: '9px', color: P.dim, marginLeft: '8px' }}>{graphEntities.length} nodes</span>
       </div>
       <canvas ref={canvasRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
         onWheel={handleWheel} style={{ display: 'block', width: '100%', height: '400px' }} />
@@ -251,7 +251,7 @@ function ForceGraph({ entities, onSelect, selectedId }: { entities: ExtractedEnt
           {detailEntity.relatedEntities.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               {detailEntity.relatedEntities.map(r => (
-                <span key={r.id} style={{ fontSize: '8px', padding: '2px 6px', background: `${P.accent}12`, border: `1px solid ${P.accent}25`, borderRadius: '3px', color: P.accent }}>
+                <span key={r.id} style={{ fontSize: '9px', padding: '2px 6px', background: `${P.accent}12`, border: `1px solid ${P.accent}25`, borderRadius: '3px', color: P.accent }}>
                   {r.name} <span style={{ color: P.dim }}>({r.relation})</span>
                 </span>
               ))}
@@ -336,7 +336,7 @@ export function EntityGraphPanel() {
                 padding: '4px 8px', background: filter === f ? `${P.accent}15` : 'transparent',
                 border: `1px solid ${filter === f ? P.accent + '40' : P.border}`,
                 borderRadius: '3px', color: filter === f ? P.accent : P.dim,
-                fontSize: '8px', cursor: 'pointer', fontFamily: P.font, textTransform: 'uppercase',
+                fontSize: '9px', cursor: 'pointer', fontFamily: P.font, textTransform: 'uppercase',
               }}>{f}</button>
             ))}
           </div>
@@ -352,7 +352,7 @@ export function EntityGraphPanel() {
                   }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{t.icon} {e.name}</span>
-                    {e.sanctioned && <span style={{ fontSize: '8px', padding: '1px 5px', background: '#ff3b5c20', color: '#ff3b5c', borderRadius: '3px', fontWeight: 700 }}>SANCTIONED</span>}
+                    {e.sanctioned && <span style={{ fontSize: '9px', padding: '1px 5px', background: '#ff3b5c20', color: '#ff3b5c', borderRadius: '3px', fontWeight: 700 }}>SANCTIONED</span>}
                   </div>
                   <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: P.dim }}>
                     <span>{e.type.toUpperCase()}</span>
@@ -361,7 +361,7 @@ export function EntityGraphPanel() {
                   </div>
                   {selectedEntity?.id === e.id && e.relatedEntities.length > 0 && (
                     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${P.border}` }}>
-                      <div style={{ fontSize: '8px', color: P.dim, marginBottom: '4px', letterSpacing: '0.1em' }}>RELATED ENTITIES</div>
+                      <div style={{ fontSize: '9px', color: P.dim, marginBottom: '4px', letterSpacing: '0.1em' }}>RELATED ENTITIES</div>
                       {e.relatedEntities.slice(0, 5).map(r => (
                         <div key={r.id} style={{ fontSize: '10px', color: P.text, padding: '2px 0' }}>
                           <span style={{ color: P.accent }}>{r.name}</span> <span style={{ color: P.dim }}>({r.relation})</span>
@@ -397,7 +397,7 @@ export function EntityGraphPanel() {
                   <span>⚪ {s.neutral} neu</span>
                   <span>🔴 {s.negative} neg</span>
                 </div>
-                <div style={{ fontSize: '8px', color: P.dim, marginTop: '4px' }}>Score: {s.score} | {s.sampleSize} samples</div>
+                <div style={{ fontSize: '9px', color: P.dim, marginTop: '4px' }}>Score: {s.score} | {s.sampleSize} samples</div>
               </div>
             )
           })}
@@ -444,7 +444,7 @@ function AIEntitySection() {
         <div style={{ flex: 1 }} />
         {analysis && (
           <button onClick={() => setExpanded(e => !e)} style={{
-            padding: '2px 6px', fontSize: '8px', background: 'transparent',
+            padding: '2px 6px', fontSize: '9px', background: 'transparent',
             border: `1px solid ${P.border}`, borderRadius: '3px',
             color: P.dim, cursor: 'pointer', fontFamily: P.font,
           }}>{expanded ? '\u25BC' : '\u25B6'}</button>
@@ -466,7 +466,7 @@ function AIEntitySection() {
         <div>
           <MarkdownText text={analysis} style={{ fontSize: '10px', color: P.text, background: P.bg, padding: '10px', borderRadius: '4px', maxHeight: '350px', overflowY: 'auto' }} />
           {model && model !== 'error' && (
-            <div style={{ fontSize: '7px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
           )}
         </div>
       )}
