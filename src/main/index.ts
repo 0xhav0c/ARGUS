@@ -108,8 +108,16 @@ function startRendererServer(rendererDir: string): Promise<number> {
         res.end('Forbidden')
         return
       }
+
+      // Cesium assets are unpacked from asar to avoid binary read issues
+      // on Apple Silicon (createReadStream inside asar is unreliable for images/wasm)
+      let actualFilePath = filePath
+      if (urlPath.startsWith('/cesium/')) {
+        actualFilePath = filePath.replace('app.asar', 'app.asar.unpacked')
+      }
+
       try {
-        const stat = statSync(filePath)
+        const stat = statSync(actualFilePath)
         if (!stat.isFile()) {
           // SPA fallback — serve index.html for unknown routes
           const indexPath = join(rendererDir, 'index.html')
@@ -119,10 +127,10 @@ function startRendererServer(rendererDir: string): Promise<number> {
           return
         }
 
-        const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase()
+        const ext = actualFilePath.substring(actualFilePath.lastIndexOf('.')).toLowerCase()
         const contentType = mimeTypes[ext] || 'application/octet-stream'
         res.writeHead(200, { ...corsHeaders, 'Content-Type': contentType, 'Content-Length': String(stat.size) })
-        createReadStream(filePath).pipe(res)
+        createReadStream(actualFilePath).pipe(res)
       } catch {
         // SPA fallback for any missing file
         try {

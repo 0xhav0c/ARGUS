@@ -1495,6 +1495,9 @@ function AppShellContent() {
     selectedCountry, trackingPopup, incidentScreenPos, flyToRegion, resetView,
     sidebarCollapsed, handleApplyView, handleAlertNavigate, unlockRotation])
 
+  // Hook must be called before any conditional return (React rules of hooks)
+  const uiScale = useSettingsStore(s => s.uiScale)
+
   if (mapFullscreen) {
     return (
       <div style={{
@@ -1559,8 +1562,6 @@ function AppShellContent() {
       </div>
     )
   }
-
-  const uiScale = useSettingsStore(s => s.uiScale)
 
   const globeFilter = visualMode === 'nightvision' ? 'hue-rotate(80deg) saturate(3) brightness(1.2)'
     : visualMode === 'thermal' ? 'hue-rotate(-40deg) saturate(2) contrast(1.3)'
