@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { InfoTip } from '@/components/ui/InfoTip'
+import { ExpandableList, ExpandableListPopup } from '@/components/ui/ExpandableList'
 import { useBookmarkStore } from '@/stores/bookmark-store'
-import { useAlertProfileStore } from '@/stores/alert-profile-store'
+// Alert Profiles moved to Settings modal - useAlertProfileStore no longer needed here
 import { useThreadStore } from '@/stores/thread-store'
 import { useAnnotationStore, type MapAnnotation } from '@/stores/annotation-store'
 import { useSettingsStore } from '@/stores/settings-store'
@@ -9,19 +10,18 @@ import type { Incident, FeatureFlags } from '../../../shared/types'
 
 const P = { bg: '#0a0e17', card: '#0d1220', border: '#141c2e', accent: '#00d4ff', dim: '#4a5568', text: '#c8d6e5', font: "'JetBrains Mono', monospace" }
 
-type SubTab = 'query' | 'bookmarks' | 'threads' | 'profiles' | 'annotations' | 'timemachine' | 'hotspots' | 'reliability' | 'alertrules' | 'predictions'
+type SubTab = 'bookmarks' | 'threads' | 'annotations' | 'timemachine' | 'hotspots' | 'reliability' | 'alertrules' | 'predictions'
 
 interface Props { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }
 
 export function OperationsPage({ incidents, onLocateIncident }: Props) {
   const features = useSettingsStore(s => s.features)
-  const [tab, setTab] = useState<SubTab>('query')
+  const [tab, setTab] = useState<SubTab>('bookmarks')
 
   const allTabs: { id: SubTab; label: string; icon: string; featureKey: keyof FeatureFlags }[] = [
-    { id: 'query', label: 'ASK ARGUS', icon: '⌕', featureKey: 'opsQuery' },
     { id: 'bookmarks', label: 'BOOKMARKS', icon: '★', featureKey: 'opsBookmarks' },
     { id: 'threads', label: 'THREADS', icon: '⛓', featureKey: 'opsThreads' },
-    { id: 'profiles', label: 'ALERT PROFILES', icon: '🔔', featureKey: 'opsProfiles' },
+    // Alert Profiles moved to Settings modal
     { id: 'annotations', label: 'MAP ANNOTATIONS', icon: '📌', featureKey: 'opsAnnotations' },
     { id: 'hotspots', label: 'HOTSPOTS', icon: '🔥', featureKey: 'opsHotspots' },
     { id: 'reliability', label: 'SOURCE SCORE', icon: '✓', featureKey: 'opsReliability' },
@@ -44,81 +44,15 @@ export function OperationsPage({ incidents, onLocateIncident }: Props) {
           }}>{t.icon} {t.label}</button>
         ))}
       </div>
-      {effectiveTab === 'query' && <QuerySection incidents={incidents} onLocateIncident={onLocateIncident} />}
       {effectiveTab === 'bookmarks' && <BookmarkSection incidents={incidents} onLocateIncident={onLocateIncident} />}
       {effectiveTab === 'threads' && <ThreadSection incidents={incidents} onLocateIncident={onLocateIncident} />}
-      {effectiveTab === 'profiles' && <ProfileSection />}
+      {/* Alert Profiles moved to Settings modal */}
       {effectiveTab === 'annotations' && <AnnotationSection />}
-      {effectiveTab === 'hotspots' && <HotspotsSection incidents={incidents} />}
-      {effectiveTab === 'reliability' && <ReliabilitySection incidents={incidents} />}
+      {effectiveTab === 'hotspots' && <HotspotsSection incidents={incidents} onLocateIncident={onLocateIncident} />}
+      {effectiveTab === 'reliability' && <ReliabilitySection incidents={incidents} onLocateIncident={onLocateIncident} />}
       {effectiveTab === 'alertrules' && <AlertRulesSection />}
-      {effectiveTab === 'predictions' && <PredictionsSection incidents={incidents} />}
+      {effectiveTab === 'predictions' && <PredictionsSection incidents={incidents} onLocateIncident={onLocateIncident} />}
       {effectiveTab === 'timemachine' && <TimeMachineSection incidents={incidents} onLocateIncident={onLocateIncident} />}
-    </div>
-  )
-}
-
-function QuerySection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
-  const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 250)
-    return () => clearTimeout(timer)
-  }, [query])
-
-  const results = useMemo(() => {
-    const q = debouncedQuery.trim().toLowerCase()
-    if (!q) return []
-    const terms = q.split(/\s+/).filter(t => t.length > 1)
-    if (terms.length === 0) return []
-
-    return incidents.filter(inc => {
-      const text = `${inc.title} ${inc.description || ''} ${inc.country || ''} ${inc.domain} ${inc.severity} ${inc.source}`.toLowerCase()
-      return terms.every(term => text.includes(term))
-    }).slice(0, 50)
-  }, [debouncedQuery, incidents])
-
-  const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff' }[s] || P.dim)
-
-  return (
-    <div>
-      <div style={{ fontSize: '10px', color: P.accent, fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>⌕ ASK ARGUS — Search Incidents <InfoTip text="Full-text search across all incidents. Filter by domain, severity, and time range. Click any result to locate it on the globe." size={11} /></div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        <input value={query} onChange={e => setQuery(e.target.value)}
-          placeholder="Type to search... e.g. Ukraine conflict, cyber NATO, earthquake Turkey..."
-          style={{ flex: 1, padding: '10px 14px', background: P.card, border: `1px solid ${query ? P.accent + '40' : P.border}`, borderRadius: '6px', color: P.text, fontSize: '12px', fontFamily: P.font, outline: 'none', transition: 'border 0.2s' }} />
-      </div>
-      {query.trim().length > 1 && (
-        <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px' }}>{results.length} result{results.length !== 1 ? 's' : ''} found</div>
-      )}
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {results.map(r => {
-          const clickable = !!onLocateIncident && r.latitude != null && r.longitude != null
-          return (
-            <div key={r.id}
-              onClick={clickable ? () => onLocateIncident(r) : undefined}
-              style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px', cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s' }}
-              onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
-              onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = P.card } : undefined}
-            >
-              <span style={{ fontSize: '9px', padding: '2px 6px', background: sevColor(r.severity) + '20', color: sevColor(r.severity), borderRadius: '3px', fontWeight: 700, flexShrink: 0 }}>{r.severity}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>{r.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
-                <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px' }}>{r.domain} · {r.country || 'Global'} · {r.source} · {new Date(r.timestamp).toLocaleDateString()}</div>
-              </div>
-            </div>
-          )
-        })}
-        {results.length === 0 && query.trim().length > 1 && <div style={{ color: P.dim, fontSize: '11px', padding: '30px', textAlign: 'center' }}>No results. Try different keywords.</div>}
-        {!query.trim() && (
-          <div style={{ padding: '30px', textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px', opacity: 0.3 }}>⌕</div>
-            <div style={{ fontSize: '11px', color: P.dim }}>Type keywords to search across all incidents</div>
-            <div style={{ fontSize: '9px', color: P.dim, marginTop: '6px' }}>Searches title, description, country, domain, severity, and source</div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
@@ -202,37 +136,6 @@ function ThreadSection({ incidents, onLocateIncident }: { incidents: Incident[];
     </div>
   )
 }
-
-function ProfileSection() {
-  const profiles = useAlertProfileStore(s => s.profiles)
-  const activeId = useAlertProfileStore(s => s.activeProfileId)
-  const setActive = useAlertProfileStore(s => s.setActive)
-
-
-  return (
-    <div>
-      <div style={{ fontSize: '10px', color: P.accent, fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>🔔 ALERT PROFILES <InfoTip text="Pre-configured alert profiles for different domains. Activate a profile to receive notifications when matching incidents are detected." size={11} /></div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '8px' }}>
-        {profiles.map(p => (
-          <div key={p.id} onClick={() => setActive(p.id)} style={{ padding: '14px', background: p.id === activeId ? `${P.accent}08` : P.card, border: `1px solid ${p.id === activeId ? P.accent + '40' : P.border}`, borderRadius: '6px', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '14px' }}>{p.icon} <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{p.name}</span></span>
-              {p.id === activeId && <span style={{ fontSize: '9px', padding: '2px 6px', background: `${P.accent}20`, color: P.accent, borderRadius: '3px', fontWeight: 700 }}>ACTIVE</span>}
-            </div>
-            <div style={{ fontSize: '9px', color: P.dim }}>
-              Domains: {p.rules.domains.join(', ')}<br/>
-              Min Severity: {p.rules.minSeverity}<br/>
-              Sound: {p.rules.soundEnabled ? 'ON' : 'OFF'}
-              {p.rules.quietHoursStart && <><br/>Quiet: {p.rules.quietHoursStart} - {p.rules.quietHoursEnd}</>}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-
 
 function TimeMachineSection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
   const today = new Date().toISOString().split('T')[0]
@@ -549,59 +452,184 @@ function AnnotationSection() {
   )
 }
 
-function HotspotsSection({ incidents }: { incidents: Incident[] }) {
+function HotspotsSection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
+  const [expandedRegion, setExpandedRegion] = useState<string | null>(null)
+
   const hotspots = useMemo(() => {
-    const regionMap = new Map<string, { count: number; prevCount: number; domains: Map<string, number>; lat: number; lng: number }>()
+    const regionMap = new Map<string, { count: number; prevCount: number; domains: Map<string, number>; severities: Map<string, number>; lat: number; lng: number; incidents: Incident[] }>()
     const now = Date.now()
     const weekMs = 7 * 86400000
     for (const inc of incidents) {
       const region = inc.country || 'Unknown'
       const age = now - new Date(inc.timestamp).getTime()
-      const prev = regionMap.get(region) || { count: 0, prevCount: 0, domains: new Map(), lat: inc.latitude, lng: inc.longitude }
-      if (age < weekMs) prev.count++; else if (age < weekMs * 2) prev.prevCount++
+      const prev = regionMap.get(region) || { count: 0, prevCount: 0, domains: new Map(), severities: new Map(), lat: inc.latitude, lng: inc.longitude, incidents: [] }
+      if (age < weekMs) { prev.count++; prev.incidents.push(inc) } else if (age < weekMs * 2) prev.prevCount++
       prev.domains.set(inc.domain, (prev.domains.get(inc.domain) || 0) + 1)
+      prev.severities.set(inc.severity, (prev.severities.get(inc.severity) || 0) + 1)
       regionMap.set(region, prev)
     }
     return Array.from(regionMap.entries()).map(([region, data]) => ({
       region, ...data,
       changePercent: data.prevCount > 0 ? Math.round(((data.count - data.prevCount) / data.prevCount) * 100) : data.count > 0 ? 100 : 0,
-      topDomains: Array.from(data.domains.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([d, c]) => ({ domain: d, count: c })),
-    })).sort((a, b) => b.count - a.count).slice(0, 20)
+      topDomains: Array.from(data.domains.entries()).sort((a, b) => b[1] - a[1]).map(([d, c]) => ({ domain: d, count: c })),
+      severityBreakdown: Array.from(data.severities.entries()).sort((a, b) => {
+        const order = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
+        return order.indexOf(a[0]) - order.indexOf(b[0])
+      }),
+      incidents: data.incidents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    })).sort((a, b) => b.count - a.count)
   }, [incidents])
+
+  const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', INFO: '#4a5568' }[s] || P.dim)
+
+  const renderHotspot = useCallback((h: typeof hotspots[number]) => {
+    const isExpanded = expandedRegion === h.region
+    return (
+      <div key={h.region} style={{ marginBottom: '4px' }}>
+        <div
+          onClick={() => setExpandedRegion(isExpanded ? null : h.region)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
+            background: isExpanded ? `${P.accent}06` : P.card,
+            border: `1px solid ${isExpanded ? P.accent + '30' : P.border}`,
+            borderRadius: isExpanded ? '6px 6px 0 0' : '6px',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.04)' }}
+          onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = P.card }}
+        >
+          <span style={{ fontSize: '8px', color: P.accent, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: P.text }}>{h.region}</div>
+            <div style={{ fontSize: '9px', color: P.dim }}>{h.count} incidents • {h.topDomains.slice(0, 3).map(d => `${d.domain}(${d.count})`).join(', ')}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: P.accent }}>{h.count}</div>
+            <div style={{ fontSize: '9px', fontWeight: 700, color: h.changePercent > 50 ? '#ff3b5c' : h.changePercent > 0 ? '#ff6b35' : '#00e676' }}>
+              {h.changePercent > 0 ? `+${h.changePercent}%` : h.changePercent === 0 ? 'NEW' : `${h.changePercent}%`}
+            </div>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div style={{
+            border: `1px solid ${P.accent}20`, borderTop: 'none',
+            borderRadius: '0 0 6px 6px', background: `${P.card}`,
+            padding: '10px 12px',
+          }}>
+            {/* Severity breakdown */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              {h.severityBreakdown.map(([sev, cnt]) => (
+                <span key={sev} style={{
+                  fontSize: '9px', padding: '2px 8px', borderRadius: '3px', fontWeight: 700,
+                  background: sevColor(sev) + '15', color: sevColor(sev),
+                }}>{sev}: {cnt}</span>
+              ))}
+            </div>
+
+            {/* Domain breakdown */}
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '8px', letterSpacing: '0.08em', fontWeight: 700 }}>DOMAINS</div>
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              {h.topDomains.map(d => (
+                <span key={d.domain} style={{
+                  fontSize: '9px', padding: '3px 8px', borderRadius: '4px',
+                  background: `${P.accent}10`, border: `1px solid ${P.accent}20`, color: P.text,
+                }}>{d.domain} <span style={{ color: P.accent, fontWeight: 700 }}>({d.count})</span></span>
+              ))}
+            </div>
+
+            {/* Incident list sorted by time */}
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '6px', letterSpacing: '0.08em', fontWeight: 700 }}>
+              RECENT INCIDENTS ({h.incidents.length})
+            </div>
+            <ExpandableList
+              items={h.incidents}
+              title={`${h.region} Incidents`}
+              icon="🔥"
+              color="#ff6b35"
+              emptyMessage="No incidents in the last 7 days"
+              searchable
+              searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+              filters={[
+                { id: 'severity', label: 'Severity', options: [...new Set(h.incidents.map(i => i.severity))] },
+                { id: 'domain', label: 'Domain', options: [...new Set(h.incidents.map(i => i.domain))] },
+              ]}
+              filterFn={(inc, f) => {
+                if (f.severity && inc.severity !== f.severity) return false
+                if (f.domain && inc.domain !== f.domain) return false
+                return true
+              }}
+              renderItem={(inc) => {
+                const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
+                return (
+                  <div key={inc.id}
+                    onClick={clickable ? () => onLocateIncident(inc) : undefined}
+                    style={{
+                      display: 'flex', gap: '8px', alignItems: 'flex-start',
+                      padding: '6px 8px', background: P.bg, border: `1px solid ${P.border}`,
+                      borderRadius: '4px', marginBottom: '3px',
+                      cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                    onMouseLeave={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = P.bg } : undefined}
+                  >
+                    <span style={{
+                      fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+                      background: sevColor(inc.severity) + '20', color: sevColor(inc.severity), marginTop: '1px',
+                    }}>{inc.severity}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '10px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>
+                        {inc.title}
+                        {clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                      </div>
+                      <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                        {inc.domain} · {inc.source} · {new Date(inc.timestamp).toLocaleString()}
+                      </div>
+                      {inc.description && (
+                        <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', lineHeight: 1.4, opacity: 0.8 }}>
+                          {inc.description.length > 150 ? inc.description.slice(0, 150) + '…' : inc.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }, [expandedRegion, onLocateIncident])
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>GEOSPATIAL HOTSPOTS — Last 7 Days <InfoTip text="Geographic clusters of incidents detected in the last 7 days. Shows regions with the highest event density and week-over-week change percentage." size={11} color="#ff6b35" /></div>
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {hotspots.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: P.dim, fontSize: '11px' }}>No hotspot data available for the last 7 days</div>}
-        {hotspots.map(h => (
-          <div key={h.region} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: P.text }}>{h.region}</div>
-              <div style={{ fontSize: '9px', color: P.dim }}>{h.count} incidents • {h.topDomains.map(d => `${d.domain}(${d.count})`).join(', ')}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: P.accent }}>{h.count}</div>
-              <div style={{ fontSize: '9px', fontWeight: 700, color: h.changePercent > 50 ? '#ff3b5c' : h.changePercent > 0 ? '#ff6b35' : '#00e676' }}>
-                {h.changePercent > 0 ? `+${h.changePercent}%` : h.changePercent === 0 ? 'NEW' : `${h.changePercent}%`}
-              </div>
-            </div>
-          </div>
-        ))}
+      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        GEOSPATIAL HOTSPOTS — Last 7 Days
+        <InfoTip text="Geographic clusters of incidents detected in the last 7 days. Click a region to see severity breakdown, domain distribution, and individual incidents sorted by time." size={11} color="#ff6b35" />
       </div>
+      <ExpandableList
+        items={hotspots}
+        title="Hotspots"
+        icon="🔥"
+        color="#ff6b35"
+        emptyMessage="No hotspot data available for the last 7 days"
+        renderItem={(h) => renderHotspot(h)}
+      />
     </div>
   )
 }
 
 
 
-function ReliabilitySection({ incidents }: { incidents: Incident[] }) {
+function ReliabilitySection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
+  const [expandedSource, setExpandedSource] = useState<string | null>(null)
+
   const sourceStats = useMemo(() => {
-    const map = new Map<string, { count: number; domains: Set<string>; severities: string[] }>()
+    const map = new Map<string, { count: number; domains: Set<string>; severities: string[]; incidents: Incident[] }>()
     for (const inc of incidents) {
       const s = inc.source || 'Unknown'
-      const prev = map.get(s) || { count: 0, domains: new Set<string>(), severities: [] }
-      prev.count++; prev.domains.add(inc.domain); prev.severities.push(inc.severity)
+      const prev = map.get(s) || { count: 0, domains: new Set<string>(), severities: [], incidents: [] }
+      prev.count++; prev.domains.add(inc.domain); prev.severities.push(inc.severity); prev.incidents.push(inc)
       map.set(s, prev)
     }
     return Array.from(map.entries()).map(([source, data]) => {
@@ -609,26 +637,145 @@ function ReliabilitySection({ incidents }: { incidents: Incident[] }) {
       const criticalRatio = data.severities.filter(s => s === 'CRITICAL' || s === 'HIGH').length / data.count
       const volumeScore = Math.min(data.count / 10, 5)
       const score = Math.min(5, Math.round((diversityScore + volumeScore + (criticalRatio > 0.3 ? 2 : 1)) * 0.8))
-      return { source, count: data.count, domains: Array.from(data.domains), score, grade: ['F', 'E', 'D', 'C', 'B', 'A'][score] || 'F' }
+      const sevBreakdown = new Map<string, number>()
+      for (const sv of data.severities) sevBreakdown.set(sv, (sevBreakdown.get(sv) || 0) + 1)
+      return {
+        source, count: data.count, domains: Array.from(data.domains),
+        score, grade: ['F', 'E', 'D', 'C', 'B', 'A'][score] || 'F',
+        severityBreakdown: Array.from(sevBreakdown.entries()).sort((a, b) => {
+          const order = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
+          return order.indexOf(a[0]) - order.indexOf(b[0])
+        }),
+        incidents: data.incidents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+      }
     }).sort((a, b) => b.score - a.score || b.count - a.count)
   }, [incidents])
+
   const gradeColor = (g: string) => ({ A: '#00e676', B: '#00d4ff', C: '#f5c542', D: '#ff6b35', E: '#ff3b5c', F: '#ff3b5c' }[g] || P.dim)
+  const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', INFO: '#4a5568' }[s] || P.dim)
+
+  const renderSourceItem = useCallback((s: typeof sourceStats[number]) => {
+    const isExpanded = expandedSource === s.source
+    return (
+      <div key={s.source} style={{ marginBottom: '4px' }}>
+        <div
+          onClick={() => setExpandedSource(isExpanded ? null : s.source)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
+            background: isExpanded ? `${gradeColor(s.grade)}06` : P.card,
+            border: `1px solid ${isExpanded ? gradeColor(s.grade) + '30' : P.border}`,
+            borderRadius: isExpanded ? '6px 6px 0 0' : '6px',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.04)' }}
+          onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = P.card }}
+        >
+          <span style={{ fontSize: '8px', color: P.accent, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+          <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${gradeColor(s.grade)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: gradeColor(s.grade), flexShrink: 0 }}>{s.grade}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: P.text }}>{s.source}</div>
+            <div style={{ fontSize: '9px', color: P.dim }}>{s.count} reports • {s.domains.join(', ')}</div>
+          </div>
+          <div style={{ fontSize: '10px', color: P.dim, fontWeight: 600 }}>{s.score}/5</div>
+        </div>
+
+        {isExpanded && (
+          <div style={{
+            border: `1px solid ${gradeColor(s.grade)}20`, borderTop: 'none',
+            borderRadius: '0 0 6px 6px', background: P.card, padding: '10px 12px',
+          }}>
+            {/* Severity breakdown */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              {s.severityBreakdown.map(([sev, cnt]) => (
+                <span key={sev} style={{
+                  fontSize: '9px', padding: '2px 8px', borderRadius: '3px', fontWeight: 700,
+                  background: sevColor(sev) + '15', color: sevColor(sev),
+                }}>{sev}: {cnt}</span>
+              ))}
+            </div>
+
+            {/* Domain tags */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              {s.domains.map(d => (
+                <span key={d} style={{
+                  fontSize: '9px', padding: '3px 8px', borderRadius: '4px',
+                  background: `${P.accent}10`, border: `1px solid ${P.accent}20`, color: P.text,
+                }}>{d}</span>
+              ))}
+            </div>
+
+            {/* Incident list */}
+            <div style={{ fontSize: '9px', color: P.dim, marginBottom: '6px', letterSpacing: '0.08em', fontWeight: 700 }}>
+              REPORTS ({s.incidents.length})
+            </div>
+            <ExpandableList
+              items={s.incidents}
+              title={`${s.source} Reports`}
+              icon="✓"
+              color="#00e676"
+              emptyMessage="No reports"
+              searchable
+              searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+              filters={[
+                { id: 'severity', label: 'Severity', options: [...new Set(s.incidents.map(i => i.severity))] },
+                { id: 'domain', label: 'Domain', options: [...new Set(s.incidents.map(i => i.domain))] },
+              ]}
+              filterFn={(inc, f) => {
+                if (f.severity && inc.severity !== f.severity) return false
+                if (f.domain && inc.domain !== f.domain) return false
+                return true
+              }}
+              renderItem={(inc) => {
+                const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
+                return (
+                  <div key={inc.id}
+                    onClick={clickable ? () => onLocateIncident(inc) : undefined}
+                    style={{
+                      display: 'flex', gap: '8px', alignItems: 'flex-start',
+                      padding: '6px 8px', background: P.bg, border: `1px solid ${P.border}`,
+                      borderRadius: '4px', marginBottom: '3px',
+                      cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                    onMouseLeave={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = P.bg } : undefined}
+                  >
+                    <span style={{
+                      fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+                      background: sevColor(inc.severity) + '20', color: sevColor(inc.severity), marginTop: '1px',
+                    }}>{inc.severity}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '10px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>
+                        {inc.title}
+                        {clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                      </div>
+                      <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                        {inc.domain} · {inc.country || 'Global'} · {new Date(inc.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }, [expandedSource, onLocateIncident])
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#00e676', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>SOURCE ACTIVITY SCORING <InfoTip text="Rates feed sources by volume, domain diversity, and severity distribution. Higher grade = more active and diverse source. This is NOT an intelligence reliability rating — it measures source activity, not accuracy." size={11} color="#00e676" /></div>
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {sourceStats.map(s => (
-          <div key={s.source} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', marginBottom: '4px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${gradeColor(s.grade)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: gradeColor(s.grade), flexShrink: 0 }}>{s.grade}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: P.text }}>{s.source}</div>
-              <div style={{ fontSize: '9px', color: P.dim }}>{s.count} reports • {s.domains.join(', ')}</div>
-            </div>
-            <div style={{ fontSize: '10px', color: P.dim, fontWeight: 600 }}>{s.score}/5</div>
-          </div>
-        ))}
+      <div style={{ fontSize: '10px', color: '#00e676', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        SOURCE ACTIVITY SCORING
+        <InfoTip text="Rates feed sources by volume, domain diversity, and severity distribution. Click a source to view severity breakdown and individual reports. Higher grade = more active and diverse source." size={11} color="#00e676" />
       </div>
+      <ExpandableList
+        items={sourceStats}
+        title="Sources"
+        icon="✓"
+        color="#00e676"
+        emptyMessage="No source data available"
+        renderItem={(s) => renderSourceItem(s)}
+      />
     </div>
   )
 }
@@ -674,7 +821,9 @@ function AlertRulesSection() {
   )
 }
 
-function PredictionsSection({ incidents }: { incidents: Incident[] }) {
+function PredictionsSection({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+
   const predictions = useMemo(() => {
     const countryMap = new Map<string, { count: number; critical: number; trend: number[]; lat: number; lng: number }>()
     const now = Date.now()
@@ -697,15 +846,35 @@ function PredictionsSection({ incidents }: { incidents: Incident[] }) {
       return { country, riskScore, trend: recentAccel, factors, count: data.count, critical: data.critical }
     }).sort((a, b) => b.riskScore - a.riskScore).slice(0, 15)
   }, [incidents])
+
+  const selectedIncidents = useMemo(() => {
+    if (!selectedCountry) return []
+    return incidents.filter(i => (i.country || 'Unknown') === selectedCountry)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  }, [incidents, selectedCountry])
+
   const trendColor = (t: string) => t === 'escalating' ? '#ff3b5c' : t === 'de-escalating' ? '#00e676' : '#f5c542'
   const trendIcon = (t: string) => t === 'escalating' ? '\u2191' : t === 'de-escalating' ? '\u2193' : '\u2192'
+  const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', INFO: '#4a5568' }[s] || P.dim)
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>INCIDENT TREND ANALYSIS <InfoTip text="Ranks countries by incident activity. Risk score is based on incident volume, severity ratio (Critical/High), and recent acceleration. This is a volume-based heuristic, not a predictive model." size={11} color="#ff6b35" /></div>
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {predictions.map(p => (
-          <div key={p.country} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderLeft: `3px solid ${p.riskScore > 70 ? '#ff3b5c' : p.riskScore > 40 ? '#ff6b35' : '#00d4ff'}`, borderRadius: '6px', marginBottom: '4px' }}>
+      <div style={{ fontSize: '10px', color: '#ff6b35', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '6px' }}>INCIDENT TREND ANALYSIS <InfoTip text="Ranks countries by incident activity. Risk score is based on incident volume, severity ratio (Critical/High), and recent acceleration. Click any country to view all incidents." size={11} color="#ff6b35" /></div>
+      <ExpandableList
+        items={predictions}
+        title="Country Trends"
+        icon="📈"
+        color="#ff6b35"
+        emptyMessage="No trend data available"
+        searchable
+        searchFn={(p, q) => p.country.toLowerCase().includes(q)}
+        renderItem={(p) => (
+          <div key={p.country}
+            onClick={() => setSelectedCountry(p.country)}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: P.card, border: `1px solid ${P.border}`, borderLeft: `3px solid ${p.riskScore > 70 ? '#ff3b5c' : p.riskScore > 40 ? '#ff6b35' : '#00d4ff'}`, borderRadius: '6px', marginBottom: '4px', cursor: 'pointer', transition: 'background 0.15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.04)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = P.card }}
+          >
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{p.country}</span>
@@ -719,8 +888,59 @@ function PredictionsSection({ incidents }: { incidents: Incident[] }) {
               <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>RISK</div>
             </div>
           </div>
-        ))}
-      </div>
+        )}
+      />
+
+      {selectedCountry && selectedIncidents.length > 0 && (
+        <ExpandableListPopup
+          items={selectedIncidents}
+          title={`${selectedCountry} Incidents`}
+          icon="📈"
+          color="#ff6b35"
+          onClose={() => setSelectedCountry(null)}
+          searchable
+          searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source}`.toLowerCase().includes(q)}
+          filters={[
+            { id: 'severity', label: 'Severity', options: [...new Set(selectedIncidents.map(i => i.severity))] },
+            { id: 'domain', label: 'Domain', options: [...new Set(selectedIncidents.map(i => i.domain))] },
+          ]}
+          filterFn={(inc, f) => {
+            if (f.severity && inc.severity !== f.severity) return false
+            if (f.domain && inc.domain !== f.domain) return false
+            return true
+          }}
+          renderItem={(inc) => {
+            const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
+            return (
+              <div key={inc.id}
+                onClick={clickable ? () => onLocateIncident(inc) : undefined}
+                style={{
+                  display: 'flex', gap: '8px', alignItems: 'flex-start',
+                  padding: '8px 10px', background: P.bg, border: `1px solid ${P.border}`,
+                  borderRadius: '5px', marginBottom: '4px',
+                  cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s',
+                }}
+                onMouseEnter={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                onMouseLeave={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = P.bg } : undefined}
+              >
+                <span style={{
+                  fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+                  background: sevColor(inc.severity) + '20', color: sevColor(inc.severity), marginTop: '1px',
+                }}>{inc.severity}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '10px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>
+                    {inc.title}
+                    {clickable && <span style={{ color: P.accent, marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                  </div>
+                  <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                    {inc.domain} · {inc.source} · {new Date(inc.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )
+          }}
+        />
+      )}
     </div>
   )
 }

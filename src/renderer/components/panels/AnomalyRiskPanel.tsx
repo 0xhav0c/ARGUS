@@ -70,7 +70,7 @@ export function AnomalyRiskPanel({ onLocateIncident }: Props) {
                   </div>
                   <div style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: 1.5 }}>{a.description}</div>
                   <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '6px' }}>
-                    {a.type?.toUpperCase()} • {incidents.length} related incidents
+                    {(a.type === 'correlation' ? 'CO-OCCURRENCE' : a.type?.toUpperCase()) || 'UNKNOWN'} • {incidents.length} related incidents
                   </div>
                 </div>
 
@@ -186,7 +186,7 @@ export function AnomalyRiskPanel({ onLocateIncident }: Props) {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: trendColor(r.trend) }}>{trendIcon(r.trend)}</div>
-                      <div style={{ fontSize: '9px', color: '#64748b' }}>Trend</div>
+                      <div style={{ fontSize: '9px', color: '#64748b' }}>Threat Level</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: '#e2e8f0' }}>{(r.factors || []).length}</div>
@@ -195,7 +195,7 @@ export function AnomalyRiskPanel({ onLocateIncident }: Props) {
                   </div>
                 </div>
 
-                {/* Prediction / Analysis */}
+                {/* Assessment */}
                 {r.prediction && (
                   <div style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '10px', padding: '0 2px' }}>
                     {r.prediction}

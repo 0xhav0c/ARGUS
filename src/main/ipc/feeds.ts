@@ -1,9 +1,10 @@
 import { ipcMain } from 'electron'
-import { CacheManager } from '../services/cache-manager'
+import { getCacheManager } from '../services/cache-manager'
 import { FeedAggregator } from '../services/feed-aggregator'
 import { randomUUID } from 'crypto'
+import { isSafeUrl } from '../utils/url-safety'
 
-const cache = new CacheManager()
+const cache = getCacheManager()
 let aggregator: FeedAggregator | null = null
 
 export function registerFeedHandlers(feedAggregator: FeedAggregator): void {
@@ -31,6 +32,7 @@ export function registerFeedHandlers(feedAggregator: FeedAggregator): void {
     const url = opts.url.trim()
     if (!/^https?:\/\//i.test(url)) return { error: 'Invalid URL scheme' }
     if (url.length > 2048) return { error: 'URL too long' }
+    if (!isSafeUrl(url)) return { error: 'URL points to a restricted network address' }
     const feed = {
       id: `custom-${randomUUID()}`,
       name: (opts.name || url).substring(0, 200),
@@ -66,6 +68,7 @@ export function registerFeedHandlers(feedAggregator: FeedAggregator): void {
       const url = updates.url.trim()
       if (!/^https?:\/\//i.test(url)) return { error: 'Invalid URL scheme (http/https only)' }
       if (url.length > 2048) return { error: 'URL too long' }
+      if (!isSafeUrl(url)) return { error: 'URL points to a restricted network address' }
       updated.url = url
     }
     cache.upsertFeed(updated)

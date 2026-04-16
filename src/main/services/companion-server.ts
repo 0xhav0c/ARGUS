@@ -1,6 +1,6 @@
 import { createServer, type Server, type IncomingMessage } from 'http'
 import { networkInterfaces } from 'os'
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 import type { Incident } from '../../shared/types'
 
 interface CompanionClient {
@@ -64,15 +64,15 @@ export class CompanionServer {
           return
         }
 
-        if (req.url === '/status') {
-          res.writeHead(200)
-          res.end(JSON.stringify({ app: 'Argus', status: 'running' }))
+        if (!this.isAuthorized(req)) {
+          res.writeHead(401)
+          res.end(JSON.stringify({ error: 'Unauthorized. Provide token via Authorization: Bearer <token> header.' }))
           return
         }
 
-        if (!this.isAuthorized(req)) {
-          res.writeHead(401)
-          res.end(JSON.stringify({ error: 'Unauthorized. Provide Bearer token or ?token= parameter.' }))
+        if (req.url === '/status') {
+          res.writeHead(200)
+          res.end(JSON.stringify({ app: 'Argus', status: 'running', clients: this.clients.length }))
           return
         }
 
@@ -117,7 +117,7 @@ export class CompanionServer {
       'Connection': 'keep-alive',
     })
 
-    const clientId = Math.random().toString(36).slice(2)
+    const clientId = randomUUID()
     const client: CompanionClient = {
       id: clientId,
       send: (data: string) => {

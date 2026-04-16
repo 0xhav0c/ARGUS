@@ -98,8 +98,8 @@ export class AnomalyEngine {
         const domains = [...new Set(incs.map(i => i.domain))]
         if (domains.length >= 2) {
           results.push({
-            id: `corr-${country}`, type: 'correlation', title: `Multi-domain crisis: ${country}`,
-            description: `${incs.length} high/critical events across ${domains.join(', ')} in ${country}.`,
+            id: `corr-${country}`, type: 'correlation', title: `Multi-domain co-occurrence: ${country}`,
+            description: `${incs.length} high/critical events co-occurring across ${domains.join(', ')} domains in ${country} within 24h. This indicates simultaneous activity, not a statistical correlation.`,
             severity: 'HIGH',
             relatedIncidents: incs.map(i => ({ id: i.id, title: i.title, severity: i.severity, domain: i.domain, country: i.country, timestamp: i.timestamp, latitude: i.latitude, longitude: i.longitude })),
             detectedAt: new Date().toISOString(), region: country,
@@ -208,7 +208,7 @@ export class AnomalyEngine {
           riskScore: score,
           trend: data.critical >= 5 ? 'increasing' : data.critical >= 2 ? 'stable' : 'decreasing',
           factors: [...data.domains],
-          prediction: score >= 70 ? 'High probability of escalation' : score >= 40 ? 'Moderate risk, monitor closely' : 'Situation stabilizing',
+          prediction: score >= 70 ? 'High threat level — elevated critical incident density' : score >= 40 ? 'Moderate threat level — monitor closely' : 'Low threat level — limited critical activity',
         }
       })
   }

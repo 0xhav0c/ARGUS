@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import type { Incident, IncidentDomain } from '../../../shared/types'
 import { useFilterStore } from '@/stores/filter-store'
 import { InfoTip } from '../ui/InfoTip'
+import { ExpandableListPopup } from '../ui/ExpandableList'
 
 const P = {
   bg: '#0a0e17',
@@ -37,7 +38,8 @@ interface Props {
 }
 
 export function DashboardFeed({ incidents, onLocateIncident }: Props) {
-  const [showCount, setShowCount] = useState(20)
+  const [popupOpen, setPopupOpen] = useState(false)
+  const showCount = 10
 
   const searchQuery = useFilterStore(s => s.searchQuery)
   const setSearchQuery = useFilterStore(s => s.setSearchQuery)
@@ -158,7 +160,8 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ width: '3px', height: '16px', background: '#ff6b35', borderRadius: '2px' }} />
         <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>INCIDENT FEED</span>
-        <InfoTip text="Incident feed aggregated from RSS sources, APIs and intelligence feeds. Data freshness depends on source publication timing and poll interval." />
+        <InfoTip text="Incident feed filtered by active sidebar layers and map filters. Toggle layers in the sidebar to include/exclude domains. For unfiltered data, see Intelligence tab." />
+        <span style={{ fontSize: '9px', color: '#ff6b35', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.8 }}>FILTERED</span>
         <span style={{ fontSize: '9px', color: P.dim }}>{filteredAll.length} / {incidents.length} events</span>
         {filterCount > 0 && (
           <span style={{
@@ -333,17 +336,104 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           </div>
         )}
 
-        {showCount < filteredAll.length && (
-          <button type="button" onClick={() => setShowCount(c => c + 20)} style={{
+        {filteredAll.length > showCount && (
+          <button type="button" onClick={() => setPopupOpen(true)} style={{
             width: '100%', padding: '10px', fontSize: '10px',
-            color: P.accent, background: 'transparent', border: 'none',
-            borderTop: `1px solid ${P.border}`, cursor: 'pointer',
-            fontFamily: P.font, fontWeight: 600, letterSpacing: '0.1em',
-          }}>
-            LOAD MORE ({filteredAll.length - showCount} remaining)
+            color: P.accent, background: `${P.accent}06`,
+            border: 'none', borderTop: `1px solid ${P.border}`,
+            cursor: 'pointer', fontFamily: P.font, fontWeight: 700, letterSpacing: '0.06em',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${P.accent}12` }}
+          onMouseLeave={e => { e.currentTarget.style.background = `${P.accent}06` }}
+          >
+            VIEW ALL {filteredAll.length} INCIDENTS →
           </button>
         )}
       </div>
+
+      {popupOpen && (
+        <FeedPopup incidents={filteredAll} onLocateIncident={onLocateIncident} onClose={() => setPopupOpen(false)} />
+      )}
     </section>
+  )
+}
+
+function FeedPopup({ incidents, onLocateIncident, onClose }: { incidents: Incident[]; onLocateIncident: (i: Incident) => void; onClose: () => void }) {
+  const sevOptions = useMemo(() => {
+    const s = new Set<string>()
+    for (const i of incidents) s.add(i.severity)
+    return [...s]
+  }, [incidents])
+  const domOptions = useMemo(() => {
+    const s = new Set<string>()
+    for (const i of incidents) s.add(i.domain)
+    return [...s]
+  }, [incidents])
+  const srcOptions = useMemo(() => {
+    const s = new Set<string>()
+    for (const i of incidents) if (i.source) s.add(i.source)
+    return [...s].sort()
+  }, [incidents])
+  const countryOptions = useMemo(() => {
+    const s = new Set<string>()
+    for (const i of incidents) if (i.country) s.add(i.country)
+    return [...s].sort()
+  }, [incidents])
+
+  return (
+    <ExpandableListPopup
+      items={incidents}
+      title="Incident Feed"
+      icon="📡"
+      color="#ff6b35"
+      onClose={onClose}
+      searchable
+      searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+      filters={[
+        { id: 'severity', label: 'Severity', options: sevOptions },
+        { id: 'domain', label: 'Domain', options: domOptions },
+        ...(srcOptions.length > 1 ? [{ id: 'source', label: 'Source', options: srcOptions }] : []),
+        ...(countryOptions.length > 1 ? [{ id: 'country', label: 'Country', options: countryOptions }] : []),
+      ]}
+      filterFn={(inc, f) => {
+        if (f.severity && inc.severity !== f.severity) return false
+        if (f.domain && inc.domain !== f.domain) return false
+        if (f.source && inc.source !== f.source) return false
+        if (f.country && (inc.country || '') !== f.country) return false
+        return true
+      }}
+      renderItem={(inc) => {
+        const sevColor = SEVERITY_COLORS[inc.severity] || P.dim
+        const clickable = inc.latitude != null && inc.longitude != null
+        return (
+          <div key={inc.id}
+            onClick={() => onLocateIncident(inc)}
+            style={{
+              display: 'flex', gap: '8px', alignItems: 'flex-start',
+              padding: '8px 10px', background: P.bg, border: `1px solid ${P.border}`,
+              borderRadius: '5px', marginBottom: '4px',
+              cursor: 'pointer', transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = P.bg }}
+          >
+            <span style={{
+              fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+              background: sevColor + '20', color: sevColor, marginTop: '1px',
+            }}>{inc.severity}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '10px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>
+                {inc.title}
+                {clickable && <span style={{ color: P.accent, marginLeft: 6, fontSize: '9px' }}>◎</span>}
+              </div>
+              <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                {inc.domain} · {inc.source} · {inc.country || 'Global'} · {new Date(inc.timestamp).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        )
+      }}
+    />
   )
 }

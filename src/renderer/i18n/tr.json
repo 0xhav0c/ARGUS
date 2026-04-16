@@ -8,11 +8,30 @@
   "topbar": {
     "search": "Olay, bölge veya kaynak ara...",
     "zulu": "ZULU",
-    "online": "ÇEVRİMİÇİ"
+    "online": "ÇEVRİMİÇİ",
+    "alerts": "Uyarılar",
+    "settings": "Ayarlar",
+    "tracking": "Takip",
+    "fullscreen": "Tam Ekran",
+    "minimize": "Küçült",
+    "maximize": "Büyüt",
+    "restore": "Geri Yükle",
+    "close": "Kapat"
   },
   "sidebar": {
     "layers": "KATMANLAR",
-    "activeLayers": "Aktif Katmanlar"
+    "activeLayers": "Aktif Katmanlar",
+    "tracking": "TAKİP",
+    "views": "GÖRÜNÜMLER",
+    "watchlist": "İZLEME LİSTESİ",
+    "collapse": "Daralt",
+    "expand": "Genişlet"
+  },
+  "domains": {
+    "conflict": "Çatışma",
+    "cyber": "Siber",
+    "intel": "İstihbarat",
+    "finance": "Finans"
   },
   "layers": {
     "conflict": "ÇATIŞMA",
@@ -36,6 +55,24 @@
     "currencies": "Döviz Kurları",
     "crypto": "Kripto Paralar"
   },
+  "tracking": {
+    "flights": "Uçuşlar",
+    "vessels": "Gemiler",
+    "satellites": "Uydular",
+    "earthquakes": "Depremler"
+  },
+  "tabs": {
+    "intelligence": "İSTİHBARAT",
+    "analysis": "ANALİZ",
+    "security": "GÜVENLİK",
+    "finance": "FİNANS",
+    "entities": "VARLIKLAR",
+    "compare": "KARŞILAŞTIR",
+    "operations": "OPERASYONLAR",
+    "media": "MEDYA",
+    "feed": "CANLI AKIŞ",
+    "logs": "GÜNLÜK"
+  },
   "panels": {
     "liveFeed": "Canlı Akış",
     "incidentCount": "{{count}} olay",
@@ -46,13 +83,22 @@
     "locate": "Konumla",
     "viewSource": "Kaynak",
     "hideStats": "İstatistikleri Gizle",
-    "showStats": "İstatistikleri Göster"
+    "showStats": "İstatistikleri Göster",
+    "noData": "Veri mevcut değil",
+    "loading": "Yükleniyor..."
   },
   "filters": {
     "severity": "ÖNC",
     "time": "ZAMAN",
     "region": "BÖLGE",
     "all": "HEPSİ"
+  },
+  "severity": {
+    "critical": "KRİTİK",
+    "high": "YÜKSEK",
+    "medium": "ORTA",
+    "low": "DÜŞÜK",
+    "info": "BİLGİ"
   },
   "stats": {
     "domainDistribution": "Alan Dağılımı",
@@ -67,6 +113,23 @@
     "feeds": "Kaynaklar",
     "active": "aktif",
     "incidents": "Olaylar",
+    "events": "Olaylar",
+    "critical": "Kritik",
     "cache": "Önbellek"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "language": "Dil",
+    "apiKeys": "API Anahtarları",
+    "appearance": "Görünüm",
+    "notifications": "Bildirimler",
+    "save": "Kaydet",
+    "cancel": "İptal"
+  },
+  "ai": {
+    "title": "AI Asistan",
+    "placeholder": "Olaylar hakkında sorun...",
+    "analyzing": "Analiz ediliyor...",
+    "error": "AI Hatası"
   }
 }

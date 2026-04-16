@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Incident } from '../../../shared/types'
 
 const P = {
@@ -19,10 +20,16 @@ interface StatusBarProps {
 }
 
 export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '3d', onSceneModeChange }: StatusBarProps) {
+  const { t } = useTranslation()
   const [uptime, setUptime] = useState(0)
+  const [appVersion, setAppVersion] = useState<string | null>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => setUptime(prev => prev + 1), 1000)
+    window.argus?.getAppUptime?.().then(setUptime).catch(() => {})
+    window.argus?.getAppVersion?.().then(setAppVersion).catch(() => {})
+    const timer = setInterval(() => {
+      window.argus?.getAppUptime?.().then(setUptime).catch(() => setUptime(prev => prev + 1))
+    }, 1000)
     return () => clearInterval(timer)
   }, [])
 
@@ -63,21 +70,21 @@ export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{
             width: '5px', height: '5px', borderRadius: '50%',
-            background: P.success,
-            boxShadow: `0 0 4px ${P.success}60`,
+            background: incidents.length > 0 ? P.success : P.warning,
+            boxShadow: `0 0 4px ${incidents.length > 0 ? P.success : P.warning}60`,
           }} />
-          <span>SYS OK</span>
+          <span>{incidents.length > 0 ? t('statusbar.sysOk') : t('statusbar.noData', 'NO DATA')}</span>
         </div>
         <span style={{ color: P.border }}>│</span>
         <span>↑ {formatUptime(uptime)}</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>Events: <span style={{ color: P.accent }}>{stats.total}</span></span>
+        <span>{t('statusbar.events')}: <span style={{ color: P.accent }}>{stats.total}</span></span>
         {stats.critical > 0 && (
           <>
             <span style={{ color: P.border }}>│</span>
-            <span>Critical: <span style={{ color: '#ff3b5c' }}>{stats.critical}</span></span>
+            <span>{t('statusbar.critical')}: <span style={{ color: '#ff3b5c' }}>{stats.critical}</span></span>
           </>
         )}
         <span style={{ color: P.border }}>│</span>
@@ -91,7 +98,7 @@ export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span>v1.0.3</span>
+        <span>{appVersion ? `v${appVersion}` : 'v—'}</span>
       </div>
     </footer>
   )

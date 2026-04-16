@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useContext, createContext, type CSSProperties } from 'react'
 import type { CryptoData, CommodityData, ForexData, MarketIndex, FinanceFullData, MarketSentiment, BondYield } from '../../../shared/types'
 import { InfoTip } from '../ui/InfoTip'
+import { ExpandableList } from '../ui/ExpandableList'
 
 const P = {
   bg: '#0a0e17', card: '#0d1220', cardAlt: '#0f1525', border: '#141c2e',
@@ -551,7 +552,7 @@ function NewsTab({ onLocateIncident }: { onLocateIncident?: (i: any) => void }) 
   useEffect(() => {
     window.argus.getIncidents?.({ domain: 'FINANCE' }).then((list: any) => {
       const arr = Array.isArray(list) ? list : []
-      setIncidents(arr.filter((i: any) => i.domain === 'FINANCE').sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 40))
+      setIncidents(arr.filter((i: any) => i.domain === 'FINANCE').sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()))
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
@@ -562,19 +563,38 @@ function NewsTab({ onLocateIncident }: { onLocateIncident?: (i: any) => void }) 
   return (
     <div>
       <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>FINANCE INCIDENT FEED ({incidents.length} events) <InfoTip text="Finance-domain incidents from intelligence feeds. These are geopolitical or economic events that may impact markets — sanctions, trade disputes, central bank decisions, etc." size={11} /></div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {incidents.map((inc: any) => {
+      <ExpandableList
+        items={incidents}
+        title="Finance News"
+        icon="◆"
+        color={P.accent}
+        emptyMessage="No finance incidents available"
+        searchable
+        searchFn={(inc: any, q: string) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+        filters={[
+          { id: 'severity', label: 'Severity', options: [...new Set(incidents.map((i: any) => i.severity))] as string[] },
+          { id: 'source', label: 'Source', options: [...new Set(incidents.map((i: any) => i.source).filter(Boolean))] as string[] },
+        ]}
+        filterFn={(inc: any, f: Record<string, string>) => {
+          if (f.severity && inc.severity !== f.severity) return false
+          if (f.source && inc.source !== f.source) return false
+          return true
+        }}
+        renderItem={(inc: any) => {
           const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
           return (
             <div key={inc.id}
               onClick={clickable ? () => onLocateIncident(inc) : undefined}
-              style={{ padding: '10px 14px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', display: 'flex', gap: '10px', alignItems: 'flex-start', cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s' }}
+              style={{ padding: '10px 14px', background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', display: 'flex', gap: '10px', alignItems: 'flex-start', cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s', marginBottom: '4px' }}
               onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
               onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = P.card } : undefined}
             >
               <div style={{ width: '3px', borderRadius: '2px', background: sevColors[inc.severity] || P.dim, minHeight: '30px', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '11px', color: P.text, fontWeight: 500, marginBottom: '3px', lineHeight: 1.4 }}>{inc.title}{clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}</div>
+                <div style={{ fontSize: '11px', color: P.text, fontWeight: 500, marginBottom: '3px', lineHeight: 1.4 }}>
+                  {inc.title}
+                  {clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                </div>
                 <div style={{ display: 'flex', gap: '8px', fontSize: '9px', color: P.dim }}>
                   <span>{inc.source}</span>
                   <span>{inc.country}</span>
@@ -584,9 +604,8 @@ function NewsTab({ onLocateIncident }: { onLocateIncident?: (i: any) => void }) 
               <span style={{ fontSize: '9px', color: sevColors[inc.severity] || P.dim, fontWeight: 700, letterSpacing: '0.05em', flexShrink: 0 }}>{inc.severity}</span>
             </div>
           )
-        })}
-        {incidents.length === 0 && <div style={{ padding: '30px', textAlign: 'center', color: P.dim, fontSize: '11px' }}>No finance incidents available</div>}
-      </div>
+        }}
+      />
     </div>
   )
 }

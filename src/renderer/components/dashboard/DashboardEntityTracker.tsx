@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { Incident } from '../../../shared/types'
 import { useEntityStore, type TrackedEntity } from '../../stores/entity-store'
 import { InfoTip } from '../ui/InfoTip'
+import { ExpandableListPopup } from '../ui/ExpandableList'
 
 const P = {
   bg: '#0a0e17',
@@ -72,9 +73,10 @@ function matchBadgeStyle(count: number): CSSProperties {
 
 interface Props {
   incidents: Incident[]
+  onLocateIncident?: (i: Incident) => void
 }
 
-export function DashboardEntityTracker({ incidents }: Props) {
+export function DashboardEntityTracker({ incidents, onLocateIncident }: Props) {
   const entities = useEntityStore((s) => s.entities)
   const addEntity = useEntityStore((s) => s.addEntity)
   const removeEntity = useEntityStore((s) => s.removeEntity)
@@ -85,13 +87,8 @@ export function DashboardEntityTracker({ incidents }: Props) {
   const [keywordsStr, setKeywordsStr] = useState('')
   const [color, setColor] = useState('#00d4ff')
 
-  const incLenRef = useRef(0)
-  const entityLenRef = useRef(0)
-
   useEffect(() => {
-    if (incidents.length === incLenRef.current && entities.length === entityLenRef.current) return
-    incLenRef.current = incidents.length
-    entityLenRef.current = entities.length
+    if (incidents.length === 0 || entities.length === 0) return
 
     const timer = setTimeout(() => {
       const currentEntities = useEntityStore.getState().entities
@@ -104,7 +101,7 @@ export function DashboardEntityTracker({ incidents }: Props) {
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [incidents.length, entities.length])
+  }, [incidents, entities])
 
   const onAdd = useCallback(() => {
     const trimmed = name.trim()
@@ -318,137 +315,161 @@ export function DashboardEntityTracker({ incidents }: Props) {
             No entities tracked yet. Add one above to start monitoring.
           </div>
         )}
-        {entities.map((entity) => {
-          const liveCount = entity.matchCount ?? 0
-          const liveLast = entity.lastSeen || ''
-          const totalMatches = liveCount
-          return (
-            <div
-              key={entity.id}
-              style={{
-                background: P.card,
-                border: `1px solid ${P.border}`,
-                borderRadius: '8px',
-                padding: '12px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                opacity: entity.enabled ? 1 : 0.55,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: P.text,
-                      fontFamily: P.font,
-                      marginBottom: '4px',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {entity.name}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                    <span
-                      style={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        padding: '3px 6px',
-                        borderRadius: '4px',
-                        background: `${entity.color}22`,
-                        color: entity.color,
-                        border: `1px solid ${entity.color}44`,
-                        fontFamily: P.font,
-                      }}
-                    >
-                      {TYPE_LABEL[entity.type]}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        fontFamily: P.font,
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        ...matchBadgeStyle(liveCount),
-                      }}
-                    >
-                      {liveCount} MATCH{liveCount === 1 ? '' : 'ES'}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-                  <button
-                    type="button"
-                    onClick={() => toggleEntity(entity.id)}
-                    style={{
-                      background: entity.enabled ? `${P.accent}18` : P.bg,
-                      border: `1px solid ${entity.enabled ? P.accent : P.border}`,
-                      color: entity.enabled ? P.accent : P.dim,
-                      cursor: 'pointer',
-                      fontFamily: P.font,
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      letterSpacing: '0.08em',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {entity.enabled ? 'ON' : 'OFF'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeEntity(entity.id)}
-                    style={{
-                      background: 'transparent',
-                      border: `1px solid #ff3b5c55`,
-                      color: '#ff3b5c',
-                      cursor: 'pointer',
-                      fontFamily: P.font,
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      letterSpacing: '0.08em',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    DELETE
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
-                  Last seen:{' '}
-                  <span style={{ color: P.text }}>{formatLastSeen(liveLast)}</span>
-                </div>
-                <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
-                  Total: <span style={{ color: entity.color }}>{totalMatches}</span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  paddingTop: '4px',
-                  borderTop: `1px solid ${P.border}`,
-                }}
-              >
-                <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font, letterSpacing: '0.06em' }}>
-                  MATCHES
-                </span>
-                <div style={{ fontSize: '9px', fontWeight: 700, color: entity.color, fontFamily: P.font }}>{liveCount}</div>
-              </div>
-            </div>
-          )
-        })}
+        {entities.map((entity) => (
+          <EntityCard key={entity.id} entity={entity} incidents={incidents} onLocateIncident={onLocateIncident} onToggle={toggleEntity} onRemove={removeEntity} />
+        ))}
       </div>
     </section>
+  )
+}
+
+const SEVERITY_COLORS: Record<string, string> = { CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', INFO: '#4a5568' }
+
+function EntityCard({ entity, incidents, onLocateIncident, onToggle, onRemove }: {
+  entity: TrackedEntity
+  incidents: Incident[]
+  onLocateIncident?: (i: Incident) => void
+  onToggle: (id: string) => void
+  onRemove: (id: string) => void
+}) {
+  const [showIncidents, setShowIncidents] = useState(false)
+  const liveCount = entity.matchCount ?? 0
+  const liveLast = entity.lastSeen || ''
+
+  const matchedIncidents = useMemo(() =>
+    incidents.filter(inc => incidentMatchesEntity(inc, entity))
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    [incidents, entity]
+  )
+
+  const sevFilterOpts = useMemo(() => {
+    const s = new Set<string>()
+    for (const inc of matchedIncidents) s.add(inc.severity)
+    return [...s]
+  }, [matchedIncidents])
+
+  const domFilterOpts = useMemo(() => {
+    const s = new Set<string>()
+    for (const inc of matchedIncidents) s.add(inc.domain)
+    return [...s]
+  }, [matchedIncidents])
+
+  return (
+    <>
+      <div
+        style={{
+          background: P.card, border: `1px solid ${P.border}`, borderRadius: '8px',
+          padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px',
+          opacity: entity.enabled ? 1 : 0.55,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: P.text, fontFamily: P.font, marginBottom: '4px', wordBreak: 'break-word' }}>
+              {entity.name}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+              <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', padding: '3px 6px', borderRadius: '4px', background: `${entity.color}22`, color: entity.color, border: `1px solid ${entity.color}44`, fontFamily: P.font }}>
+                {TYPE_LABEL[entity.type]}
+              </span>
+              <span style={{ fontSize: '9px', fontWeight: 700, fontFamily: P.font, padding: '3px 8px', borderRadius: '4px', ...matchBadgeStyle(liveCount) }}>
+                {liveCount} MATCH{liveCount === 1 ? '' : 'ES'}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+            <button type="button" onClick={() => onToggle(entity.id)} style={{
+              background: entity.enabled ? `${P.accent}18` : P.bg, border: `1px solid ${entity.enabled ? P.accent : P.border}`,
+              color: entity.enabled ? P.accent : P.dim, cursor: 'pointer', fontFamily: P.font,
+              fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '4px',
+            }}>{entity.enabled ? 'ON' : 'OFF'}</button>
+            <button type="button" onClick={() => onRemove(entity.id)} style={{
+              background: 'transparent', border: `1px solid #ff3b5c55`, color: '#ff3b5c', cursor: 'pointer',
+              fontFamily: P.font, fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em', padding: '5px 10px', borderRadius: '4px',
+            }}>DELETE</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+          <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
+            Last seen: <span style={{ color: P.text }}>{formatLastSeen(liveLast)}</span>
+          </div>
+          <div style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>
+            Total: <span style={{ color: entity.color }}>{liveCount}</span>
+          </div>
+        </div>
+
+        {liveCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowIncidents(true)}
+            style={{
+              width: '100%', padding: '8px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+              letterSpacing: '0.06em', cursor: 'pointer',
+              background: `${entity.color}08`, border: `1px solid ${entity.color}30`,
+              borderRadius: '5px', color: entity.color, transition: 'all 0.15s',
+            }}
+          >
+            VIEW {liveCount} INCIDENT{liveCount === 1 ? '' : 'S'} →
+          </button>
+        )}
+        {liveCount === 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', paddingTop: '4px', borderTop: `1px solid ${P.border}` }}>
+            <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font, letterSpacing: '0.06em' }}>NO MATCHES</span>
+          </div>
+        )}
+      </div>
+
+      {showIncidents && (
+        <ExpandableListPopup
+          items={matchedIncidents}
+          title={`${entity.name} Incidents`}
+          icon="◎"
+          color={entity.color}
+          onClose={() => setShowIncidents(false)}
+          searchable
+          searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+          filters={[
+            { id: 'severity', label: 'Severity', options: sevFilterOpts },
+            ...(domFilterOpts.length > 1 ? [{ id: 'domain', label: 'Domain', options: domFilterOpts }] : []),
+          ]}
+          filterFn={(inc, f) => {
+            if (f.severity && inc.severity !== f.severity) return false
+            if (f.domain && inc.domain !== f.domain) return false
+            return true
+          }}
+          renderItem={(inc) => {
+            const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
+            return (
+              <div key={inc.id}
+                onClick={clickable ? () => onLocateIncident(inc) : undefined}
+                style={{
+                  display: 'flex', gap: '8px', alignItems: 'flex-start',
+                  padding: '8px 10px', background: P.bg, border: `1px solid ${P.border}`,
+                  borderRadius: '5px', marginBottom: '4px',
+                  cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s',
+                }}
+                onMouseEnter={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                onMouseLeave={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = P.bg } : undefined}
+              >
+                <span style={{
+                  fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+                  background: (SEVERITY_COLORS[inc.severity] || P.dim) + '20', color: SEVERITY_COLORS[inc.severity] || P.dim, marginTop: '1px',
+                }}>{inc.severity}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '10px', color: P.text, fontWeight: 600, lineHeight: 1.3 }}>
+                    {inc.title}
+                    {clickable && <span style={{ color: P.accent, marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                  </div>
+                  <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                    {inc.domain} · {inc.source} · {inc.country || 'Global'} · {new Date(inc.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )
+          }}
+        />
+      )}
+    </>
   )
 }

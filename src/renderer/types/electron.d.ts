@@ -29,7 +29,7 @@ export interface ArgusAPI {
 
   getEarthquakes: () => Promise<import('../../shared/types').EarthquakeData[]>
   getDisasters: () => Promise<import('../../shared/types').NaturalDisaster[]>
-  getFlights: () => Promise<import('../../shared/types').FlightData[]>
+  getFlights: (bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => Promise<import('../../shared/types').FlightData[]>
   getVessels: () => Promise<import('../../shared/types').VesselData[]>
   getSatellites: () => Promise<import('../../shared/types').SatelliteData[]>
   getVIPTweets: (accounts?: any[]) => Promise<import('../../shared/types').VIPTweet[]>
@@ -101,6 +101,9 @@ export interface ArgusAPI {
   testApiKey: (name: string) => Promise<{ success: boolean; message: string; latencyMs?: number }>
 
   onMainLog: (callback: (data: { level: string; category: string; message: string; detail?: string }) => void) => () => void
+
+  getAppVersion: () => Promise<string>
+  getAppUptime: () => Promise<number>
 }
 
 declare global {

@@ -117,8 +117,8 @@ export class EntityExtractionService {
 
   analyzeSentiment(incidents: Incident[]): SentimentData[] {
     const regionMap = new Map<string, { pos: number; neg: number; neu: number; count: number }>()
-    const positiveWords = /\bpeace|ceasefire|agreement|cooperation|aid|humanitarian|rescue|recovery|reform|progress|growth|stability\b/i
-    const negativeWords = /\battack|kill|bomb|missile|strike|war|conflict|threat|sanction|crisis|terror|casualt|dead|wound|explosion|destroy\b/i
+    const positiveWords = /\b(?:peace|ceasefire|agreement|cooperation|aid|humanitarian|rescue|recovery|reform|progress|growth|stability)\b/gi
+    const negativeWords = /\b(?:attack|kill|bomb|missile|strike|war|conflict|threat|sanction|crisis|terror|casualt|dead|wound|explosion|destroy)\b/gi
 
     for (const inc of incidents) {
       const region = inc.country || inc.region || 'Global'

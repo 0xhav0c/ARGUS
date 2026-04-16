@@ -4,6 +4,7 @@ import { getApiKeyManager } from './api-key-manager'
 let cache: CyberThreat[] = []
 let lastFetch = 0
 const TTL = 300000
+const FRESHNESS_WINDOW = 30 * 86400000 // 30 days
 
 export interface ShodanResult {
   ip: string
@@ -61,9 +62,10 @@ export class CyberThreatService {
       }
     }
 
-    cache = Array.from(seen.values()).sort(
-      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-    )
+    const cutoff = Date.now() - FRESHNESS_WINDOW
+    cache = Array.from(seen.values())
+      .filter(t => new Date(t.publishedAt).getTime() > cutoff)
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
     lastFetch = Date.now()
     console.log(`[CTI] ${cache.length} cyber threats loaded`)
     return cache
@@ -192,17 +194,25 @@ export class CyberThreatService {
       const res = await fetch('https://raw.githubusercontent.com/joshhighet/ransomwatch/main/posts.json', { signal: AbortSignal.timeout(8000) })
       if (!res.ok) return []
       const data: any = await res.json()
-      return (Array.isArray(data) ? data : []).slice(0, 20).map((p: any) => ({
-        id: `ransom-${p.post_title?.substring(0, 20) || Math.random()}`,
-        type: 'ransomware' as const,
-        title: `Ransomware: ${p.group_name} → ${p.post_title || 'Unknown Target'}`,
-        severity: 'HIGH' as const,
-        source: 'RansomWatch',
-        publishedAt: p.discovered || new Date().toISOString(),
-        description: `Group: ${p.group_name}. Target: ${p.post_title}`,
-        attackerGroup: p.group_name,
-        sourceUrl: p.post_url,
-      }))
+      const cutoff = Date.now() - FRESHNESS_WINDOW
+      return (Array.isArray(data) ? data : [])
+        .filter((p: any) => {
+          const discovered = p.discovered ? new Date(p.discovered).getTime() : 0
+          return discovered > cutoff
+        })
+        .sort((a: any, b: any) => new Date(b.discovered || 0).getTime() - new Date(a.discovered || 0).getTime())
+        .slice(0, 30)
+        .map((p: any) => ({
+          id: `ransom-${p.post_title?.substring(0, 20) || Math.random()}`,
+          type: 'ransomware' as const,
+          title: `Ransomware: ${p.group_name} → ${p.post_title || 'Unknown Target'}`,
+          severity: 'HIGH' as const,
+          source: 'RansomWatch',
+          publishedAt: p.discovered || new Date().toISOString(),
+          description: `Group: ${p.group_name}. Target: ${p.post_title}`,
+          attackerGroup: p.group_name,
+          sourceUrl: p.post_url,
+        }))
     } catch { return [] }
   }
 
@@ -214,12 +224,14 @@ export class CyberThreatService {
       )
       if (!res.ok) return []
       const data: any = await res.json()
+      const cutoff = Date.now() - FRESHNESS_WINDOW
       const vulns: any[] = (data.vulnerabilities || [])
+        .filter((v: any) => new Date(v.dateAdded).getTime() > cutoff)
         .sort((a: any, b: any) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
-        .slice(0, 15)
+        .slice(0, 20)
       return vulns.map((vuln: any) => ({
         id: `kev-${vuln.cveID}`,
-        type: 'exploit' as const,
+        type: 'cve' as const,
         title: `🔴 Actively Exploited: ${vuln.cveID} — ${vuln.vendorProject} ${vuln.product}`,
         severity: 'CRITICAL' as const,
         source: 'CISA KEV',
@@ -235,12 +247,15 @@ export class CyberThreatService {
   private async fetchGitHubAdvisories(): Promise<CyberThreat[]> {
     try {
       const res = await fetch(
-        'https://api.github.com/advisories?per_page=15&type=reviewed&severity=critical,high',
+        'https://api.github.com/advisories?per_page=20&type=reviewed&severity=critical,high',
         { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) },
       )
       if (!res.ok) return []
-      const data: any[] = await res.json()
-      return (Array.isArray(data) ? data : []).map((adv: any) => ({
+      const data = (await res.json()) as any[]
+      const cutoff = Date.now() - FRESHNESS_WINDOW
+      return (Array.isArray(data) ? data : [])
+        .filter((adv: any) => new Date(adv.published_at || 0).getTime() > cutoff)
+        .map((adv: any) => ({
         id: `ghsa-${adv.ghsa_id}`,
         type: 'cve' as const,
         title: `${adv.cve_id || adv.ghsa_id}: ${adv.summary?.substring(0, 120)}`,

@@ -2,6 +2,13 @@ import { getDatabase, isFallbackMode, getFallbackStore } from '../database/schem
 import type { Incident, FeedSource } from '../../shared/types'
 import { resolveLocation } from './geo-resolver'
 
+let _instance: CacheManager | null = null
+
+export function getCacheManager(): CacheManager {
+  if (!_instance) _instance = new CacheManager()
+  return _instance
+}
+
 export class CacheManager {
   upsertIncident(incident: Incident): void {
     if (isFallbackMode()) {

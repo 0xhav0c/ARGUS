@@ -237,7 +237,7 @@ function TopCountriesChart({ incidents }: { incidents: Incident[] }) {
     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px', padding: '10px', minWidth: 0, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', minWidth: 0 }}>
         <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.06em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>TOP COUNTRIES</span>
-        <InfoTip text="Countries with the most incidents in the last 24 hours, ranked by total count." size={11} />
+        <InfoTip text="Countries with the most incidents across all cached data, ranked by total count." size={11} />
       </div>
       <div ref={wrapRef} style={{ width: '100%', height: '160px' }}>
         <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
@@ -339,7 +339,7 @@ export function DashboardStats({ incidents }: { incidents: Incident[] }) {
     return () => clearInterval(iv)
   }, [])
 
-  const lastRefreshed = useMemo(() => new Date().toLocaleTimeString(), [incidents.length])
+  const lastRefreshed = useMemo(() => new Date().toLocaleTimeString(), [incidents])
 
   const stats = useMemo(() => {
     const now = Date.now()

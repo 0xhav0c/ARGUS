@@ -116,21 +116,7 @@ export function SecurityIntelPage({ onLocateIncident }: SecurityIntelPageProps) 
         <button onClick={loadAll} disabled={loading} style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: '9px', fontFamily: P.font, fontWeight: 600, background: `${P.accent}10`, border: `1px solid ${P.accent}30`, borderRadius: '4px', color: P.accent, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.5 : 1 }}>↻ REFRESH</button>
       </div>
 
-      {effectiveTab === 'cyber' && (
-        <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-          {(cyber || []).map(c => (
-            <Card key={c.id} title={c.title} subtitle={`${c.source} • ${c.type.toUpperCase()} • ${new Date(c.publishedAt).toLocaleDateString()}`} color={sevColor(c.severity)}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                <span style={{ fontSize: '9px', padding: '1px 5px', background: sevColor(c.severity) + '20', color: sevColor(c.severity), borderRadius: '2px', fontWeight: 700 }}>{c.severity}</span>
-                {c.cvssScore && <span style={{ fontSize: '9px', color: P.dim }}>CVSS: {c.cvssScore}</span>}
-                {c.attackerGroup && <span style={{ fontSize: '9px', color: '#a78bfa' }}>Group: {c.attackerGroup}</span>}
-                {c.targetSector && <span style={{ fontSize: '9px', color: P.dim }}>Sector: {c.targetSector}</span>}
-              </div>
-            </Card>
-          ))}
-          {(!cyber || cyber.length === 0) && <Empty />}
-        </div>
-      )}
+      {effectiveTab === 'cyber' && <CyberThreatView threats={cyber || []} />}
 
       {effectiveTab === 'pandemic' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '8px' }}>
@@ -362,6 +348,103 @@ function SpaceNeoView({ events: rawEvents }: { events: SpaceWeatherEvent[] }) {
       })}
 
       {filtered.length === 0 && <Empty />}
+    </div>
+  )
+}
+
+type CyberCategory = 'all' | 'exploits' | 'ransomware' | 'vulnerabilities' | 'other'
+
+const CYBER_CATS: { id: CyberCategory; label: string; icon: string; color: string }[] = [
+  { id: 'all', label: 'ALL', icon: '🛡', color: '#ff3b5c' },
+  { id: 'exploits', label: 'ACTIVELY EXPLOITED', icon: '🔴', color: '#ff3b5c' },
+  { id: 'ransomware', label: 'RANSOMWARE', icon: '💀', color: '#ff6b35' },
+  { id: 'vulnerabilities', label: 'CVE / VULNERABILITIES', icon: '🐛', color: '#f5c542' },
+  { id: 'other', label: 'OTHER', icon: '⚡', color: '#00d4ff' },
+]
+
+function categorizeThreat(t: CyberThreat): CyberCategory {
+  if (t.source === 'CISA KEV' || t.title.includes('Actively Exploited')) return 'exploits'
+  if (t.type === 'ransomware') return 'ransomware'
+  if (t.type === 'cve' || t.cveId) return 'vulnerabilities'
+  return 'other'
+}
+
+function CyberThreatView({ threats }: { threats: CyberThreat[] }) {
+  const [cat, setCat] = useState<CyberCategory>('all')
+
+  const counts = useMemo(() => {
+    const m: Record<CyberCategory, number> = { all: threats.length, exploits: 0, ransomware: 0, vulnerabilities: 0, other: 0 }
+    for (const t of threats) m[categorizeThreat(t)]++
+    return m
+  }, [threats])
+
+  const filtered = useMemo(() =>
+    cat === 'all' ? threats : threats.filter(t => categorizeThreat(t) === cat),
+    [threats, cat]
+  )
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {CYBER_CATS.map(c => (
+          <button key={c.id} onClick={() => setCat(c.id)} style={{
+            padding: '5px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+            background: cat === c.id ? `${c.color}15` : 'transparent',
+            border: `1px solid ${cat === c.id ? c.color + '40' : P.border}`,
+            borderRadius: '4px', color: cat === c.id ? c.color : P.dim,
+            cursor: 'pointer', letterSpacing: '0.06em',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}>{c.icon} {c.label} <span style={{ opacity: 0.7 }}>({counts[c.id]})</span></button>
+        ))}
+      </div>
+
+      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        {filtered.map(c => {
+          const cveUrl = c.sourceUrl || (c.cveId ? `https://nvd.nist.gov/vuln/detail/${c.cveId}` : null)
+          const category = categorizeThreat(c)
+          const catCfg = CYBER_CATS.find(cc => cc.id === category)
+          return (
+            <Card key={c.id}
+              title={c.title}
+              subtitle={`${c.source} • ${c.type.toUpperCase()} • ${new Date(c.publishedAt).toLocaleDateString()}`}
+              color={sevColor(c.severity)}
+            >
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px', alignItems: 'center' }}>
+                <span style={{ fontSize: '9px', padding: '1px 5px', background: sevColor(c.severity) + '20', color: sevColor(c.severity), borderRadius: '2px', fontWeight: 700 }}>{c.severity}</span>
+                {catCfg && <span style={{ fontSize: '9px', padding: '1px 5px', background: `${catCfg.color}15`, color: catCfg.color, borderRadius: '2px', fontWeight: 600 }}>{catCfg.icon} {catCfg.label}</span>}
+                {c.cvssScore != null && <span style={{ fontSize: '9px', color: P.dim, fontWeight: 600 }}>CVSS: {c.cvssScore}</span>}
+                {c.cveId && (
+                  <span
+                    onClick={(e) => { e.stopPropagation(); if (cveUrl) window.open(cveUrl, '_blank', 'noopener,noreferrer') }}
+                    style={{
+                      fontSize: '9px', fontWeight: 700, color: '#00d4ff', cursor: 'pointer',
+                      padding: '1px 6px', background: '#00d4ff12', border: '1px solid #00d4ff30',
+                      borderRadius: '3px', transition: 'all 0.15s',
+                    }}
+                    title={`Open ${c.cveId} details`}
+                  >{c.cveId} ↗</span>
+                )}
+                {c.attackerGroup && <span style={{ fontSize: '9px', color: '#a78bfa' }}>Group: {c.attackerGroup}</span>}
+                {c.targetSector && <span style={{ fontSize: '9px', color: P.dim }}>Sector: {c.targetSector}</span>}
+              </div>
+              {c.description && (
+                <div style={{ fontSize: '9px', color: P.dim, marginTop: '6px', lineHeight: 1.5 }}>
+                  {c.description.length > 200 ? c.description.slice(0, 200) + '...' : c.description}
+                </div>
+              )}
+              {cveUrl && !c.cveId && (
+                <div style={{ marginTop: '6px' }}>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); window.open(cveUrl, '_blank', 'noopener,noreferrer') }}
+                    style={{ fontSize: '9px', color: '#00d4ff', cursor: 'pointer', fontWeight: 600 }}
+                  >View Details ↗</span>
+                </div>
+              )}
+            </Card>
+          )
+        })}
+        {filtered.length === 0 && <Empty msg="No threats in this category" />}
+      </div>
     </div>
   )
 }

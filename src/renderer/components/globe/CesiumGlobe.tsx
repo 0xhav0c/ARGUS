@@ -101,6 +101,10 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
 
         const scene = viewer.scene
 
+        // HiDPI/Retina resolution: render at native device pixel ratio for sharp imagery
+        viewer.useBrowserRecommendedResolution = false
+        viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
+
         scene.backgroundColor = Cesium.Color.BLACK
         scene.globe.baseColor = Cesium.Color.fromCssColorString('#0a1628')
         scene.globe.enableLighting = false
@@ -290,7 +294,8 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
         // === IMAGERY LAYERS ===
         viewer.imageryLayers.removeAll()
 
-        scene.globe.maximumScreenSpaceError = 1.3
+        scene.globe.maximumScreenSpaceError = 1.0
+        scene.globe.tileCacheSize = 1000
 
         // Apple Silicon ANGLE/Metal shader bug workaround
         // https://github.com/CesiumGS/cesium/issues/11251
@@ -342,20 +347,25 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           }
         } catch {
           console.warn('[Globe] ArcGIS unavailable, trying Bing')
-          try {
-            const bingImagery = await Cesium.BingMapsImageryProvider.fromUrl(
-              'https://dev.virtualearth.net', {
-                key: import.meta.env.VITE_BING_MAPS_KEY || 'AqtM7MhNr45OFC_jLW5FGtRPBN49cJvRYRfJpfqmcCIVMQWJrIi1LGBqEReIjYGf',
-                mapStyle: Cesium.BingMapsStyle.AERIAL,
+          const bingKey = import.meta.env.VITE_BING_MAPS_KEY
+          if (bingKey) {
+            try {
+              const bingImagery = await Cesium.BingMapsImageryProvider.fromUrl(
+                'https://dev.virtualearth.net', {
+                  key: bingKey,
+                  mapStyle: Cesium.BingMapsStyle.AERIAL,
+                }
+              )
+              if (!destroyed) {
+                satLayer = viewer.imageryLayers.addImageryProvider(bingImagery)
+                satLayer.alpha = 0
+                console.log('[Globe] Bing satellite fallback ready')
               }
-            )
-            if (!destroyed) {
-              satLayer = viewer.imageryLayers.addImageryProvider(bingImagery)
-              satLayer.alpha = 0
-              console.log('[Globe] Bing satellite fallback ready')
+            } catch {
+              console.warn('[Globe] Bing satellite provider failed')
             }
-          } catch {
-            console.warn('[Globe] All satellite providers failed')
+          } else {
+            console.warn('[Globe] No VITE_BING_MAPS_KEY configured, skipping Bing imagery')
           }
         }
 
@@ -483,8 +493,8 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           const alt = viewer.camera.positionCartographic.height
 
           // Satellite imagery fades in as user zooms closer
-          const SAT_START = 5000000
-          const SAT_FULL  = 300000
+          const SAT_START = 8000000
+          const SAT_FULL  = 800000
           let satAlpha = 0
           if (alt <= SAT_FULL) {
             satAlpha = 1

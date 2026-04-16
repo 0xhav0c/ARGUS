@@ -41,7 +41,7 @@ export class BriefingService {
       .map(([d]) => d)
 
     const summaryParts: string[] = []
-    if (todayIncidents.length > 0) summaryParts.push(`${todayIncidents.length} new events detected today.`)
+    if (todayIncidents.length > 0) summaryParts.push(`${todayIncidents.length} new events detected today (UTC).`)
     const critToday = todayIncidents.filter(i => i.severity === 'CRITICAL').length
     if (critToday > 0) summaryParts.push(`${critToday} CRITICAL alerts require immediate attention.`)
     const topDomain = trending[0]

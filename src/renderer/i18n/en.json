@@ -8,11 +8,30 @@
   "topbar": {
     "search": "Search incidents, regions, sources...",
     "zulu": "ZULU",
-    "online": "ONLINE"
+    "online": "ONLINE",
+    "alerts": "Alerts",
+    "settings": "Settings",
+    "tracking": "Tracking",
+    "fullscreen": "Fullscreen",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
   },
   "sidebar": {
     "layers": "LAYERS",
-    "activeLayers": "Active Layers"
+    "activeLayers": "Active Layers",
+    "tracking": "TRACKING",
+    "views": "VIEWS",
+    "watchlist": "WATCHLIST",
+    "collapse": "Collapse",
+    "expand": "Expand"
+  },
+  "domains": {
+    "conflict": "Conflict",
+    "cyber": "Cyber",
+    "intel": "Intel",
+    "finance": "Finance"
   },
   "layers": {
     "conflict": "CONFLICT",
@@ -36,6 +55,24 @@
     "currencies": "Currencies",
     "crypto": "Crypto"
   },
+  "tracking": {
+    "flights": "Flights",
+    "vessels": "Vessels",
+    "satellites": "Satellites",
+    "earthquakes": "Earthquakes"
+  },
+  "tabs": {
+    "intelligence": "INTELLIGENCE",
+    "analysis": "ANALYSIS",
+    "security": "SECURITY",
+    "finance": "FINANCE",
+    "entities": "ENTITIES",
+    "compare": "COMPARE",
+    "operations": "OPERATIONS",
+    "media": "MEDIA",
+    "feed": "LIVE FEED",
+    "logs": "LOG"
+  },
   "panels": {
     "liveFeed": "Live Feed",
     "incidentCount": "{{count}} incidents",
@@ -46,13 +83,22 @@
     "locate": "Locate",
     "viewSource": "Source",
     "hideStats": "Hide Stats",
-    "showStats": "Show Stats"
+    "showStats": "Show Stats",
+    "noData": "No data available",
+    "loading": "Loading..."
   },
   "filters": {
     "severity": "SEV",
     "time": "TIME",
     "region": "AOR",
     "all": "ALL"
+  },
+  "severity": {
+    "critical": "CRITICAL",
+    "high": "HIGH",
+    "medium": "MEDIUM",
+    "low": "LOW",
+    "info": "INFO"
   },
   "stats": {
     "domainDistribution": "Domain Distribution",
@@ -67,6 +113,23 @@
     "feeds": "Feeds",
     "active": "active",
     "incidents": "Incidents",
+    "events": "Events",
+    "critical": "Critical",
     "cache": "Cache"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "apiKeys": "API Keys",
+    "appearance": "Appearance",
+    "notifications": "Notifications",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "placeholder": "Ask about incidents...",
+    "analyzing": "Analyzing...",
+    "error": "AI Error"
   }
 }

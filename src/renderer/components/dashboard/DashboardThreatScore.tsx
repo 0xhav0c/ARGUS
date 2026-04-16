@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import type { Incident, IncidentDomain, IncidentSeverity } from '../../../shared/types'
 import { InfoTip } from '../ui/InfoTip'
+import { ExpandableList } from '../ui/ExpandableList'
 
 const P = {
   bg: '#0a0e17',
@@ -285,104 +286,36 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                   padding: '10px 12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
+                  gap: '4px',
                   border: open ? `1px solid ${P.accent}` : `1px solid ${P.border}`,
                 }}
               >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '28px minmax(0,1fr) 32px 44px minmax(56px,1fr)',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span style={{ fontSize: '10px', color: P.dim, fontFamily: P.font }}>{String(idx + 1).padStart(2, '0')}</span>
-                  <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '14px', lineHeight: 1 }}>{flagForCountry(row.country)}</span>
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 600,
-                        color: P.text,
-                        fontFamily: P.font,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.country}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '14px', textAlign: 'center' }} aria-hidden title="12h vs prior 12h">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', color: P.dim, fontFamily: P.font, width: '20px', flexShrink: 0 }}>{String(idx + 1).padStart(2, '0')}</span>
+                  <span style={{ fontSize: '14px', lineHeight: 1, flexShrink: 0 }}>{flagForCountry(row.country)}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: P.text, fontFamily: P.font, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>
+                    {row.country}
+                  </span>
+                  <span style={{ fontSize: '12px', flexShrink: 0 }} title="12h vs prior 12h">
                     {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
                   </span>
-                  <span
-                    style={{
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      color: P.bg,
-                      background: P.border,
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      textAlign: 'center',
-                      fontFamily: P.font,
-                    }}
-                    title="Incidents (all time in feed)"
-                  >
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: P.dim, fontFamily: P.font, flexShrink: 0 }} title="Incidents">
                     {row.count}
                   </span>
-                  <div
-                    style={{
-                      display: 'flex',
-                      height: '8px',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      background: P.bg,
-                      border: `1px solid ${P.border}`,
-                    }}
-                    title="Domain mix"
-                  >
-                    {DOMAIN_ORDER.map(d => {
-                      const segW = (row.byDomain[d] / totalD) * 100
-                      if (segW <= 0) return null
-                      return (
-                        <div
-                          key={d}
-                          style={{
-                            width: `${segW}%`,
-                            background: DOMAIN_COLOR[d],
-                            minWidth: segW > 0 ? '2px' : 0,
-                          }}
-                        />
-                      )
-                    })}
-                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: threatBarColor(row.score), fontFamily: P.font, flexShrink: 0, width: '30px', textAlign: 'right' }}>
+                    {row.score}
+                  </span>
                 </div>
-                <div>
-                  <div
-                    style={{
-                      height: '8px',
-                      borderRadius: '4px',
-                      background: P.bg,
-                      border: `1px solid ${P.border}`,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${row.score}%`,
-                        height: '100%',
-                        background: threatBarColor(row.score),
-                        transition: 'width 0.2s ease',
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-                    <span style={{ fontSize: '9px', color: P.dim, fontFamily: P.font }}>threat score</span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: threatBarColor(row.score), fontFamily: P.font }}>
-                      {row.score}
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '28px' }}>
+                  <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: P.bg, border: `1px solid ${P.border}`, overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+                      {DOMAIN_ORDER.map(d => {
+                        const segW = (row.byDomain[d] / totalD) * 100
+                        if (segW <= 0) return null
+                        return <div key={d} style={{ width: `${segW}%`, background: DOMAIN_COLOR[d], minWidth: segW > 0 ? '2px' : 0 }} />
+                      })}
+                    </div>
+                    <div style={{ width: `${row.score}%`, height: '100%', background: `${threatBarColor(row.score)}50`, position: 'relative', zIndex: 1 }} />
                   </div>
                 </div>
               </button>
@@ -397,24 +330,39 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                   }}
                 >
                   <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px' }}>
-                    LAST 5 INCIDENTS
+                    INCIDENTS ({row.incidents.length})
                   </div>
-                  {[...row.incidents]
-                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                    .slice(0, 5)
-                    .map(inc => {
+                  <ExpandableList
+                    items={[...row.incidents].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())}
+                    title={`${row.country} Incidents`}
+                    icon="🎯"
+                    color={threatBarColor(row.score)}
+                    emptyMessage="No incidents"
+                    searchable
+                    searchFn={(inc, q) => `${inc.title} ${inc.description || ''} ${inc.source} ${inc.country || ''}`.toLowerCase().includes(q)}
+                    filters={[
+                      { id: 'severity', label: 'Severity', options: [...new Set(row.incidents.map(i => i.severity))] },
+                      { id: 'domain', label: 'Domain', options: [...new Set(row.incidents.map(i => i.domain))] },
+                    ]}
+                    filterFn={(inc, f) => {
+                      if (f.severity && inc.severity !== f.severity) return false
+                      if (f.domain && inc.domain !== f.domain) return false
+                      return true
+                    }}
+                    renderItem={(inc) => {
                       const clickable = !!onLocateIncident && inc.latitude != null && inc.longitude != null
                       return (
                         <div
                           key={inc.id}
                           onClick={clickable ? () => onLocateIncident(inc) : undefined}
                           style={{
-                            padding: '6px 0',
-                            borderTop: `1px solid ${P.border}`,
+                            padding: '6px 8px',
+                            borderBottom: `1px solid ${P.border}15`,
                             fontSize: '9px',
                             fontFamily: P.font,
                             color: P.text,
                             cursor: clickable ? 'pointer' : 'default',
+                            transition: 'background 0.15s',
                           }}
                           onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
                           onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' } : undefined}
@@ -426,7 +374,8 @@ export function DashboardThreatScore({ incidents, onLocateIncident }: { incident
                           </div>
                         </div>
                       )
-                    })}
+                    }}
+                  />
                 </div>
               )}
             </div>

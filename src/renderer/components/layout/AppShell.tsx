@@ -33,43 +33,43 @@ import { findCountryByCoords } from '@/data/countries'
 import { CommandPalette, KeyboardShortcutsGuide, AIPanel } from '@/components/panels/CommandPalette'
 import type { Incident, CountryProfile, VIPTweet, GlobeVisualMode, FeatureFlags, DailyBriefing } from '../../../shared/types'
 import { InfoTip } from '@/components/ui/InfoTip'
+import { ExpandableList } from '@/components/ui/ExpandableList'
 import { VoiceControl } from '@/components/panels/VoiceControl'
 import { MarkdownText } from '@/components/ui/MarkdownText'
 import { AnomalyRiskPanel } from '@/components/panels/AnomalyRiskPanel'
+import { theme } from '@/theme'
 
 const DashboardTimeAnalysis = lazy(() => import('@/components/dashboard/DashboardTimeAnalysis').then(m => ({ default: m.DashboardTimeAnalysis })))
 const DashboardEntityTracker = lazy(() => import('@/components/dashboard/DashboardEntityTracker').then(m => ({ default: m.DashboardEntityTracker })))
 const DashboardThreatScore = lazy(() => import('@/components/dashboard/DashboardThreatScore').then(m => ({ default: m.DashboardThreatScore })))
 const MediaPage = lazy(() => import('@/components/pages/MediaPage').then(m => ({ default: m.MediaPage })))
 const FinanceDeepPanel = lazy(() => import('@/components/panels/FinanceDeepPanel').then(m => ({ default: m.FinanceDeepPanel })))
-const EntityGraphPanel = lazy(() => import('@/components/panels/EntityGraphPanel').then(m => ({ default: m.EntityGraphPanel })))
+
 const TimelineCompare = lazy(() => import('@/components/panels/TimelineCompare').then(m => ({ default: m.TimelineCompare })))
 const SecurityIntelPage = lazy(() => import('@/components/pages/SecurityIntelPage').then(m => ({ default: m.SecurityIntelPage })))
 const LogPage = lazy(() => import('@/components/pages/LogPage').then(m => ({ default: m.LogPage })))
 const OperationsPage = lazy(() => import('@/components/pages/OperationsPage').then(m => ({ default: m.OperationsPage })))
 
 const P = {
-  bg: '#0a0e17',
-  border: '#141c2e',
-  card: '#0d1220',
-  font: "'JetBrains Mono', 'Fira Code', monospace",
-  accent: '#00d4ff',
-  dim: '#4a5568',
-  text: '#c8d6e5',
+  bg: theme.bg,
+  border: theme.border,
+  card: theme.card,
+  font: theme.font,
+  accent: theme.accent,
+  dim: theme.textDim,
+  text: theme.text,
 }
 
-type TabId = 'intelligence' | 'analysis' | 'media' | 'feed' | 'finance' | 'entities' | 'compare' | 'security' | 'operations' | 'logs'
+type TabId = 'intelligence' | 'analysis' | 'media' | 'feed' | 'finance' | 'security' | 'operations' | 'logs'
 
 const TABS: { id: TabId; label: string; icon: string; color: string; featureKey: keyof FeatureFlags }[] = [
   { id: 'intelligence', label: 'INTELLIGENCE', icon: '◉', color: '#00d4ff', featureKey: 'tabIntelligence' },
   { id: 'analysis', label: 'ANALYSIS', icon: '◎', color: '#a78bfa', featureKey: 'tabAnalysis' },
+  { id: 'feed', label: 'LIVE FEED', icon: '⚡', color: '#ff6b35', featureKey: 'tabLiveFeed' },
   { id: 'security', label: 'SECURITY', icon: '🛡', color: '#ff3b5c', featureKey: 'tabSecurity' },
   { id: 'finance', label: 'FINANCE', icon: '◈', color: '#f5c542', featureKey: 'tabFinance' },
-  { id: 'entities', label: 'ENTITIES', icon: '⬡', color: '#06b6d4', featureKey: 'tabEntities' },
-  { id: 'compare', label: 'COMPARE', icon: '⇄', color: '#ff6b35', featureKey: 'tabCompare' },
   { id: 'operations', label: 'OPERATIONS', icon: '⚙', color: '#00e676', featureKey: 'tabOperations' },
   { id: 'media', label: 'MEDIA', icon: '▶', color: '#64c8ff', featureKey: 'tabMedia' },
-  { id: 'feed', label: 'LIVE FEED', icon: '⚡', color: '#ff6b35', featureKey: 'tabLiveFeed' },
   { id: 'logs', label: 'LOG', icon: '📋', color: '#6b7280', featureKey: 'tabLogs' },
 ] as const
 
@@ -339,139 +339,9 @@ const InlineTimeline = React.memo(function InlineTimeline({ incidents }: { incid
 
 /* ─── Intelligence Page ─── */
 
-const RISK_COUNTRY_MAP: Record<string, string> = {
-  'ukraine': 'UA', 'russia': 'RU', 'china': 'CN', 'iran': 'IR',
-  'israel': 'IL', 'syria': 'SY', 'iraq': 'IQ', 'yemen': 'YE',
-  'turkey': 'TR', 'usa': 'US', 'united states': 'US', 'north korea': 'KP',
-  'pakistan': 'PK', 'india': 'IN', 'taiwan': 'TW', 'afghanistan': 'AF',
-  'libya': 'LY', 'somalia': 'SO', 'myanmar': 'MM', 'sudan': 'SD',
-  'ethiopia': 'ET', 'nigeria': 'NG', 'mali': 'ML', 'mozambique': 'MZ',
-  'mexico': 'MX', 'colombia': 'CO', 'venezuela': 'VE', 'brazil': 'BR',
-  'germany': 'DE', 'france': 'FR', 'uk': 'GB', 'united kingdom': 'GB',
-  'japan': 'JP', 'south korea': 'KR', 'saudi arabia': 'SA', 'egypt': 'EG',
-  'lebanon': 'LB', 'palestine': 'PS', 'gaza': 'PS',
-}
-
-function getRiskColor(score: number): string {
-  if (score >= 80) return '#ff3b5c'
-  if (score >= 60) return '#ffb000'
-  if (score >= 40) return '#f5c542'
-  if (score >= 20) return '#00d4ff'
-  return '#3fb950'
-}
-
-const RiskIndexInline = React.memo(function RiskIndexInline({ incidents }: { incidents: Incident[] }) {
-  const riskScores = useMemo(() => {
-    const countryData: Record<string, {
-      conflict: number; cyber: number; intel: number; finance: number; total: number; severityWeight: number
-    }> = {}
-
-    for (const inc of incidents) {
-      // Use the incident's country field (from feed classification) — much more reliable than keyword matching
-      const rawCountry = inc.country?.trim()
-      if (!rawCountry || rawCountry.length < 2) continue
-      const country = rawCountry.toLowerCase()
-
-      if (!countryData[country]) countryData[country] = { conflict: 0, cyber: 0, intel: 0, finance: 0, total: 0, severityWeight: 0 }
-      const d = countryData[country]
-      d.total++
-      d[inc.domain.toLowerCase() as 'conflict' | 'cyber' | 'intel' | 'finance']++
-      const w: Record<string, number> = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1 }
-      d.severityWeight += w[inc.severity] ?? 1
-    }
-
-    return Object.entries(countryData)
-      .map(([country, data]) => {
-        const overall = Math.min(100, Math.round(data.severityWeight * 2))
-        const maxDomain = Math.max(data.conflict, data.cyber, data.intel, data.finance, 1)
-        return {
-          country: country.charAt(0).toUpperCase() + country.slice(1),
-          countryCode: RISK_COUNTRY_MAP[country] ?? country.slice(0, 2).toUpperCase(),
-          overall,
-          conflict: Math.round((data.conflict / maxDomain) * 100),
-          cyber: Math.round((data.cyber / maxDomain) * 100),
-          intel: Math.round((data.intel / maxDomain) * 100),
-          finance: Math.round((data.finance / maxDomain) * 100),
-          incidentCount: data.total,
-          trend: data.severityWeight > 15 ? 'high' : data.severityWeight > 5 ? 'medium' : 'low',
-        }
-      })
-      .sort((a, b) => b.overall - a.overall)
-      .slice(0, 20)
-  }, [incidents])
-
-  if (riskScores.length === 0) {
-    return <div style={{ padding: '20px', fontSize: '11px', color: P.dim, textAlign: 'center' }}>Insufficient data for risk analysis</div>
-  }
-
-  const topRisk = riskScores[0]
-
-  return (
-    <div style={{ padding: '12px' }}>
-      {/* Top Risk Highlight */}
-      <div style={{
-        padding: '14px', marginBottom: '12px', borderRadius: '8px',
-        background: `linear-gradient(135deg, ${getRiskColor(topRisk.overall)}10, transparent)`,
-        border: `1px solid ${getRiskColor(topRisk.overall)}30`,
-      }}>
-        <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>HIGHEST RISK <InfoTip text="Country with the highest composite risk score based on incident frequency, severity distribution, and domain diversity." size={11} /></div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <span style={{ fontSize: '14px', fontWeight: 800, color: '#e2e8f0' }}>{topRisk.country}</span>
-            <span style={{ fontSize: '10px', color: P.dim, marginLeft: '6px' }}>{topRisk.countryCode}</span>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: getRiskColor(topRisk.overall), lineHeight: 1 }}>{topRisk.overall}</div>
-            <div style={{ fontSize: '9px', color: P.dim }}>{topRisk.incidentCount} incidents</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Risk Table */}
-      <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>RISK INDEX BY COUNTRY <InfoTip text="Risk score per country. Calculated from incident count, severity weights (Critical=5, High=3, Medium=2, Low=1), domain diversity, and recency. Bars show domain breakdown: orange=Conflict, green=Cyber, blue=Intel, yellow=Finance." size={11} /></div>
-      {riskScores.map((score, idx) => (
-        <div key={score.country} style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '7px 8px', background: idx % 2 === 0 ? P.bg : 'transparent',
-          borderRadius: '4px',
-        }}>
-          <span style={{ fontSize: '9px', color: P.dim, width: '18px', textAlign: 'right' }}>{idx + 1}</span>
-          <span style={{ fontSize: '10px', color: P.dim, width: '24px', fontWeight: 600 }}>{score.countryCode}</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '11px', color: P.text, fontWeight: 500, marginBottom: '3px' }}>{score.country}</div>
-            <div style={{ display: 'flex', gap: '2px', height: '4px' }}>
-              <div style={{ flex: score.conflict, background: '#ff6b35', borderRadius: '2px', minWidth: score.conflict > 0 ? '3px' : 0 }} />
-              <div style={{ flex: score.cyber, background: '#00ff87', borderRadius: '2px', minWidth: score.cyber > 0 ? '3px' : 0 }} />
-              <div style={{ flex: score.intel, background: '#4a9eff', borderRadius: '2px', minWidth: score.intel > 0 ? '3px' : 0 }} />
-              <div style={{ flex: score.finance, background: '#f5c542', borderRadius: '2px', minWidth: score.finance > 0 ? '3px' : 0 }} />
-            </div>
-          </div>
-          <div style={{ textAlign: 'right', minWidth: '44px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: getRiskColor(score.overall) }}>{score.overall}</div>
-            <div style={{ fontSize: '9px', color: P.dim }}>
-              {score.trend === 'high' ? '●' : score.trend === 'low' ? '○' : '◐'} {score.incidentCount}
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '12px', padding: '8px', background: P.bg, borderRadius: '4px' }}>
-        {[
-          { label: 'CONFLICT', color: '#ff6b35' }, { label: 'CYBER', color: '#00ff87' },
-          { label: 'INTEL', color: '#4a9eff' }, { label: 'FINANCE', color: '#f5c542' },
-        ].map(l => (
-          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: l.color }} />
-            <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.05em' }}>{l.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-})
-
 function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
+  const [expandedCluster, setExpandedCluster] = useState<number | null>(null)
+
   const clusters = useMemo(() => {
     const groups = new Map<string, Incident[]>()
     for (const inc of incidents) {
@@ -493,48 +363,153 @@ function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident
     return Array.from(groups.values())
       .filter(g => g.length >= 2)
       .sort((a, b) => b.length - a.length)
-      .slice(0, 15)
-      .map((members, i) => ({ id: i, title: members[0].title, count: members.length, domain: members[0].domain, country: members[0].country, members: members.slice(0, 5), severity: members.reduce((max, m) => { const w: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1, INFO: 0 }; return (w[m.severity] || 0) > (w[max] || 0) ? m.severity : max }, members[0].severity) }))
+      .map((members, i) => {
+        const allMembers = members.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        const sevWeights: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1, INFO: 0 }
+        const maxSev = allMembers.reduce((max, m) => (sevWeights[m.severity] || 0) > (sevWeights[max] || 0) ? m.severity : max, allMembers[0].severity)
+        const domainMap = new Map<string, number>()
+        for (const m of allMembers) domainMap.set(m.domain, (domainMap.get(m.domain) || 0) + 1)
+        return {
+          id: i, title: allMembers[0].title, count: allMembers.length,
+          domain: allMembers[0].domain, country: allMembers[0].country,
+          members: allMembers, severity: maxSev,
+          domains: Array.from(domainMap.entries()).sort((a, b) => b[1] - a[1]),
+        }
+      })
   }, [incidents])
+
+  const sevColor = (s: string) => ({ CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#f5c542', LOW: '#00d4ff', INFO: '#4a5568' }[s] || '#4a5568')
+  const borderColor = (s: string) => s === 'CRITICAL' ? '#ff3b5c' : s === 'HIGH' ? '#ff6b35' : '#00d4ff'
+
+  const renderCluster = useCallback((c: typeof clusters[number]) => {
+    const isExpanded = expandedCluster === c.id
+    return (
+      <div key={c.id} style={{ marginBottom: '6px' }}>
+        <div
+          onClick={() => setExpandedCluster(isExpanded ? null : c.id)}
+          style={{
+            padding: '10px', background: isExpanded ? 'rgba(6,182,212,0.04)' : '#0d1220',
+            border: `1px solid ${isExpanded ? '#06b6d430' : '#141c2e'}`,
+            borderLeft: `3px solid ${borderColor(c.severity)}`,
+            borderRadius: isExpanded ? '6px 6px 0 0' : '6px',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = 'rgba(6,182,212,0.03)' }}
+          onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLDivElement).style.background = '#0d1220' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '8px', color: '#06b6d4', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#c8d6e5' }}>{c.title.length > 60 ? c.title.substring(0, 60) + '...' : c.title}</span>
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#00d4ff' }}>{c.count}</span>
+          </div>
+          <div style={{ fontSize: '9px', color: '#4a5568' }}>{c.domain} • {c.country || 'Global'} • Max severity: {c.severity}</div>
+        </div>
+
+        {isExpanded && (
+          <div style={{
+            border: '1px solid #06b6d420', borderTop: 'none',
+            borderRadius: '0 0 6px 6px', background: '#0d1220', padding: '10px 12px',
+          }}>
+            {/* Domain breakdown */}
+            {c.domains.length > 1 && (
+              <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                {c.domains.map(([d, cnt]) => (
+                  <span key={d} style={{
+                    fontSize: '9px', padding: '3px 8px', borderRadius: '4px',
+                    background: '#00d4ff10', border: '1px solid #00d4ff20', color: '#c8d6e5',
+                  }}>{d} <span style={{ color: '#00d4ff', fontWeight: 700 }}>({cnt})</span></span>
+                ))}
+              </div>
+            )}
+
+            <div style={{ fontSize: '9px', color: '#4a5568', marginBottom: '6px', letterSpacing: '0.08em', fontWeight: 700 }}>
+              CLUSTER MEMBERS ({c.members.length})
+            </div>
+            <ExpandableList
+              items={c.members}
+              title={`Cluster: ${c.title.substring(0, 40)}`}
+              icon="◎"
+              color="#06b6d4"
+              emptyMessage="No members"
+              searchable
+              searchFn={(m, q) => `${m.title} ${m.description || ''} ${m.source} ${m.country || ''}`.toLowerCase().includes(q)}
+              filters={[
+                { id: 'severity', label: 'Severity', options: [...new Set(c.members.map(i => i.severity))] },
+                { id: 'domain', label: 'Domain', options: [...new Set(c.members.map(i => i.domain))] },
+              ]}
+              filterFn={(m, f) => {
+                if (f.severity && m.severity !== f.severity) return false
+                if (f.domain && m.domain !== f.domain) return false
+                return true
+              }}
+              renderItem={(m) => {
+                const clickable = !!onLocateIncident && m.latitude != null && m.longitude != null
+                return (
+                  <div key={m.id}
+                    onClick={clickable ? () => onLocateIncident(m) : undefined}
+                    style={{
+                      display: 'flex', gap: '8px', alignItems: 'flex-start',
+                      padding: '6px 8px', background: '#0a0e17', border: '1px solid #141c2e',
+                      borderRadius: '4px', marginBottom: '3px',
+                      cursor: clickable ? 'pointer' : 'default', transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.06)' } : undefined}
+                    onMouseLeave={clickable ? e => { (e.currentTarget as HTMLDivElement).style.background = '#0a0e17' } : undefined}
+                  >
+                    <span style={{
+                      fontSize: '8px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, flexShrink: 0,
+                      background: sevColor(m.severity) + '20', color: sevColor(m.severity), marginTop: '1px',
+                    }}>{m.severity}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '10px', color: '#c8d6e5', fontWeight: 600, lineHeight: 1.3 }}>
+                        {m.title}
+                        {clickable && <span style={{ color: '#00d4ff', marginLeft: 6, fontSize: '9px' }}>◎</span>}
+                      </div>
+                      <div style={{ fontSize: '9px', color: '#4a5568', marginTop: '2px' }}>
+                        {m.domain} · {m.source} · {m.country || 'Global'} · {new Date(m.timestamp).toLocaleString()}
+                      </div>
+                      {m.description && (
+                        <div style={{ fontSize: '9px', color: '#4a5568', marginTop: '3px', lineHeight: 1.4, opacity: 0.8 }}>
+                          {m.description.length > 150 ? m.description.slice(0, 150) + '…' : m.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }, [expandedCluster, onLocateIncident])
 
   return (
     <div style={{ padding: '12px' }}>
-      <div style={{ fontSize: '10px', color: '#06b6d4', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>AUTO INCIDENT CLUSTERING — {clusters.length} clusters detected <InfoTip text="Groups similar incidents together using keyword matching and domain/region proximity. This is a heuristic grouping based on title keywords — not AI-powered. Each cluster represents potentially related events." size={11} color="#06b6d4" /></div>
-      {clusters.map(c => (
-        <div key={c.id} style={{ padding: '10px', background: '#0d1220', border: '1px solid #141c2e', borderLeft: `3px solid ${c.severity === 'CRITICAL' ? '#ff3b5c' : c.severity === 'HIGH' ? '#ff6b35' : '#00d4ff'}`, borderRadius: '6px', marginBottom: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#c8d6e5' }}>{c.title.length > 60 ? c.title.substring(0, 60) + '...' : c.title}</span>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#00d4ff' }}>{c.count}</span>
-          </div>
-          <div style={{ fontSize: '9px', color: '#4a5568', marginBottom: '6px' }}>{c.domain} • {c.country || 'Global'} • Max severity: {c.severity}</div>
-          {c.members.map(m => {
-            const clickable = !!onLocateIncident && m.latitude != null && m.longitude != null
-            return (
-              <div key={m.id}
-                onClick={clickable ? () => onLocateIncident(m) : undefined}
-                style={{ fontSize: '9px', color: '#4a5568', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: clickable ? 'pointer' : 'default', borderRadius: '2px', padding: '1px 2px', transition: 'background 0.15s' }}
-                onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,0.08)' } : undefined}
-                onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' } : undefined}
-              >
-                <span style={{ color: m.severity === 'CRITICAL' ? '#ff3b5c' : m.severity === 'HIGH' ? '#ff6b35' : '#f5c542', marginRight: '4px' }}>{'\u25CF'}</span>
-                {m.source}: {m.title}
-                {clickable && <span style={{ color: '#00d4ff', marginLeft: 4 }}>◎</span>}
-              </div>
-            )
-          })}
-          {c.count > 5 && <div style={{ fontSize: '9px', color: '#4a5568', fontStyle: 'italic' }}>+{c.count - 5} more sources...</div>}
-        </div>
-      ))}
-      {clusters.length === 0 && <div style={{ padding: '20px', textAlign: 'center', color: '#4a5568', fontSize: '11px' }}>No clusters detected yet. Need more incident data.</div>}
+      <div style={{ fontSize: '10px', color: '#06b6d4', fontWeight: 700, marginBottom: '10px', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        AUTO INCIDENT CLUSTERING — {clusters.length} clusters detected
+        <InfoTip text="Groups similar incidents together using keyword matching and domain/region proximity. Click a cluster to see all related incidents sorted by time. This is a heuristic grouping based on title keywords — not AI-powered." size={11} color="#06b6d4" />
+      </div>
+      <ExpandableList
+        items={clusters}
+        title="Clusters"
+        icon="◎"
+        color="#06b6d4"
+        emptyMessage="No clusters detected yet. Need more incident data."
+        renderItem={(c) => renderCluster(c)}
+      />
     </div>
   )
 }
 
-type IntelTab = 'overview' | 'timeline' | 'anomaly' | 'briefing'
+type IntelTab = 'overview' | 'timeline' | 'entities' | 'anomaly' | 'briefing'
 
 const INTEL_TABS: { id: IntelTab; label: string; icon: string; color: string }[] = [
   { id: 'overview', label: 'OVERVIEW', icon: '◉', color: '#00d4ff' },
   { id: 'timeline', label: 'TIME ANALYSIS', icon: '📊', color: '#a78bfa' },
+  { id: 'entities', label: 'ENTITY TRACKER', icon: '⬡', color: '#06b6d4' },
   { id: 'anomaly', label: 'ANOMALY & RISK', icon: '⚠', color: '#ff6b35' },
   { id: 'briefing', label: 'DAILY BRIEFING', icon: '📋', color: '#00e676' },
 ]
@@ -545,7 +520,7 @@ const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLoc
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, overflowX: 'hidden' }}>
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: '4px', padding: '10px 24px 6px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '4px', padding: '10px 24px 6px', flexWrap: 'wrap', alignItems: 'center' }}>
         {INTEL_TABS.map(t => (
           <button key={t.id} onClick={() => setActiveIntelTab(t.id)} style={{
             padding: '6px 14px', background: activeIntelTab === t.id ? `${t.color}15` : 'transparent',
@@ -555,6 +530,7 @@ const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLoc
             transition: 'all 0.15s',
           }}>{t.icon} {t.label}</button>
         ))}
+        <span style={{ fontSize: '8px', color: P.dim, marginLeft: 'auto', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.7 }}>ALL EVENTS (UNFILTERED)</span>
       </div>
 
       {/* Tab content */}
@@ -570,8 +546,13 @@ const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLoc
           <Suspense fallback={<div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: P.dim, fontSize: '11px', fontFamily: P.font }}>Loading...</div>}>
             <DashboardTimeAnalysis incidents={incidents} />
           </Suspense>
-          <Suspense fallback={<div style={{ height: '300px' }} />}>
-            <DashboardEntityTracker incidents={incidents} />
+        </div>
+      )}
+
+      {activeIntelTab === 'entities' && (
+        <div style={{ padding: '8px 0' }}>
+          <Suspense fallback={<div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: P.dim, fontSize: '11px', fontFamily: P.font }}>Loading...</div>}>
+            <DashboardEntityTracker incidents={incidents} onLocateIncident={onLocateIncident} />
           </Suspense>
         </div>
       )}
@@ -841,14 +822,14 @@ const SpikeBar = React.memo(function SpikeBar({ incidents }: { incidents: Incide
 
 /* ─── Analysis Page ─── */
 
-const ANALYSIS_TABS: { id: 'briefing' | 'risk' | 'threats' | 'clusters'; label: string; color: string; featureKey: keyof FeatureFlags }[] = [
+const ANALYSIS_TABS: { id: 'briefing' | 'threats' | 'clusters' | 'compare'; label: string; color: string; featureKey: keyof FeatureFlags }[] = [
   { id: 'briefing', label: 'BRIEFING', color: '#00d4ff', featureKey: 'analysisBriefing' },
-  { id: 'risk', label: 'RISK INDEX', color: '#ff3b5c', featureKey: 'analysisRiskIndex' },
   { id: 'threats', label: 'THREATS', color: '#ff6b35', featureKey: 'analysisThreats' },
   { id: 'clusters', label: 'AUTO CLUSTERS', color: '#06b6d4', featureKey: 'analysisClusters' },
+  { id: 'compare', label: 'COMPARE', color: '#ff6b35', featureKey: 'tabCompare' },
 ]
 
-type AnalysisTabId = 'briefing' | 'risk' | 'threats' | 'clusters'
+type AnalysisTabId = 'briefing' | 'threats' | 'clusters' | 'compare'
 
 const AnalysisPage = React.memo(function AnalysisPage({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident: (i: Incident) => void }) {
   const features = useSettingsStore(s => s.features)
@@ -880,9 +861,9 @@ const AnalysisPage = React.memo(function AnalysisPage({ incidents, onLocateIncid
         {effectiveTab === 'briefing' && (
           <BriefingSummary incidents={incidents} onLocateIncident={onLocateIncident} />
         )}
-        {effectiveTab === 'risk' && <RiskIndexInline incidents={incidents} />}
         {effectiveTab === 'threats' && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><DashboardThreatScore incidents={incidents} onLocateIncident={onLocateIncident} /></Suspense>}
         {effectiveTab === 'clusters' && <IncidentClusters incidents={incidents} onLocateIncident={onLocateIncident} />}
+        {effectiveTab === 'compare' && <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>}><TimelineCompare incidents={incidents} /></Suspense>}
       </div>
     </div>
   )
@@ -952,8 +933,8 @@ const ToastContainer = React.memo(function ToastContainer({ notifications, allIn
         const handleClick = () => {
           markRead(n.id)
           dismissedRef.current.add(n.id)
-          if (n.type === 'incident' && n.incidentId) {
-            const inc = allIncidents.find((i: Incident) => i.id === n.incidentId)
+          if (n.type === 'incident') {
+            const inc = n.incidentId ? allIncidents.find((i: Incident) => i.id === n.incidentId) : undefined
             if (inc) {
               selectIncident(inc)
               if (inc.latitude != null && inc.longitude != null) {
@@ -1097,13 +1078,11 @@ function AppShellContent() {
       else if (isEditing) return
       else if (e.key === '1' && e.altKey) { e.preventDefault(); setActiveTab('intelligence') }
       else if (e.key === '2' && e.altKey) { e.preventDefault(); setActiveTab('analysis') }
-      else if (e.key === '3' && e.altKey) { e.preventDefault(); setActiveTab('security') }
-      else if (e.key === '4' && e.altKey) { e.preventDefault(); setActiveTab('finance') }
-      else if (e.key === '5' && e.altKey) { e.preventDefault(); setActiveTab('entities') }
-      else if (e.key === '6' && e.altKey) { e.preventDefault(); setActiveTab('compare') }
-      else if (e.key === '7' && e.altKey) { e.preventDefault(); setActiveTab('operations') }
-      else if (e.key === '8' && e.altKey) { e.preventDefault(); setActiveTab('media') }
-      else if (e.key === '9' && e.altKey) { e.preventDefault(); setActiveTab('feed') }
+      else if (e.key === '3' && e.altKey) { e.preventDefault(); setActiveTab('feed') }
+      else if (e.key === '4' && e.altKey) { e.preventDefault(); setActiveTab('security') }
+      else if (e.key === '5' && e.altKey) { e.preventDefault(); setActiveTab('finance') }
+      else if (e.key === '6' && e.altKey) { e.preventDefault(); setActiveTab('operations') }
+      else if (e.key === '9' && e.altKey) { e.preventDefault(); setActiveTab('media') }
       else if (e.key === 'Home') { e.preventDefault(); resetViewRef.current(); unlockRotationRef.current() }
       else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); setMapFullscreen(f => !f) }
       else if (e.key === '?') { e.preventDefault(); setShortcutsGuideOpen(o => !o) }
@@ -1137,13 +1116,11 @@ function AppShellContent() {
   const commands = useMemo(() => [
     { id: 'tab-intel', label: 'Go to Intelligence', shortcut: 'Alt+1', category: 'Navigation', icon: '◉', action: () => setActiveTab('intelligence') },
     { id: 'tab-analysis', label: 'Go to Analysis', shortcut: 'Alt+2', category: 'Navigation', icon: '◎', action: () => setActiveTab('analysis') },
-    { id: 'tab-security', label: 'Go to Security', shortcut: 'Alt+3', category: 'Navigation', icon: '🛡', action: () => setActiveTab('security') },
-    { id: 'tab-finance', label: 'Go to Finance', shortcut: 'Alt+4', category: 'Navigation', icon: '◈', action: () => setActiveTab('finance') },
-    { id: 'tab-entities', label: 'Go to Entities', shortcut: 'Alt+5', category: 'Navigation', icon: '⬡', action: () => setActiveTab('entities') },
-    { id: 'tab-compare', label: 'Go to Compare', shortcut: 'Alt+6', category: 'Navigation', icon: '⇄', action: () => setActiveTab('compare') },
-    { id: 'tab-operations', label: 'Go to Operations', shortcut: 'Alt+7', category: 'Navigation', icon: '⚙', action: () => setActiveTab('operations') },
-    { id: 'tab-media', label: 'Go to Media', shortcut: 'Alt+8', category: 'Navigation', icon: '▶', action: () => setActiveTab('media') },
-    { id: 'tab-feed', label: 'Go to Live Feed', shortcut: 'Alt+9', category: 'Navigation', icon: '⚡', action: () => setActiveTab('feed') },
+    { id: 'tab-feed', label: 'Go to Live Feed', shortcut: 'Alt+3', category: 'Navigation', icon: '⚡', action: () => setActiveTab('feed') },
+    { id: 'tab-security', label: 'Go to Security', shortcut: 'Alt+4', category: 'Navigation', icon: '🛡', action: () => setActiveTab('security') },
+    { id: 'tab-finance', label: 'Go to Finance', shortcut: 'Alt+5', category: 'Navigation', icon: '◈', action: () => setActiveTab('finance') },
+    { id: 'tab-operations', label: 'Go to Operations', shortcut: 'Alt+6', category: 'Navigation', icon: '⚙', action: () => setActiveTab('operations') },
+    { id: 'tab-media', label: 'Go to Media', shortcut: 'Alt+9', category: 'Navigation', icon: '▶', action: () => setActiveTab('media') },
     { id: 'fullscreen', label: 'Toggle Fullscreen Map', shortcut: 'Ctrl+F', category: 'View', icon: '⛶', action: () => setMapFullscreen(f => !f) },
     { id: 'mode-default', label: 'Default View', category: 'Visual Mode', icon: '🌍', action: () => setVisualMode('default') },
     { id: 'mode-nv', label: 'Night Vision Mode', category: 'Visual Mode', icon: '🟢', action: () => setVisualMode('nightvision') },
@@ -1286,19 +1263,23 @@ function AppShellContent() {
   useEffect(() => {
     if (!window.argus?.onCascadeAlert) return
     const handler = (raw: unknown) => {
-      const alert = raw as { title: string; description: string; severity: string; region?: string }
+      const alert = raw as { title: string; description: string; severity: string; region?: string; relatedIncidents?: Array<{ id: string; latitude?: number; longitude?: number }> }
       const key = alert.title.toLowerCase().trim()
       if (cascadeSeenRef.current.has(key)) return
       cascadeSeenRef.current.add(key)
       if (cascadeSeenRef.current.size > 200) {
         const arr = [...cascadeSeenRef.current]; cascadeSeenRef.current = new Set(arr.slice(-100))
       }
+      const firstWithCoords = alert.relatedIncidents?.find(r => r.latitude != null && r.longitude != null)
       useNotificationStore.getState().addNotification({
         type: 'incident',
         title: alert.title,
         subtitle: alert.description.slice(0, 120),
         severity: alert.severity,
         domain: 'INTEL',
+        incidentId: firstWithCoords?.id,
+        latitude: firstWithCoords?.latitude,
+        longitude: firstWithCoords?.longitude,
       })
     }
     const dispose = window.argus.onCascadeAlert(handler)
@@ -1467,8 +1448,8 @@ function AppShellContent() {
   const handleAlertNavigate = useCallback((n: any) => {
     if (n.type === 'tweet' && n.tweetUrl) {
       window.open(n.tweetUrl, '_blank', 'noopener,noreferrer')
-    } else if (n.type === 'incident' && n.incidentId) {
-      const inc = allIncidents.find((i: Incident) => i.id === n.incidentId)
+    } else if (n.type === 'incident') {
+      const inc = n.incidentId ? allIncidents.find((i: Incident) => i.id === n.incidentId) : undefined
       if (inc) {
         selectIncident(inc)
         if (inc.latitude != null && inc.longitude != null) { flyToIncident(inc); scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }) }
@@ -1639,8 +1620,6 @@ function AppShellContent() {
       {activeTab === 'intelligence' && ff('tabIntelligence') && <AppErrorBoundary><IntelligencePage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></AppErrorBoundary>}
       {activeTab === 'analysis' && ff('tabAnalysis') && <AppErrorBoundary><AnalysisPage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></AppErrorBoundary>}
       {activeTab === 'finance' && ff('tabFinance') && <AppErrorBoundary><Suspense fallback={loadingFallback}><FinanceDeepPanel onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
-      {activeTab === 'entities' && ff('tabEntities') && <AppErrorBoundary><Suspense fallback={loadingFallback}><EntityGraphPanel /></Suspense></AppErrorBoundary>}
-      {activeTab === 'compare' && ff('tabCompare') && <AppErrorBoundary><Suspense fallback={loadingFallback}><TimelineCompare incidents={allIncidents} /></Suspense></AppErrorBoundary>}
       {activeTab === 'security' && ff('tabSecurity') && <AppErrorBoundary><Suspense fallback={loadingFallback}><SecurityIntelPage onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
       {activeTab === 'operations' && ff('tabOperations') && <AppErrorBoundary><Suspense fallback={loadingFallback}><OperationsPage incidents={allIncidents} onLocateIncident={handleLocateIncident} /></Suspense></AppErrorBoundary>}
       {activeTab === 'media' && ff('tabMedia') && <AppErrorBoundary><Suspense fallback={loadingFallback}><MediaPage onOpenSettings={() => openSettings('tv')} /></Suspense></AppErrorBoundary>}

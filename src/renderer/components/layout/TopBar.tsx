@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFilterStore } from '@/stores/filter-store'
 import { useNotificationStore } from '@/stores/notification-store'
 
@@ -40,9 +41,11 @@ function WinBtn({ onClick, children, hoverColor, title }: {
 }
 
 export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch, trackingSearchOpen }: TopBarProps) {
+  const { t } = useTranslation()
   const [time, setTime] = useState(new Date())
   const [isMaximized, setIsMaximized] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
   const unreadCount = useNotificationStore(s => {
     let count = 0
     for (const n of s.notifications) { if (!n.read) count++ }
@@ -54,6 +57,14 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true)
+    const goOffline = () => setIsOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => { window.removeEventListener('online', goOnline); window.removeEventListener('offline', goOffline) }
   }, [])
 
   useEffect(() => {
@@ -91,7 +102,7 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
         }}>ARGUS</span>
         <span style={{ width: '1px', height: '18px', background: P.border }} />
         <span style={{ fontSize: '11px', color: P.dim, letterSpacing: '0.15em' }}>
-          GLOBAL INTELLIGENCE
+          {t('app.subtitle').toUpperCase()}
         </span>
       </div>
 
@@ -110,7 +121,7 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
           <span style={{ fontSize: '12px', color: P.dim }}>⌕</span>
           <input
             type="text"
-            placeholder="Search incidents... (Ctrl+K for commands)"
+            placeholder={t('topbar.search')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onFocus={e => { const p = e.currentTarget.parentElement; if (p) p.style.borderColor = P.accent + '40' }}
@@ -195,8 +206,8 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
         <span style={{ width: '1px', height: '14px', background: P.border }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3fb950' }} />
-          <span style={{ fontSize: '10px', color: P.dim }}>ACTIVE</span>
+          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: isOnline ? '#3fb950' : P.danger }} />
+          <span style={{ fontSize: '10px', color: isOnline ? P.dim : P.danger }}>{isOnline ? t('topbar.online').toUpperCase() : t('topbar.offline', 'OFFLINE').toUpperCase()}</span>
         </div>
       </div>
 
@@ -207,11 +218,11 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
           borderLeft: `1px solid ${P.border}`,
           ...({ WebkitAppRegion: 'no-drag' } as any),
         }}>
-          <WinBtn onClick={() => window.argus?.windowMinimize()} hoverColor="#1a2235" title="Minimize">─</WinBtn>
-          <WinBtn onClick={() => window.argus?.windowMaximize()} hoverColor="#1a2235" title="Maximize">
+          <WinBtn onClick={() => window.argus?.windowMinimize()} hoverColor="#1a2235" title={t('topbar.minimize')}>─</WinBtn>
+          <WinBtn onClick={() => window.argus?.windowMaximize()} hoverColor="#1a2235" title={isMaximized ? t('topbar.restore') : t('topbar.maximize')}>
             {isMaximized ? '❐' : '□'}
           </WinBtn>
-          <WinBtn onClick={() => window.argus?.windowClose()} hoverColor="#c42b1c" title="Close">✕</WinBtn>
+          <WinBtn onClick={() => window.argus?.windowClose()} hoverColor="#c42b1c" title={t('topbar.close')}>✕</WinBtn>
         </div>
       )}
     </header>

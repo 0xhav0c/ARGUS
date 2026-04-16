@@ -1,20 +1,6 @@
 import type { Incident } from '../../shared/types'
 import { getApiKeyManager } from './api-key-manager'
-
-/** Block cloud metadata and link-local SSRF targets. Localhost is allowed for Ollama. */
-function isSafeUrl(urlStr: string, allowLocalhost = false): boolean {
-  try {
-    const u = new URL(urlStr)
-    const host = u.hostname
-    // Block cloud metadata endpoints
-    if (host === '169.254.169.254' || host === 'metadata.google.internal') return false
-    // Block link-local
-    if (host.startsWith('169.254.')) return false
-    // Optionally block localhost (allowed for Ollama)
-    if (!allowLocalhost && (host === 'localhost' || host === '127.0.0.1' || host === '::1')) return false
-    return true
-  } catch { return false }
-}
+import { isSafeUrl } from '../utils/url-safety'
 
 export interface AISummaryRequest {
   query: string
@@ -79,7 +65,7 @@ Respond in the same language as the user query.`
 }
 
 async function queryOllama(prompt: string, systemPrompt?: string): Promise<AISummaryResponse> {
-  if (!isSafeUrl(`${config.ollamaUrl}/api/generate`, true)) throw new Error('Ollama URL blocked by SSRF protection')
+  if (!isSafeUrl(`${config.ollamaUrl}/api/generate`, { allowLocalhost: true })) throw new Error('Ollama URL blocked by SSRF protection')
   const res = await fetch(`${config.ollamaUrl}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -137,7 +123,7 @@ async function queryCustom(prompt: string, systemPrompt?: string): Promise<AISum
   if (!config.customUrl) throw new Error('Custom AI URL not configured')
   const baseUrl = config.customUrl.replace(/\/+$/, '')
   const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`
-  if (!isSafeUrl(url)) throw new Error('Custom AI URL blocked by SSRF protection')
+  if (!isSafeUrl(url, { allowLocalhost: false })) throw new Error('Custom AI URL blocked by SSRF protection')
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (config.customKey) headers['Authorization'] = `Bearer ${config.customKey}`
   const messages: { role: string; content: string }[] = []

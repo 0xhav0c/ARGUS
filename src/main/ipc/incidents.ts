@@ -1,8 +1,8 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import { CacheManager } from '../services/cache-manager'
+import { getCacheManager } from '../services/cache-manager'
 import type { CompanionServer } from '../services/companion-server'
 
-const cache = new CacheManager()
+const cache = getCacheManager()
 let companionRef: CompanionServer | null = null
 
 export function setCompanionServer(server: CompanionServer): void {

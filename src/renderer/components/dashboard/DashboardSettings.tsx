@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, useCallback, useRef, type CSSProperties } from 'react'
 import { useSettingsStore } from '@/stores/settings-store'
+import { useAlertProfileStore } from '@/stores/alert-profile-store'
 import { useNotificationStore } from '@/stores/notification-store'
 import { useTTSStore } from '@/stores/tts-store'
 import { useIncidentStore } from '@/stores/incident-store'
 import { useTVStore, type UserTVChannel } from '@/stores/tv-store'
-import type { Incident, FeedSource, AppSettings, FeatureFlags } from '../../../shared/types'
+import type { Incident, FeedSource, AppSettings, FeatureFlags, IncidentDomain, IncidentSeverity } from '../../../shared/types'
 import { DEFAULT_FEATURES } from '@/stores/settings-store'
 
 const P = {
@@ -51,7 +52,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () =
   )
 }
 
-interface SettingsModalProps { open: boolean; onClose: () => void; incidents: Incident[]; initialTab?: 'general' | 'audio' | 'feeds' | 'tv' | 'data' | 'companion' | 'apikeys' | 'ai' | 'performance' | 'features' }
+interface SettingsModalProps { open: boolean; onClose: () => void; incidents: Incident[]; initialTab?: 'general' | 'audio' | 'feeds' | 'tv' | 'data' | 'companion' | 'apikeys' | 'ai' | 'performance' | 'features' | 'alertprofiles' }
 interface CompanionInfo { ip: string; port: number; running: boolean; clients: number; token?: string }
 
 type DraftSettings = Omit<AppSettings, never>
@@ -73,7 +74,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
   const addCategory = useTVStore(s => s.addCategory)
   const removeCategory = useTVStore(s => s.removeCategory)
 
-  const [tab, setTab] = useState<'general' | 'audio' | 'feeds' | 'tv' | 'data' | 'companion' | 'apikeys' | 'ai' | 'performance' | 'features'>(initialTab || 'general')
+  const [tab, setTab] = useState<'general' | 'audio' | 'feeds' | 'tv' | 'data' | 'companion' | 'apikeys' | 'ai' | 'performance' | 'features' | 'alertprofiles'>(initialTab || 'general')
 
   // Sync initialTab when modal opens
   useEffect(() => {
@@ -420,6 +421,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
     { id: 'ai', label: 'AI CONFIG', color: '#a855f7', featureKey: 'featureAIPanel' },
     { id: 'performance', label: 'PERFORMANCE', color: '#3fb950' },
     { id: 'features', label: '⚡ FEATURES', color: '#f97316' },
+    { id: 'alertprofiles', label: '🔔 ALERT PROFILES', color: '#a855f7', featureKey: 'opsProfiles' },
   ]
   const tabs = allSettingsTabs.filter(t => !t.featureKey || features[t.featureKey])
 
@@ -991,7 +993,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: apiKey.configured ? '#3fb950' : P.dim, boxShadow: apiKey.configured ? '0 0 4px #3fb95088' : 'none', flexShrink: 0 }} />
                               <span style={{ fontSize: '10px', fontWeight: 700, color: P.text, letterSpacing: '0.05em' }}>{apiKey.label}</span>
                               <span style={{ fontSize: '9px', color: P.dim, flex: 1 }}>{apiKey.description}</span>
-                              <a href={apiKey.docsUrl} target="_blank" rel="noopener noreferrer" onClick={e => { e.preventDefault(); window.open(apiKey.docsUrl, '_blank') }}
+                              <a href={apiKey.docsUrl} target="_blank" rel="noopener noreferrer" onClick={e => { e.preventDefault(); window.open(apiKey.docsUrl, '_blank', 'noopener,noreferrer') }}
                                 style={{ fontSize: '9px', color: catColors[category] || P.accent, textDecoration: 'none', flexShrink: 0, padding: '2px 6px', background: `${catColors[category] || P.accent}10`, border: `1px solid ${catColors[category] || P.accent}30`, borderRadius: '3px' }}>GET KEY</a>
                             </div>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -1265,6 +1267,9 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
           {/* ===== FEATURES ===== */}
           {tab === 'features' && <FeaturesTab />}
 
+          {/* ===== ALERT PROFILES ===== */}
+          {tab === 'alertprofiles' && <AlertProfilesSettingsTab />}
+
           </div>
         </div>
 
@@ -1501,6 +1506,258 @@ function FeaturesTab() {
       <div style={{ fontSize: '9px', color: P.dim, textAlign: 'center', padding: '4px 0' }}>
         Click any item to toggle · Changes apply immediately
       </div>
+    </div>
+  )
+}
+
+const ALL_DOMAINS: IncidentDomain[] = ['CONFLICT', 'CYBER', 'INTEL', 'FINANCE', 'MILITARY', 'ENVIRONMENT']
+const ALL_SEVERITIES: IncidentSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
+const PROFILE_ICONS = ['💼', '🌙', '✈', '🛡', '⚔', '🌐', '🔒', '📊', '🏠', '🚨']
+
+function AlertProfilesSettingsTab() {
+  const profiles = useAlertProfileStore(s => s.profiles)
+  const activeId = useAlertProfileStore(s => s.activeProfileId)
+  const setActive = useAlertProfileStore(s => s.setActive)
+  const addProfile = useAlertProfileStore(s => s.addProfile)
+  const removeProfile = useAlertProfileStore(s => s.removeProfile)
+  const updateProfile = useAlertProfileStore(s => s.updateProfile)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newIcon, setNewIcon] = useState('💼')
+  const [newDomains, setNewDomains] = useState<IncidentDomain[]>(['CONFLICT', 'CYBER'])
+  const [newMinSev, setNewMinSev] = useState<IncidentSeverity>('MEDIUM')
+  const [newSound, setNewSound] = useState(true)
+  const [newQStart, setNewQStart] = useState('')
+  const [newQEnd, setNewQEnd] = useState('')
+
+  const handleCreate = useCallback(() => {
+    if (!newName.trim()) return
+    addProfile({
+      name: newName.trim(), icon: newIcon, active: false,
+      rules: {
+        domains: newDomains, minSeverity: newMinSev, soundEnabled: newSound,
+        quietHoursStart: newQStart || undefined, quietHoursEnd: newQEnd || undefined,
+      },
+    })
+    setNewName(''); setNewIcon('💼'); setNewDomains(['CONFLICT', 'CYBER'])
+    setNewMinSev('MEDIUM'); setNewSound(true); setNewQStart(''); setNewQEnd('')
+    setShowCreate(false)
+  }, [newName, newIcon, newDomains, newMinSev, newSound, newQStart, newQEnd, addProfile])
+
+  const toggleDomain = (list: IncidentDomain[], d: IncidentDomain): IncidentDomain[] =>
+    list.includes(d) ? list.filter(x => x !== d) : [...list, d]
+
+  const domainColor = (d: string) =>
+    ({ CONFLICT: '#ff3b5c', CYBER: '#00d4ff', INTEL: '#a78bfa', FINANCE: '#f5c542', MILITARY: '#ff6b35', ENVIRONMENT: '#00e676' }[d] || P.dim)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionTitle text="ALERT PROFILES" color="#a855f7" />
+      <div style={{ fontSize: '9px', color: P.dim, marginBottom: '4px', lineHeight: 1.5 }}>
+        Configure alert profiles to control which notifications you receive based on domain, severity, and time. Only one profile can be active at a time.
+      </div>
+
+      {/* Profile cards */}
+      {profiles.map(p => {
+        const isActive = p.id === activeId
+        const isEditing = editingId === p.id
+        return (
+          <div key={p.id} style={{
+            background: isActive ? `#a855f708` : P.card,
+            border: `1px solid ${isActive ? '#a855f740' : P.border}`,
+            borderRadius: '8px', overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px',
+              cursor: 'pointer',
+            }} onClick={() => setEditingId(isEditing ? null : p.id)}>
+              <span style={{ fontSize: '18px' }}>{p.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: P.text }}>{p.name}</div>
+                <div style={{ fontSize: '9px', color: P.dim, marginTop: '2px' }}>
+                  {p.rules.domains.join(', ')} · Min: {p.rules.minSeverity} · Sound: {p.rules.soundEnabled ? 'ON' : 'OFF'}
+                  {p.rules.quietHoursStart && ` · Quiet: ${p.rules.quietHoursStart}-${p.rules.quietHoursEnd}`}
+                </div>
+              </div>
+              <span style={{ fontSize: '8px', color: P.accent, transition: 'transform 0.2s', transform: isEditing ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+              {isActive && <span style={{ fontSize: '9px', padding: '2px 8px', background: '#a855f720', color: '#a855f7', borderRadius: '4px', fontWeight: 700 }}>ACTIVE</span>}
+              <button onClick={(e) => { e.stopPropagation(); setActive(p.id) }}
+                style={{
+                  padding: '4px 12px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+                  background: isActive ? 'transparent' : `#a855f710`, border: `1px solid ${isActive ? P.border : '#a855f740'}`,
+                  borderRadius: '4px', color: isActive ? P.dim : '#a855f7', cursor: isActive ? 'default' : 'pointer',
+                }}>{isActive ? 'ACTIVE' : 'ACTIVATE'}</button>
+            </div>
+
+            {/* Expanded edit */}
+            {isEditing && (
+              <div style={{ padding: '12px 14px', borderTop: `1px solid ${P.border}` }}>
+                {/* Name & Icon */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                  <div>
+                    <div style={rowLabel}>NAME</div>
+                    <input value={p.name} onChange={e => updateProfile(p.id, { name: e.target.value })}
+                      style={{ ...inputStyle, width: '180px', marginTop: '3px' }} />
+                  </div>
+                  <div>
+                    <div style={rowLabel}>ICON</div>
+                    <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
+                      {PROFILE_ICONS.map(ic => (
+                        <button key={ic} onClick={() => updateProfile(p.id, { icon: ic })} style={{
+                          width: '26px', height: '26px', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: p.icon === ic ? '#a855f715' : 'transparent',
+                          border: `1px solid ${p.icon === ic ? '#a855f740' : P.border}`,
+                          borderRadius: '4px', cursor: 'pointer',
+                        }}>{ic}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Domains */}
+                <div style={rowLabel}>DOMAINS</div>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
+                  {ALL_DOMAINS.map(d => {
+                    const on = p.rules.domains.includes(d)
+                    return (
+                      <button key={d} onClick={() => updateProfile(p.id, { rules: { ...p.rules, domains: toggleDomain(p.rules.domains, d) } })}
+                        style={{
+                          padding: '4px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+                          background: on ? domainColor(d) + '15' : 'transparent',
+                          border: `1px solid ${on ? domainColor(d) + '50' : P.border}`,
+                          borderRadius: '4px', color: on ? domainColor(d) : P.dim, cursor: 'pointer',
+                        }}>{d}</button>
+                    )
+                  })}
+                </div>
+
+                {/* Min Severity */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', alignItems: 'center' }}>
+                  <div>
+                    <div style={rowLabel}>MIN SEVERITY</div>
+                    <select value={p.rules.minSeverity} onChange={e => updateProfile(p.id, { rules: { ...p.rules, minSeverity: e.target.value as IncidentSeverity } })}
+                      style={{ ...selectStyle, marginTop: '3px' }}>
+                      {ALL_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ marginTop: '14px' }}>
+                    <Toggle checked={p.rules.soundEnabled}
+                      onChange={() => updateProfile(p.id, { rules: { ...p.rules, soundEnabled: !p.rules.soundEnabled } })}
+                      label="Notification sound" />
+                  </div>
+                </div>
+
+                {/* Quiet hours */}
+                <div style={rowLabel}>QUIET HOURS (optional)</div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', marginTop: '4px', alignItems: 'center' }}>
+                  <input type="time" value={p.rules.quietHoursStart || ''} onChange={e => updateProfile(p.id, { rules: { ...p.rules, quietHoursStart: e.target.value || undefined } })}
+                    style={{ ...inputStyle, width: '110px' }} />
+                  <span style={{ fontSize: '9px', color: P.dim }}>to</span>
+                  <input type="time" value={p.rules.quietHoursEnd || ''} onChange={e => updateProfile(p.id, { rules: { ...p.rules, quietHoursEnd: e.target.value || undefined } })}
+                    style={{ ...inputStyle, width: '110px' }} />
+                  {(p.rules.quietHoursStart || p.rules.quietHoursEnd) && (
+                    <button onClick={() => updateProfile(p.id, { rules: { ...p.rules, quietHoursStart: undefined, quietHoursEnd: undefined } })}
+                      style={{ padding: '4px 8px', fontSize: '9px', fontFamily: P.font, background: 'transparent', border: `1px solid ${P.border}`, borderRadius: '3px', color: P.dim, cursor: 'pointer' }}>CLEAR</button>
+                  )}
+                </div>
+
+                {/* Delete */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={() => { removeProfile(p.id); setEditingId(null) }}
+                    style={{
+                      padding: '6px 16px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+                      background: '#ff3b5c10', border: '1px solid #ff3b5c30', borderRadius: '4px',
+                      color: '#ff3b5c', cursor: 'pointer',
+                    }}>DELETE PROFILE</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Create new */}
+      {showCreate ? (
+        <div style={{ background: P.card, border: `1px solid #a855f730`, borderRadius: '8px', padding: '14px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#a855f7', marginBottom: '12px', letterSpacing: '0.08em' }}>CREATE NEW PROFILE</div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+            <div>
+              <div style={rowLabel}>NAME</div>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Profile name..."
+                style={{ ...inputStyle, width: '180px', marginTop: '3px' }} />
+            </div>
+            <div>
+              <div style={rowLabel}>ICON</div>
+              <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
+                {PROFILE_ICONS.map(ic => (
+                  <button key={ic} onClick={() => setNewIcon(ic)} style={{
+                    width: '26px', height: '26px', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: newIcon === ic ? '#a855f715' : 'transparent',
+                    border: `1px solid ${newIcon === ic ? '#a855f740' : P.border}`,
+                    borderRadius: '4px', cursor: 'pointer',
+                  }}>{ic}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={rowLabel}>DOMAINS</div>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
+            {ALL_DOMAINS.map(d => {
+              const on = newDomains.includes(d)
+              return (
+                <button key={d} onClick={() => setNewDomains(toggleDomain(newDomains, d))}
+                  style={{
+                    padding: '4px 10px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+                    background: on ? domainColor(d) + '15' : 'transparent',
+                    border: `1px solid ${on ? domainColor(d) + '50' : P.border}`,
+                    borderRadius: '4px', color: on ? domainColor(d) : P.dim, cursor: 'pointer',
+                  }}>{d}</button>
+              )
+            })}
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', alignItems: 'center' }}>
+            <div>
+              <div style={rowLabel}>MIN SEVERITY</div>
+              <select value={newMinSev} onChange={e => setNewMinSev(e.target.value as IncidentSeverity)} style={{ ...selectStyle, marginTop: '3px' }}>
+                {ALL_SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{ marginTop: '14px' }}>
+              <Toggle checked={newSound} onChange={() => setNewSound(!newSound)} label="Notification sound" />
+            </div>
+          </div>
+
+          <div style={rowLabel}>QUIET HOURS (optional)</div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', marginTop: '4px', alignItems: 'center' }}>
+            <input type="time" value={newQStart} onChange={e => setNewQStart(e.target.value)} style={{ ...inputStyle, width: '110px' }} />
+            <span style={{ fontSize: '9px', color: P.dim }}>to</span>
+            <input type="time" value={newQEnd} onChange={e => setNewQEnd(e.target.value)} style={{ ...inputStyle, width: '110px' }} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button onClick={() => setShowCreate(false)} style={{
+              padding: '6px 16px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+              background: 'transparent', border: `1px solid ${P.border}`, borderRadius: '4px', color: P.dim, cursor: 'pointer',
+            }}>CANCEL</button>
+            <button onClick={handleCreate} disabled={!newName.trim()} style={{
+              padding: '6px 16px', fontSize: '9px', fontWeight: 700, fontFamily: P.font,
+              background: newName.trim() ? '#a855f715' : 'transparent',
+              border: `1px solid ${newName.trim() ? '#a855f740' : P.border}`,
+              borderRadius: '4px', color: newName.trim() ? '#a855f7' : P.dim, cursor: newName.trim() ? 'pointer' : 'default',
+            }}>CREATE</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setShowCreate(true)} style={{
+          padding: '10px', width: '100%', fontSize: '10px', fontWeight: 700, fontFamily: P.font,
+          background: '#a855f708', border: `1px dashed #a855f730`, borderRadius: '8px',
+          color: '#a855f7', cursor: 'pointer', letterSpacing: '0.06em',
+        }}>+ CREATE NEW PROFILE</button>
+      )}
     </div>
   )
 }

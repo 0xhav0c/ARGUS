@@ -1,6 +1,6 @@
 import Parser from 'rss-parser'
 import { createHash } from 'crypto'
-import { CacheManager } from './cache-manager'
+import { getCacheManager } from './cache-manager'
 import { broadcastIncidentUpdate } from '../ipc/incidents'
 import { resolveLocation } from './geo-resolver'
 import type { Incident, IncidentDomain, IncidentSeverity, FeedSource } from '../../shared/types'
@@ -219,7 +219,7 @@ export class FeedAggregator {
         'User-Agent': 'Argus/1.0 Intelligence Dashboard'
       }
     })
-    this.cache = new CacheManager()
+    this.cache = getCacheManager()
   }
 
   registerProvider(domain: IncidentDomain, provider: FeedProvider): void {
@@ -305,21 +305,43 @@ export class FeedAggregator {
       if (lastModified) headers['If-Modified-Since'] = lastModified
 
       let parsed: Parser.Output<Record<string, unknown>>
+      let responseHeaders: Record<string, string> | undefined
       try {
-        parsed = await this.parser.parseURL(feed.url)
-      } catch (err: any) {
-        if (err?.statusCode === 304) {
+        const res = await fetch(feed.url, { headers, signal: AbortSignal.timeout(15000) })
+        if (res.status === 304) {
           this.cache.updateFeedStatus(feed.id, new Date().toISOString())
           return 0
         }
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        responseHeaders = Object.fromEntries(
+          [...res.headers.entries()].map(([k, v]) => [k.toLowerCase(), v])
+        )
+        const xml = await res.text()
+        parsed = await this.parser.parseString(xml)
+      } catch (err: any) {
+        if (err?.name === 'AbortError') throw new Error('Feed fetch timed out')
         throw err
+      }
+
+      if (responseHeaders) {
+        if (responseHeaders['etag']) this.cache.setFeedMeta(feed.id, 'etag', responseHeaders['etag'])
+        if (responseHeaders['last-modified']) this.cache.setFeedMeta(feed.id, 'lastModified', responseHeaders['last-modified'])
       }
 
       const now = new Date().toISOString()
       const provider = this.providers.get(feed.domain)
       let newCount = 0
 
+      const maxAge = 7 * 86400000
+      const cutoff = Date.now() - maxAge
+
       for (const item of parsed.items ?? []) {
+        const itemDate = (item as any).isoDate ?? (item as any).pubDate ?? ''
+        if (itemDate) {
+          const ts = new Date(itemDate as string).getTime()
+          if (ts > 0 && ts < cutoff) continue
+        }
+
         const incident = provider?.parseToIncident?.(item as Record<string, unknown>, feed)
           ?? this.defaultParseToIncident(item as Record<string, unknown>, feed)
 

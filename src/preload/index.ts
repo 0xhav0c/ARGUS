@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { Incident, FeedSource, VIPTweet } from '../shared/types'
 
 type Disposer = () => void
 
-function subscribe(channel: string, callback: (...args: any[]) => void): Disposer {
-  const handler = (_: Electron.IpcRendererEvent, ...args: any[]) => callback(...args)
+function subscribe<T = unknown>(channel: string, callback: (data: T) => void): Disposer {
+  const handler = (_: Electron.IpcRendererEvent, ...args: unknown[]) => callback(args[0] as T)
   ipcRenderer.on(channel, handler)
   return () => { ipcRenderer.removeListener(channel, handler) }
 }
@@ -12,34 +13,34 @@ const api = {
   platform: process.platform,
 
   getIncidents: (filters?: Record<string, unknown>) =>
-    ipcRenderer.invoke('get-incidents', filters),
+    ipcRenderer.invoke('get-incidents', filters) as Promise<Incident[]>,
   getIncidentCounts: () => ipcRenderer.invoke('get-incident-counts') as Promise<{ total: number; today: number; last24h: number }>,
 
-  getFeeds: () => ipcRenderer.invoke('get-feeds'),
-  refreshFeeds: () => ipcRenderer.invoke('refresh-feeds'),
+  getFeeds: () => ipcRenderer.invoke('get-feeds') as Promise<FeedSource[]>,
+  refreshFeeds: () => ipcRenderer.invoke('refresh-feeds') as Promise<{ feeds: FeedSource[]; error?: string }>,
   addFeed: (opts: { url: string; name?: string; category?: string }) => ipcRenderer.invoke('add-feed', opts),
   removeFeed: (feedId: string) => ipcRenderer.invoke('remove-feed', feedId),
   updateFeed: (feedId: string, updates: { name?: string; url?: string; category?: string }) => ipcRenderer.invoke('update-feed', feedId, updates),
 
-  onIncidentUpdate: (callback: (data: unknown) => void): Disposer =>
-    subscribe('incident-update', callback),
+  onIncidentUpdate: (callback: (data: Incident) => void): Disposer =>
+    subscribe<Incident>('incident-update', callback),
 
-  getSettings: () => ipcRenderer.invoke('get-settings'),
+  getSettings: () => ipcRenderer.invoke('get-settings') as Promise<Record<string, unknown>>,
   updateSettings: (settings: Record<string, unknown>) =>
     ipcRenderer.invoke('update-settings', settings),
 
   searchIncidents: (query: string) =>
-    ipcRenderer.invoke('search-incidents', query),
+    ipcRenderer.invoke('search-incidents', query) as Promise<Incident[]>,
 
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),
   windowClose: () => ipcRenderer.invoke('window-close'),
-  windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
-  windowIsFullscreen: () => ipcRenderer.invoke('window-is-fullscreen'),
+  windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized') as Promise<boolean>,
+  windowIsFullscreen: () => ipcRenderer.invoke('window-is-fullscreen') as Promise<boolean>,
   windowToggleFullscreen: () => ipcRenderer.invoke('window-toggle-fullscreen'),
 
   onWindowStateChanged: (callback: (data: { maximized?: boolean; fullscreen?: boolean }) => void): Disposer =>
-    subscribe('window-state-changed', callback),
+    subscribe<{ maximized?: boolean; fullscreen?: boolean }>('window-state-changed', callback),
 
   showNotification: (opts: { title: string; body: string }) =>
     ipcRenderer.invoke('show-notification', opts),
@@ -50,13 +51,13 @@ const api = {
   detachPanel: (type: string, title: string) =>
     ipcRenderer.invoke('detach-panel', type, title),
   closePanel: (id: string) => ipcRenderer.invoke('close-panel', id),
-  getActivePanels: () => ipcRenderer.invoke('get-active-panels'),
+  getActivePanels: () => ipcRenderer.invoke('get-active-panels') as Promise<Array<{ id: string; type: string; title: string }>>,
   detachPanels: () => ipcRenderer.invoke('detach-panels'),
   onPanelsDetached: (callback: (detached: boolean) => void): Disposer =>
-    subscribe('panels-detached', callback),
-  navigateToIncident: (incident: any) => ipcRenderer.invoke('navigate-to-incident', incident),
-  onRemoteNavigateIncident: (callback: (incident: any) => void): Disposer =>
-    subscribe('remote-navigate-incident', callback),
+    subscribe<boolean>('panels-detached', callback),
+  navigateToIncident: (incident: Incident) => ipcRenderer.invoke('navigate-to-incident', incident),
+  onRemoteNavigateIncident: (callback: (incident: Incident) => void): Disposer =>
+    subscribe<Incident>('remote-navigate-incident', callback),
 
   getEarthquakes: () => ipcRenderer.invoke('get-earthquakes'),
   getDisasters: () => ipcRenderer.invoke('get-disasters'),
@@ -67,7 +68,8 @@ const api = {
   getFlightRoute: (callsign: string) => ipcRenderer.invoke('get-flight-route', callsign),
 
   getSatellites: () => ipcRenderer.invoke('get-satellites'),
-  getVIPTweets: (accounts?: any[]) => ipcRenderer.invoke('get-vip-tweets', accounts),
+  getVIPTweets: (accounts?: Array<{ handle: string; name: string }>) =>
+    ipcRenderer.invoke('get-vip-tweets', accounts) as Promise<VIPTweet[]>,
 
   getSanctions: () => ipcRenderer.invoke('get-sanctions'),
   checkSanctions: (text: string) => ipcRenderer.invoke('check-sanctions', text),
@@ -88,7 +90,7 @@ const api = {
   getSubmarineCables: () => ipcRenderer.invoke('get-submarine-cables'),
   getMigrationRoutes: () => ipcRenderer.invoke('get-migration-routes'),
   getEnergyFacilities: () => ipcRenderer.invoke('get-energy-facilities'),
-  queryIncidents: (query: string) => ipcRenderer.invoke('query-incidents', query),
+  queryIncidents: (query: string) => ipcRenderer.invoke('query-incidents', query) as Promise<Incident[]>,
 
   getAnomalies: () => ipcRenderer.invoke('get-anomalies'),
   getPredictiveRisk: () => ipcRenderer.invoke('get-predictive-risk'),
@@ -112,22 +114,22 @@ const api = {
   companionStart: () => ipcRenderer.invoke('companion-start'),
   companionStop: () => ipcRenderer.invoke('companion-stop'),
   companionInfo: () => ipcRenderer.invoke('companion-info'),
-  companionPushIncident: (incident: any) => ipcRenderer.invoke('companion-push-incident', incident),
+  companionPushIncident: (incident: Record<string, unknown>) => ipcRenderer.invoke('companion-push-incident', incident),
 
-  onVIPTweetAlert: (callback: (data: unknown) => void): Disposer =>
-    subscribe('vip-tweet-alert', callback),
+  onVIPTweetAlert: (callback: (data: VIPTweet) => void): Disposer =>
+    subscribe<VIPTweet>('vip-tweet-alert', callback),
 
   onCascadeAlert: (callback: (data: unknown) => void): Disposer =>
     subscribe('cascade-alert', callback),
 
-  aiSummarize: (query: string) => ipcRenderer.invoke('ai-summarize', query),
-  aiAnalyzeIncident: (incident: Record<string, unknown>) => ipcRenderer.invoke('ai-analyze-incident', incident),
-  aiDailyBriefing: () => ipcRenderer.invoke('ai-daily-briefing'),
+  aiSummarize: (query: string) => ipcRenderer.invoke('ai-summarize', query) as Promise<{ summary: string; model: string; tokensUsed?: number }>,
+  aiAnalyzeIncident: (incident: Record<string, unknown>) => ipcRenderer.invoke('ai-analyze-incident', incident) as Promise<{ summary: string; model: string; tokensUsed?: number }>,
+  aiDailyBriefing: () => ipcRenderer.invoke('ai-daily-briefing') as Promise<{ summary: string; model: string; tokensUsed?: number }>,
 
-  aiEntities: () => ipcRenderer.invoke('ai-entities'),
-  aiCheck: () => ipcRenderer.invoke('ai-check'),
-  aiConfigGet: () => ipcRenderer.invoke('ai-config-get'),
-  aiConfigSet: (updates: Record<string, unknown>) => ipcRenderer.invoke('ai-config-set', updates),
+  aiEntities: () => ipcRenderer.invoke('ai-entities') as Promise<{ summary: string; model: string; tokensUsed?: number }>,
+  aiCheck: () => ipcRenderer.invoke('ai-check') as Promise<{ ollama: boolean; openai: boolean; custom: boolean }>,
+  aiConfigGet: () => ipcRenderer.invoke('ai-config-get') as Promise<Record<string, unknown>>,
+  aiConfigSet: (updates: Record<string, unknown>) => ipcRenderer.invoke('ai-config-set', updates) as Promise<Record<string, unknown>>,
 
   shodanSearch: (query: string) => ipcRenderer.invoke('shodan-search', query),
   abuseipdbCheck: (ip: string) => ipcRenderer.invoke('abuseipdb-check', ip),
@@ -136,10 +138,13 @@ const api = {
   getApiKeys: () => ipcRenderer.invoke('get-api-keys'),
   setApiKey: (name: string, value: string) => ipcRenderer.invoke('set-api-key', name, value),
   deleteApiKey: (name: string) => ipcRenderer.invoke('delete-api-key', name),
-  testApiKey: (name: string) => ipcRenderer.invoke('test-api-key', name),
+  testApiKey: (name: string) => ipcRenderer.invoke('test-api-key', name) as Promise<{ success: boolean; message: string; latencyMs?: number }>,
 
   onMainLog: (callback: (data: { level: string; category: string; message: string; detail?: string }) => void): Disposer =>
-    subscribe('main-log', callback),
+    subscribe<{ level: string; category: string; message: string; detail?: string }>('main-log', callback),
+
+  getAppVersion: () => ipcRenderer.invoke('get-app-version') as Promise<string>,
+  getAppUptime: () => ipcRenderer.invoke('get-app-uptime') as Promise<number>,
 }
 
 contextBridge.exposeInMainWorld('argus', api)

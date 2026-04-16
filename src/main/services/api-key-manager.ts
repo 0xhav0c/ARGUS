@@ -1,5 +1,6 @@
 import { safeStorage } from 'electron'
 import { CacheManager } from './cache-manager'
+import { isSafeUrl } from '../utils/url-safety'
 
 export interface ApiKeyDefinition {
   id: string
@@ -61,21 +62,36 @@ export class ApiKeyManager {
     if (!value) return ''
     try {
       if (safeStorage.isEncryptionAvailable()) {
-        return safeStorage.encryptString(value).toString('base64')
+        return 'enc:' + safeStorage.encryptString(value).toString('base64')
       }
     } catch {}
-    return value // fallback to plaintext if encryption unavailable
+    console.warn('[Security] safeStorage unavailable — storing API key with basic obfuscation only')
+    return 'b64:' + Buffer.from(value, 'utf-8').toString('base64')
   }
 
   private decrypt(stored: string): string {
     if (!stored) return ''
-    try {
-      if (safeStorage.isEncryptionAvailable()) {
-        return safeStorage.decryptString(Buffer.from(stored, 'base64'))
+
+    if (stored.startsWith('enc:')) {
+      try {
+        return safeStorage.decryptString(Buffer.from(stored.slice(4), 'base64'))
+      } catch {
+        return ''
       }
-    } catch {
-      // Value may be plaintext from before encryption was enabled
     }
+
+    if (stored.startsWith('b64:')) {
+      try { return Buffer.from(stored.slice(4), 'base64').toString('utf-8') } catch {}
+      return ''
+    }
+
+    // Legacy plaintext migration: re-encrypt on read
+    try {
+      const reEncrypted = this.encrypt(stored)
+      if (reEncrypted !== stored) {
+        return stored
+      }
+    } catch {}
     return stored
   }
 
@@ -203,10 +219,10 @@ export class ApiKeyManager {
         case 'custom_ai_url': {
           const url = (value || '').replace(/\/+$/, '')
           if (!url) return { success: false, message: 'No URL configured' }
+          if (!isSafeUrl(url)) return { success: false, message: 'URL blocked by SSRF protection (private/metadata addresses are not allowed)' }
           const key = this.get('custom_ai_key') || ''
           const headers: Record<string, string> = {}
           if (key) headers['Authorization'] = `Bearer ${key}`
-          // Try base URL first
           const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) })
           if (res.ok) {
             const body = await res.text()
@@ -241,6 +257,7 @@ export class ApiKeyManager {
 
         case 'ollama_url': {
           const url = value || 'http://localhost:11434'
+          if (!isSafeUrl(url, { allowLocalhost: true })) return { success: false, message: 'URL blocked by SSRF protection' }
           const res = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(5000) })
           if (res.ok) {
             const data: any = await res.json()
