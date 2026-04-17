@@ -266,22 +266,21 @@ export function MediaPage({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const getEmbedUrl = useCallback((ch: UserTVChannel, muted: boolean): string | null => {
     const url = ch.url
     const m = muted ? '1' : '0'
-    // YouTube channel ID → resolve to video ID first
+    // Origin query param required by YouTube when enablejsapi=1; falling back to 127.0.0.1
+    // matches the renderer server bind address used in packaged builds.
+    const origin = encodeURIComponent(`${window.location.protocol}//${window.location.host}`)
+    const ytParams = `autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0&playsinline=1&origin=${origin}`
     if (isYouTubeChannelId(url)) {
       const resolved = resolvedIds[url]
-      if (!resolved || resolved.loading) return null // still loading
-      if (!resolved.videoId) return null // no live stream
-      return `https://www.youtube.com/embed/${resolved.videoId}?autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0`
+      if (!resolved || resolved.loading) return null
+      if (!resolved.videoId) return null
+      return `https://www.youtube.com/embed/${resolved.videoId}?${ytParams}`
     }
-    // Direct YouTube video ID (11 chars)
-    if (/^[A-Za-z0-9_-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}?autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0`
-    // YouTube watch URL
-    if (url.includes('youtube.com/watch')) { try { const id = new URL(url).searchParams.get('v'); if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0` } catch {} }
-    if (url.includes('youtu.be/')) { const id = url.split('youtu.be/')[1]?.split('?')[0]; if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&mute=${m}&enablejsapi=1&modestbranding=1&rel=0` }
+    if (/^[A-Za-z0-9_-]{11}$/.test(url)) return `https://www.youtube.com/embed/${url}?${ytParams}`
+    if (url.includes('youtube.com/watch')) { try { const id = new URL(url).searchParams.get('v'); if (id) return `https://www.youtube.com/embed/${id}?${ytParams}` } catch {} }
+    if (url.includes('youtu.be/')) { const id = url.split('youtu.be/')[1]?.split('?')[0]; if (id) return `https://www.youtube.com/embed/${id}?${ytParams}` }
     if (url.includes('youtube.com/embed')) return url
-    // Twitch
     if (url.includes('twitch.tv')) { const tc = url.split('twitch.tv/')[1]?.split('/')[0]; if (tc) return `https://player.twitch.tv/?channel=${tc}&parent=${window.location.hostname || '127.0.0.1'}&muted=${muted}` }
-    // m3u8 / direct stream → handled by HLSPlayer
     if (url.endsWith('.m3u8') || url.includes('.m3u8?')) return url
     return url
   }, [resolvedIds])

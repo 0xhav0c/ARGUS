@@ -43,6 +43,7 @@ class WindowManager {
       frame: true,
       autoHideMenuBar: true,
       backgroundColor: '#0a0e17',
+      ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: 14 } } : {}),
       webPreferences: {
         preload: path.join(__dirname, '../preload/index.js'),
         sandbox: true,

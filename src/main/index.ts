@@ -238,12 +238,17 @@ function createWindow(): void {
   })
 
   mainWindow.on('close', () => {
-    windowManager.closeAll()
+    try { windowManager.closeAll() } catch {}
     const allWindows = BrowserWindow.getAllWindows()
     for (const win of allWindows) {
       if (win !== mainWindow && !win.isDestroyed()) {
-        win.close()
+        try { win.close() } catch {}
       }
+    }
+    // On macOS the app stays alive after window close by default; the user closing the
+    // primary window via traffic lights or our custom button is a quit intent.
+    if (process.platform === 'darwin') {
+      setTimeout(() => { try { app.quit() } catch {} }, 50)
     }
   })
 
@@ -272,7 +277,7 @@ async function initializeServices(): Promise<void> {
   // Register all IPC handler groups
   registerIncidentHandlers()
   registerFeedHandlers(feedAggregator)
-  registerWindowHandlers(mainWindow, () => rendererPort)
+  registerWindowHandlers(() => mainWindow, () => rendererPort)
   registerTrackingHandlers(trackingService, satelliteService, vipTweetService, sendMainLog)
   registerDataServiceHandlers({
     sanctionsService, financeDataService, sigintService, conflictZonesService,
@@ -396,22 +401,39 @@ app.whenReady().then(async () => {
       url.includes('.virtualearth.net') ||
       url.includes('.bing.com')
     ) {
+      // Strip any existing CORS headers (case-insensitive) before injecting our own —
+      // the upstream server already sets `Access-Control-Allow-Origin: *`, so naively
+      // adding ours produces a duplicate `*, *` value that browsers reject.
+      for (const k of Object.keys(responseHeaders)) {
+        const lower = k.toLowerCase()
+        if (lower === 'access-control-allow-origin' || lower === 'access-control-allow-methods' || lower === 'access-control-allow-headers') {
+          delete responseHeaders[k]
+        }
+      }
       responseHeaders['Access-Control-Allow-Origin'] = ['*']
-      responseHeaders['Access-Control-Allow-Methods'] = ['GET, OPTIONS']
-      responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization, Accept']
+      responseHeaders['Access-Control-Allow-Methods'] = ['GET, HEAD, OPTIONS']
+      // Allow any custom request header (e.g. Cesium sends `x-cesium-client-version`).
+      responseHeaders['Access-Control-Allow-Headers'] = ['*']
+      responseHeaders['Access-Control-Expose-Headers'] = ['*']
     }
 
+    // CSP: tightened where reasonable. Media (HLS/live TV) and OSINT data fetching
+    // need broad outbound access — `connect-src` and `media-src` therefore allow
+    // any HTTPS host (TV CDNs, RSS endpoints, public APIs we discover at runtime).
+    // This is intentional: the threat model assumes the local renderer is trusted
+    // (no user-controlled HTML rendering) and the value of restricting outbound
+    // hosts here is limited because the main process can fetch arbitrary URLs anyway.
     responseHeaders['Content-Security-Policy'] = [
       "default-src 'self' http://127.0.0.1:*;" +
       " script-src 'self' http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval' blob:;" +
       " style-src 'self' http://127.0.0.1:* 'unsafe-inline' https://fonts.googleapis.com;" +
-      " font-src 'self' http://127.0.0.1:* https://fonts.gstatic.com;" +
-      " img-src 'self' http://127.0.0.1:* data: blob: https://*.arcgisonline.com https://*.arcgis.com https://*.virtualearth.net https://*.bing.com https://*.cesium.com https://*.tile.openstreetmap.org https://upload.wikimedia.org;" +
-      " connect-src 'self' http://127.0.0.1:* https://*.cesium.com https://*.arcgisonline.com https://*.arcgis.com https://*.virtualearth.net https://*.bing.com https://api.coingecko.com https://pro-api.coingecko.com https://api.exchangerate-api.com https://earthquake.usgs.gov https://*.opensky-network.org https://api.nasa.gov https://services.nvd.nist.gov https://api.openai.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.tile.openstreetmap.org http://localhost:11434 ws://localhost:* wss://localhost:*;" +
+      " font-src 'self' http://127.0.0.1:* https://fonts.gstatic.com data:;" +
+      " img-src 'self' http://127.0.0.1:* data: blob: https: http:;" +
+      " connect-src 'self' http://127.0.0.1:* https: wss: ws://localhost:* wss://localhost:* http://localhost:11434;" +
       " worker-src 'self' http://127.0.0.1:* blob:;" +
       " child-src 'self' http://127.0.0.1:* blob:;" +
-      " frame-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://player.twitch.tv;" +
-      " media-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://*.youtube.com;" +
+      " frame-src 'self' http://127.0.0.1:* blob: https://www.youtube.com https://youtube.com https://*.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://embed.twitch.tv;" +
+      " media-src 'self' http://127.0.0.1:* blob: data: https: http:;" +
       " object-src 'none';" +
       " base-uri 'self' http://127.0.0.1:*;" +
       " form-action 'self' http://127.0.0.1:*;"

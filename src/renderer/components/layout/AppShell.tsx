@@ -1072,8 +1072,8 @@ function AppShellContent() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       const isEditing = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable
-      if (e.key === 'k' && (e.ctrlKey || e.metaKey) && ff('featureCommandPalette')) { e.preventDefault(); setCommandPaletteOpen(o => !o) }
-      else if (e.key === 'i' && (e.ctrlKey || e.metaKey) && ff('featureAIPanel')) { e.preventDefault(); setAIPanelOpen(o => !o) }
+      if (e.key === 'k' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && ff('featureCommandPalette')) { e.preventDefault(); setCommandPaletteOpen(o => !o) }
+      else if (e.key === 'i' && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && ff('featureAIPanel')) { e.preventDefault(); setAIPanelOpen(o => !o) }
       else if (e.key === 'Escape') { setCommandPaletteOpen(false); setAIPanelOpen(false) }
       else if (isEditing) return
       else if (e.key === '1' && e.altKey) { e.preventDefault(); setActiveTab('intelligence') }
@@ -1651,6 +1651,10 @@ function AppShellContent() {
           onOpenSettings={() => setSettingsOpen(true)}
           onToggleTrackingSearch={() => setTrackingSearchOpen(p => !p)}
           trackingSearchOpen={trackingSearchOpen}
+          onLocate={(lat, lng, title) => { flyToIncident({ latitude: lat, longitude: lng, title } as Incident); scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          onSelectIncident={(inc) => { selectIncident(inc) }}
+          onTrackingClick={(info) => setTrackingPopup(info)}
+          setActiveTab={setActiveTab}
         />
         {tabBar}
         {tabContent}
@@ -1670,6 +1674,10 @@ function AppShellContent() {
           onOpenSettings={() => setSettingsOpen(true)}
           onToggleTrackingSearch={() => setTrackingSearchOpen(p => !p)}
           trackingSearchOpen={trackingSearchOpen}
+          onLocate={(lat, lng, title) => { flyToIncident({ latitude: lat, longitude: lng, title } as Incident) }}
+          onSelectIncident={(inc) => { selectIncident(inc) }}
+          onTrackingClick={(info) => setTrackingPopup(info)}
+          setActiveTab={setActiveTab}
         />
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           <section style={{
@@ -1755,6 +1763,10 @@ function AppShellContent() {
         onOpenSettings={() => setSettingsOpen(true)}
         onToggleTrackingSearch={() => setTrackingSearchOpen(p => !p)}
         trackingSearchOpen={trackingSearchOpen}
+        onLocate={(lat, lng, title) => { flyToIncident({ latitude: lat, longitude: lng, title } as Incident); scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }) }}
+        onSelectIncident={(inc) => { selectIncident(inc) }}
+        onTrackingClick={(info) => setTrackingPopup(info)}
+        setActiveTab={setActiveTab}
       />
 
       {isHorizontal ? (

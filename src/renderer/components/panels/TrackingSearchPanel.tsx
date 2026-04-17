@@ -49,6 +49,19 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
     return () => clearTimeout(t)
   }, [isOpen])
 
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
+  }, [isOpen, onClose])
+
   const allResults = useMemo<TrackingSearchResult[]>(() => {
     const results: TrackingSearchResult[] = []
 

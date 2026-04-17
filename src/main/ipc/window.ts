@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, Notification, shell } from 'electron'
+import { BrowserWindow, ipcMain, Notification, shell, app } from 'electron'
 import { join } from 'path'
 import { windowManager } from '../services/window-manager'
 
@@ -17,24 +17,45 @@ function applyWindowOpenHandler(win: BrowserWindow): void {
 export { applyWindowOpenHandler }
 
 export function registerWindowHandlers(
-  mainWindow: BrowserWindow | null,
+  getMainWindow: () => BrowserWindow | null,
   getRendererPort: () => number
 ): void {
-  ipcMain.handle('window-minimize', () => mainWindow?.minimize())
+  ipcMain.handle('window-minimize', () => getMainWindow()?.minimize())
   ipcMain.handle('window-maximize', () => {
+    const mainWindow = getMainWindow()
     if (mainWindow?.isMaximized()) {
       mainWindow.unmaximize()
     } else {
       mainWindow?.maximize()
     }
   })
-  ipcMain.handle('window-close', () => {
-    windowManager.closeAll()
-    mainWindow?.close()
+  ipcMain.handle('window-close', (event) => {
+    const mainWindow = getMainWindow()
+    // Find which window made the request — close it specifically.
+    // If it is the main window, also tear down auxiliary windows so the app fully quits.
+    const senderWin = BrowserWindow.fromWebContents(event.sender)
+    if (senderWin && senderWin !== mainWindow && !senderWin.isDestroyed()) {
+      senderWin.close()
+      return
+    }
+    // Main window close — close detached panels, then quit the app
+    try { windowManager.closeAll() } catch {}
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (w !== mainWindow && !w.isDestroyed()) {
+        try { w.close() } catch {}
+      }
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.close()
+    }
+    // On macOS, closing the main window does not quit by default. The user clicking
+    // the explicit close button in our custom titlebar is a quit intent — honor it.
+    setTimeout(() => { try { app.quit() } catch {} }, 100)
   })
-  ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
-  ipcMain.handle('window-is-fullscreen', () => mainWindow?.isFullScreen() ?? false)
+  ipcMain.handle('window-is-maximized', () => getMainWindow()?.isMaximized() ?? false)
+  ipcMain.handle('window-is-fullscreen', () => getMainWindow()?.isFullScreen() ?? false)
   ipcMain.handle('window-toggle-fullscreen', () => {
+    const mainWindow = getMainWindow()
     mainWindow?.setFullScreen(!mainWindow.isFullScreen())
   })
 
@@ -52,13 +73,21 @@ export function registerWindowHandlers(
   ipcMain.handle('get-active-panels', () => windowManager.getActivePanels())
 
   ipcMain.handle('navigate-to-incident', (_event, incident: unknown) => {
+    const mainWindow = getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('remote-navigate-incident', incident)
       mainWindow.focus()
     }
   })
 
+  let panelsWindow: BrowserWindow | null = null
   ipcMain.handle('detach-panels', () => {
+    const mainWindow = getMainWindow()
+    // Already detached — focus existing window instead of opening a duplicate.
+    if (panelsWindow && !panelsWindow.isDestroyed()) {
+      panelsWindow.focus()
+      return { windowId: panelsWindow.id }
+    }
     const { screen: electronScreen } = require('electron') as typeof import('electron')
     const displays = electronScreen.getAllDisplays()
     const mainBounds = mainWindow?.getBounds()
@@ -72,15 +101,33 @@ export function registerWindowHandlers(
     const win = new BrowserWindow({
       width: 1000, height: 800, x, y,
       title: 'Argus — Panels',
-      frame: false, titleBarStyle: 'hidden', autoHideMenuBar: true, backgroundColor: '#0a0e17',
+      // Frameless on Win/Linux (we render our own TopBar with controls).
+      // On macOS, use hiddenInset so native traffic lights remain available.
+      frame: process.platform === 'darwin',
+      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+      autoHideMenuBar: true,
+      backgroundColor: '#0a0e17',
+      ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 14 } } : {}),
       webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true, nodeIntegration: false },
     })
     applyWindowOpenHandler(win)
-    const mainUrl = mainWindow?.webContents?.getURL() || ''
-    const base = mainUrl.split('?')[0].split('#')[0]
-    win.loadURL(`${base}?mode=panels-only`)
+    // Build the URL deterministically from the renderer source instead of relying on
+    // mainWindow.webContents.getURL(), which can return '' if called before the page
+    // commits a navigation. Falling back to that produced ERR_INVALID_URL.
+    const devUrl = process.env.ELECTRON_RENDERER_URL
+    const targetUrl = devUrl
+      ? `${devUrl}?mode=panels-only`
+      : `http://127.0.0.1:${getRendererPort()}/index.html?mode=panels-only`
+    win.loadURL(targetUrl)
+    panelsWindow = win
     mainWindow?.webContents.send('panels-detached', true)
-    win.on('closed', () => { mainWindow?.webContents.send('panels-detached', false) })
+    win.on('closed', () => {
+      panelsWindow = null
+      const mw = getMainWindow()
+      if (mw && !mw.isDestroyed()) {
+        mw.webContents.send('panels-detached', false)
+      }
+    })
     return { windowId: win.id }
   })
 
@@ -88,7 +135,7 @@ export function registerWindowHandlers(
     const child = new BrowserWindow({
       width: opts.width ?? 800,
       height: opts.height ?? 600,
-      parent: mainWindow ?? undefined,
+      parent: getMainWindow() ?? undefined,
       frame: false,
       backgroundColor: '#0a0e17',
       webPreferences: {
@@ -124,7 +171,8 @@ export function registerWindowHandlers(
       frame: true, title: `Argus — ${type}`,
       webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, nodeIntegration: false, contextIsolation: true },
     })
-    win.loadURL(mainWindow?.webContents?.getURL() || `http://127.0.0.1:${getRendererPort()}/index.html`)
+    const devUrl = process.env.ELECTRON_RENDERER_URL
+    win.loadURL(devUrl || `http://127.0.0.1:${getRendererPort()}/index.html`)
     return { windowId: win.id }
   })
 }

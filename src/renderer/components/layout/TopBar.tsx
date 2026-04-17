@@ -1,7 +1,9 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, memo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFilterStore } from '@/stores/filter-store'
 import { useNotificationStore } from '@/stores/notification-store'
+import { GlobalSearchDropdown } from '@/components/panels/GlobalSearchDropdown'
+import type { Incident } from '../../../shared/types'
 
 const platform = (typeof navigator !== 'undefined' && /Mac|darwin/i.test(navigator.userAgent)) ? 'darwin'
   : (typeof navigator !== 'undefined' && /Linux/i.test(navigator.userAgent)) ? 'linux' : 'win32'
@@ -22,6 +24,10 @@ interface TopBarProps {
   onOpenSettings?: () => void
   onToggleTrackingSearch?: () => void
   trackingSearchOpen?: boolean
+  onLocate?: (lat: number, lng: number, title: string) => void
+  onSelectIncident?: (incident: Incident) => void
+  onTrackingClick?: (info: any) => void
+  setActiveTab?: (tab: any) => void
 }
 
 function WinBtn({ onClick, children, hoverColor, title }: {
@@ -40,7 +46,7 @@ function WinBtn({ onClick, children, hoverColor, title }: {
   )
 }
 
-export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch, trackingSearchOpen }: TopBarProps) {
+export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onToggleTrackingSearch, trackingSearchOpen, onLocate, onSelectIncident, onTrackingClick, setActiveTab }: TopBarProps) {
   const { t } = useTranslation()
   const [time, setTime] = useState(new Date())
   const [isMaximized, setIsMaximized] = useState(true)
@@ -53,6 +59,39 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
   })
   const setSearchQuery = useFilterStore(s => s.setSearchQuery)
   const searchQuery = useFilterStore(s => s.searchQuery)
+  const searchWrapRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
+
+  const updateAnchor = useCallback(() => {
+    if (searchWrapRef.current) setAnchorRect(searchWrapRef.current.getBoundingClientRect())
+  }, [])
+
+  useEffect(() => {
+    if (!searchOpen) return
+    updateAnchor()
+    window.addEventListener('resize', updateAnchor)
+    return () => window.removeEventListener('resize', updateAnchor)
+  }, [searchOpen, updateAnchor])
+
+  // "/" focuses the global search input (only when not already typing in a field).
+  // Note: Cmd/Ctrl+F is intentionally left to the browser/DevTools — overriding it
+  // would conflict with the OS-level developer tools shortcut on macOS.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const editing = !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      if (e.key === '/' && !editing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        inputRef.current?.focus()
+        setSearchOpen(true)
+        updateAnchor()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [updateAnchor])
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000)
@@ -107,25 +146,25 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
       </div>
 
       {/* Search bar */}
-      <div style={{
+      <div ref={searchWrapRef} style={{
         display: 'flex', alignItems: 'center', flex: 1, maxWidth: '500px', gap: '6px',
         ...({ WebkitAppRegion: 'no-drag' } as any),
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           flex: 1, height: '28px',
-          background: '#0d1220', border: `1px solid ${P.border}`,
+          background: '#0d1220', border: `1px solid ${searchOpen ? P.accent + '40' : P.border}`,
           borderRadius: '4px', padding: '0 10px',
           transition: 'border-color 0.2s',
         }}>
-          <span style={{ fontSize: '12px', color: P.dim }}>⌕</span>
+          <span style={{ fontSize: '12px', color: searchOpen ? P.accent : P.dim }}>⌕</span>
           <input
+            ref={inputRef}
             type="text"
             placeholder={t('topbar.search')}
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onFocus={e => { const p = e.currentTarget.parentElement; if (p) p.style.borderColor = P.accent + '40' }}
-            onBlur={e => { const p = e.currentTarget.parentElement; if (p) p.style.borderColor = P.border }}
+            onChange={e => { setSearchQuery(e.target.value); if (!searchOpen) { setSearchOpen(true); updateAnchor() } }}
+            onFocus={() => { setSearchOpen(true); updateAnchor() }}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
               color: P.text, fontSize: '12px', fontFamily: P.font,
@@ -137,6 +176,11 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
               style={{ background: 'transparent', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}
             >✕</button>
           )}
+          <span style={{
+            fontSize: '8px', color: P.dim, padding: '1px 4px',
+            border: `1px solid ${P.border}`, borderRadius: '2px',
+            letterSpacing: '0.06em',
+          }} title="Press / to focus search">/</span>
         </div>
         <button onClick={onToggleTrackingSearch} title="Search Flights, Vessels, Satellites" style={{
           height: '28px', padding: '0 10px',
@@ -225,6 +269,18 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
           <WinBtn onClick={() => window.argus?.windowClose()} hoverColor="#c42b1c" title={t('topbar.close')}>✕</WinBtn>
         </div>
       )}
+
+      <GlobalSearchDropdown
+        isOpen={searchOpen}
+        query={searchQuery}
+        setQuery={setSearchQuery}
+        anchorRect={anchorRect}
+        onClose={() => setSearchOpen(false)}
+        onLocate={(lat, lng, title) => onLocate?.(lat, lng, title)}
+        onSelectIncident={(inc) => onSelectIncident?.(inc)}
+        onTrackingClick={(info) => onTrackingClick?.(info)}
+        setActiveTab={setActiveTab}
+      />
     </header>
   )
 })
