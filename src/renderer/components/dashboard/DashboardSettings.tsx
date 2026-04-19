@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, type CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/i18n'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAlertProfileStore } from '@/stores/alert-profile-store'
 import { useNotificationStore } from '@/stores/notification-store'
@@ -58,6 +60,7 @@ interface CompanionInfo { ip: string; port: number; running: boolean; clients: n
 type DraftSettings = Omit<AppSettings, never>
 
 export function SettingsModal({ open, onClose, incidents, initialTab }: SettingsModalProps) {
+  const { t } = useTranslation()
   const storeSettings = useSettingsStore()
   const updateSetting = useSettingsStore(s => s.updateSetting)
   const notifSound = useNotificationStore(s => s.soundEnabled)
@@ -203,8 +206,11 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
   const handleSaveGeneral = useCallback(() => {
     const keys = Object.keys(draft) as (keyof DraftSettings)[]
     for (const k of keys) { updateSetting(k, draft[k] as any) }
+    if (draft.language && draft.language !== i18n.language) {
+      i18n.changeLanguage(draft.language)
+    }
     setDirty(false)
-    setToast('Settings saved ✓')
+    setToast(t('settings.settingsSaved'))
   }, [draft, updateSetting])
 
   const handleSaveAudio = useCallback(() => {
@@ -403,25 +409,24 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
       await window.argus?.clearTileCache?.()
       const s = await window.argus?.getCacheStats?.()
       if (s) setCacheStats(s)
-      setToast('Tile cache cleared')
-    } catch { setToast('Failed to clear cache') }
+      setToast(t('settings.tileCacheCleared'))
+    } catch { setToast(t('settings.tileCacheFailed')) }
     setClearing(false)
   }, [])
 
   const features = useSettingsStore(s => s.features) || DEFAULT_FEATURES
 
   const allSettingsTabs: { id: typeof tab; label: string; color: string; featureKey?: keyof FeatureFlags }[] = [
-    { id: 'general', label: 'GENERAL', color: P.accent },
-    { id: 'audio', label: 'AUDIO & TTS', color: '#a78bfa', featureKey: 'featureTTS' },
-    { id: 'feeds', label: 'RSS FEEDS', color: '#ff6b35' },
-    { id: 'tv', label: 'TV CHANNELS', color: '#3fb950', featureKey: 'tabMedia' },
-    { id: 'data', label: 'DATA', color: '#6bcf7f' },
-    { id: 'companion', label: 'COMPANION', color: '#a855f7', featureKey: 'featureCompanion' },
-    { id: 'apikeys', label: 'API KEYS', color: '#f5c542' },
-    { id: 'ai', label: 'AI CONFIG', color: '#a855f7', featureKey: 'featureAIPanel' },
-    { id: 'performance', label: 'PERFORMANCE', color: '#3fb950' },
-    { id: 'features', label: '⚡ FEATURES', color: '#f97316' },
-    { id: 'alertprofiles', label: '🔔 ALERT PROFILES', color: '#a855f7', featureKey: 'opsProfiles' },
+    { id: 'general', label: t('settings.tabGeneral'), color: P.accent },
+    { id: 'audio', label: t('settings.tabAudio'), color: '#a78bfa', featureKey: 'featureTTS' },
+    { id: 'feeds', label: t('settings.tabFeeds'), color: '#ff6b35' },
+    { id: 'tv', label: t('settings.tabTV'), color: '#3fb950', featureKey: 'tabMedia' },
+    { id: 'data', label: t('settings.tabData'), color: '#6bcf7f' },
+    { id: 'apikeys', label: t('settings.tabApiKeys'), color: '#f5c542' },
+    { id: 'ai', label: t('settings.tabAI'), color: '#a855f7', featureKey: 'featureAIPanel' },
+    { id: 'performance', label: t('settings.tabPerformance'), color: '#3fb950' },
+    { id: 'features', label: t('settings.tabFeatures'), color: '#f97316' },
+    { id: 'alertprofiles', label: t('settings.tabAlertProfiles'), color: '#a855f7', featureKey: 'opsProfiles' },
   ]
   const tabs = allSettingsTabs.filter(t => !t.featureKey || features[t.featureKey])
 
@@ -448,7 +453,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
       borderRadius: '6px', cursor: disabled ? 'default' : 'pointer',
       color: disabled ? P.dim : '#000', transition: 'all 0.2s',
       boxShadow: disabled ? 'none' : `0 0 16px ${P.accent}40`,
-    }}>{label || 'SAVE SETTINGS'}</button>
+    }}>{label || t('settings.save')}</button>
   )
 
   return (
@@ -459,7 +464,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: `1px solid ${P.border}`, flexShrink: 0 }}>
           <span style={{ fontSize: '14px', color: P.dim }}>⚙</span>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: P.text, letterSpacing: '0.15em', fontFamily: P.font }}>SETTINGS</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: P.text, letterSpacing: '0.15em', fontFamily: P.font }}>{t('settings.title')}</span>
           <div style={{ flex: 1 }} />
           <button onClick={onClose} style={{ background: '#ff3b5c20', border: '1px solid #ff3b5c40', borderRadius: '4px', color: '#ff3b5c', cursor: 'pointer', fontSize: '12px', fontFamily: P.font, fontWeight: 700, padding: '4px 12px', lineHeight: 1 }}>X</button>
         </div>
@@ -493,17 +498,27 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
           {/* ===== GENERAL ===== */}
           {tab === 'general' && (
             <div style={{ display: 'grid', gap: '16px' }}>
-              <SectionTitle text="DISPLAY" />
+              <SectionTitle text={t('settings.display')} />
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
-                <span style={rowLabel}>LANGUAGE</span>
+                <span style={rowLabel}>{t('settings.language')}</span>
                 <select value={draft.language} onChange={e => setField('language', e.target.value as any)} style={selectStyle}>
                   <option value="en">English</option>
                   <option value="tr">Türkçe</option>
+                  <option value="ar">العربية (Arabic)</option>
+                  <option value="ru">Русский (Russian)</option>
+                  <option value="es">Español (Spanish)</option>
+                  <option value="fr">Français (French)</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="zh">中文 (Chinese)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                  <option value="ko">한국어 (Korean)</option>
+                  <option value="pt">Português (Portuguese)</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
-                <span style={rowLabel}>UI SCALE</span>
+                <span style={rowLabel}>{t('settings.uiScale')}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <input type="range" min="0.85" max="1.5" step="0.05" value={draft.uiScale}
                     onChange={e => setField('uiScale', Number(e.target.value))}
@@ -522,7 +537,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
-                <span style={rowLabel}>DATE FORMAT</span>
+                <span style={rowLabel}>{t('settings.dateFormat')}</span>
                 <select value={draft.dateFormat} onChange={e => setField('dateFormat', e.target.value as any)} style={selectStyle}>
                   <option value="24h">24-hour</option>
                   <option value="12h">12-hour (AM/PM)</option>
@@ -540,7 +555,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
-                <span style={rowLabel}>LAYOUT MODE</span>
+                <span style={rowLabel}>{t('settings.layoutMode')}</span>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   {([
                     { value: 'stacked' as const, label: 'Stacked ▬', desc: 'Globe top, panels below' },
@@ -568,21 +583,21 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                 </div>
               )}
 
-              <SectionTitle text="GLOBE" color="#a78bfa" />
+              <SectionTitle text={t('settings.globe')} color="#a78bfa" />
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
-                <span style={rowLabel}>GLOBE QUALITY</span>
+                <span style={rowLabel}>{t('settings.globeQuality')}</span>
                 <select value={draft.globeQuality} onChange={e => setField('globeQuality', e.target.value as any)} style={selectStyle}>
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                 </select>
               </div>
-              <Toggle checked={draft.showAnimations} onChange={() => setField('showAnimations', !draft.showAnimations)} label="Show animations" />
-              <Toggle checked={draft.autoRotateGlobe} onChange={() => setField('autoRotateGlobe', !draft.autoRotateGlobe)} label="Auto-rotate globe" />
-              <Toggle checked={draft.mapLabels} onChange={() => setField('mapLabels', !draft.mapLabels)} label="Show map labels" />
+              <Toggle checked={draft.showAnimations} onChange={() => setField('showAnimations', !draft.showAnimations)} label={t('settings.showAnimations')} />
+              <Toggle checked={draft.autoRotateGlobe} onChange={() => setField('autoRotateGlobe', !draft.autoRotateGlobe)} label={t('settings.autoRotateGlobe')} />
+              <Toggle checked={draft.mapLabels} onChange={() => setField('mapLabels', !draft.mapLabels)} label={t('settings.showMapLabels')} />
 
-              <SectionTitle text="DATA REFRESH" color="#6bcf7f" />
-              <Toggle checked={draft.autoRefresh} onChange={() => setField('autoRefresh', !draft.autoRefresh)} label="Auto-refresh feeds" />
+              <SectionTitle text={t('settings.dataRefresh')} color="#6bcf7f" />
+              <Toggle checked={draft.autoRefresh} onChange={() => setField('autoRefresh', !draft.autoRefresh)} label={t('settings.autoRefreshFeeds')} />
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
                 <span style={rowLabel}>REFRESH INTERVAL</span>
                 <select value={String(draft.refreshInterval)} onChange={e => setField('refreshInterval', Number(e.target.value))} style={selectStyle}>
@@ -594,8 +609,8 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                 </select>
               </div>
 
-              <SectionTitle text="NOTIFICATIONS" color="#ff6b35" />
-              <Toggle checked={draft.notificationsEnabled} onChange={() => setField('notificationsEnabled', !draft.notificationsEnabled)} label="Enable notifications" />
+              <SectionTitle text={t('settings.notifications')} color="#ff6b35" />
+              <Toggle checked={draft.notificationsEnabled} onChange={() => setField('notificationsEnabled', !draft.notificationsEnabled)} label={t('settings.enableNotifications')} />
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: '12px' }}>
                 <span style={rowLabel}>MAX NOTIFICATIONS</span>
                 <select value={String(draft.maxNotifications)} onChange={e => setField('maxNotifications', Number(e.target.value))} style={selectStyle}>
@@ -617,7 +632,7 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
           {/* ===== AUDIO ===== */}
           {tab === 'audio' && (
             <div style={{ display: 'grid', gap: '16px' }}>
-              <SectionTitle text="NOTIFICATION SOUNDS" />
+              <SectionTitle text={t('settings.notificationSounds')} />
               <Toggle checked={draftSound} onChange={() => { setDraftSound(!draftSound); setAudioDirty(true) }} label="Enable notification sounds" />
 
               <SectionTitle text="TEXT-TO-SPEECH (TTS)" color="#a78bfa" />
@@ -974,11 +989,11 @@ export function SettingsModal({ open, onClose, incidents, initialTab }: Settings
                 Configure API keys to unlock enhanced data sources and higher rate limits. Keys are stored locally in your database and never transmitted to third parties.
               </div>
 
-              {(['intelligence', 'finance', 'tracking', 'ai'] as const).map(category => {
+              {(['intelligence', 'finance'] as const).map(category => {
                 const catKeys = apiKeys.filter(k => k.category === category)
                 if (catKeys.length === 0) return null
-                const catColors: Record<string, string> = { intelligence: '#ff6b35', finance: '#3fb950', tracking: P.accent, ai: '#a78bfa' }
-                const catLabels: Record<string, string> = { intelligence: 'INTELLIGENCE & SECURITY', finance: 'FINANCE', tracking: 'TRACKING', ai: 'AI & LLM' }
+                const catColors: Record<string, string> = { intelligence: '#ff6b35', finance: '#3fb950' }
+                const catLabels: Record<string, string> = { intelligence: 'INTELLIGENCE & SECURITY', finance: 'FINANCE' }
                 return (
                   <div key={category}>
                     <SectionTitle text={catLabels[category] || category.toUpperCase()} color={catColors[category] || P.accent} />
@@ -1301,8 +1316,6 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { key: 'tabAnalysis', label: 'Analysis' },
       { key: 'tabSecurity', label: 'Security Intel' },
       { key: 'tabFinance', label: 'Finance' },
-      { key: 'tabEntities', label: 'Entities Graph' },
-      { key: 'tabCompare', label: 'Compare' },
       { key: 'tabOperations', label: 'Operations' },
       { key: 'tabMedia', label: 'Media' },
       { key: 'tabLiveFeed', label: 'Live Feed' },
@@ -1331,7 +1344,6 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { key: 'secPandemic', label: 'Pandemic' },
       { key: 'secNuclear', label: 'Nuclear / WMD' },
       { key: 'secMilitary', label: 'Military' },
-      { key: 'secWeather', label: 'Weather' },
       { key: 'secInternet', label: 'Internet Outages' },
       { key: 'secSanctions', label: 'Sanctions' },
       { key: 'secDarkweb', label: 'Dark Web' },
@@ -1344,18 +1356,14 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     color: '#00e676',
     icon: '⚙',
     items: [
-      { key: 'opsQuery', label: 'Ask Argus' },
       { key: 'opsBookmarks', label: 'Bookmarks' },
       { key: 'opsThreads', label: 'Threads' },
       { key: 'opsProfiles', label: 'Alert Profiles' },
       { key: 'opsAnnotations', label: 'Map Annotations' },
-      { key: 'opsPlugins', label: 'Data Sources' },
       { key: 'opsHotspots', label: 'Hotspots' },
-      { key: 'opsReports', label: 'Reports' },
       { key: 'opsReliability', label: 'Source Scoring' },
       { key: 'opsAlertRules', label: 'Smart Alerts' },
       { key: 'opsPredictions', label: 'Predictions' },
-      { key: 'opsExport', label: 'Export' },
       { key: 'opsTimeMachine', label: 'Time Machine' },
     ],
   },
@@ -1364,11 +1372,8 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     color: '#f5c542',
     icon: '✈',
     items: [
-      { key: 'trackFlights', label: 'Flights' },
-      { key: 'trackVessels', label: 'Vessels' },
       { key: 'trackSatellites', label: 'Satellites' },
       { key: 'trackEarthquakes', label: 'Earthquakes' },
-      { key: 'trackDisasters', label: 'Disasters' },
     ],
   },
   {
@@ -1379,7 +1384,6 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { key: 'featureAIPanel', label: 'AI Panel' },
       { key: 'featureCommandPalette', label: 'Cmd Palette' },
       { key: 'featureVoiceControl', label: 'Voice Control' },
-      { key: 'featureCompanion', label: 'Companion' },
       { key: 'featureSplitView', label: 'Split View' },
       { key: 'featureNotifications', label: 'Notifications' },
       { key: 'featureTTS', label: 'TTS' },

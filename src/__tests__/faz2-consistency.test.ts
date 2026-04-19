@@ -27,9 +27,10 @@ describe('FAZ2: Severity weight senkronizasyonu', () => {
     expect(dashboardThreatScore).toContain('INFO: 1')
   })
 
-  it('AppShell RiskIndex: aynı ağırlıklar (HIGH=4, CRITICAL=5)', () => {
-    // AppShell'de de HIGH=4 olmalı (eskisi HIGH=3 idi)
-    expect(appShell).toContain('CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, INFO: 1')
+  it('AppShell IncidentClusters: severity ağırlıkları mevcut', () => {
+    // AppShell IncidentClusters uses its own simpler weight scale for max-severity selection.
+    // These are cluster-internal weights (0-based), different from threat scoring (1-based).
+    expect(appShell).toContain('CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1, INFO: 0')
   })
 
   it('InfoTip metni doğru weight gösteriyor', () => {

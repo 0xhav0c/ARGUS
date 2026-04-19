@@ -14,7 +14,7 @@ const P = {
   font: "'JetBrains Mono', 'Fira Code', monospace",
 }
 
-export type SearchHitKind = 'incident' | 'entity' | 'flight' | 'vessel' | 'satellite'
+export type SearchHitKind = 'incident' | 'entity' | 'satellite' | 'earthquake'
 
 export interface SearchHit {
   id: string
@@ -29,12 +29,11 @@ export interface SearchHit {
 const KIND_META: Record<SearchHitKind, { label: string; color: string; icon: string }> = {
   incident: { label: 'INCIDENT', color: '#ff6b35', icon: '⚡' },
   entity: { label: 'ENTITY', color: '#a855f7', icon: '◉' },
-  flight: { label: 'FLIGHT', color: '#00b4ff', icon: '✈' },
-  vessel: { label: 'VESSEL', color: '#64c8ff', icon: '⚓' },
   satellite: { label: 'SAT', color: '#a78bfa', icon: '🛰' },
+  earthquake: { label: 'QUAKE', color: '#ff8800', icon: '◎' },
 }
 
-const ALL_KINDS: SearchHitKind[] = ['incident', 'entity', 'flight', 'vessel', 'satellite']
+const ALL_KINDS: SearchHitKind[] = ['incident', 'entity', 'satellite', 'earthquake']
 const RECENT_KEY = 'argus-search-recent'
 const MAX_RECENT = 8
 
@@ -117,9 +116,10 @@ export function GlobalSearchDropdown({
 }: GlobalSearchDropdownProps) {
   const incidents = useIncidentStore(s => s.incidents)
   const entities = useEntityStore(s => s.entities)
-  const flights = useTrackingStore(s => s.flights)
-  const vessels = useTrackingStore(s => s.vessels)
+  const flights: any[] = []
+  const vessels: any[] = []
   const satellites = useTrackingStore(s => s.satellites)
+  const earthquakes = useTrackingStore(s => s.earthquakes)
 
   const [activeKinds, setActiveKinds] = useState<Set<SearchHitKind>>(new Set(ALL_KINDS))
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -235,9 +235,28 @@ export function GlobalSearchDropdown({
       }
     }
 
+    if (activeKinds.has('earthquake')) {
+      for (const eq of earthquakes) {
+        const place = scoreMatch(q, eq.place || '')
+        const id = scoreMatch(q, eq.id || '')
+        const score = place * 1.2 + id
+        if (score > 0) {
+          out.push({
+            id: `eq-${eq.id}`,
+            kind: 'earthquake',
+            title: `M${eq.magnitude.toFixed(1)} — ${eq.place}`,
+            subtitle: `${new Date(eq.time).toLocaleString()} · Depth: ${eq.depth} km`,
+            meta: eq.id,
+            score: score + (eq.magnitude >= 6 ? 20 : eq.magnitude >= 5 ? 10 : 0),
+            raw: eq,
+          })
+        }
+      }
+    }
+
     out.sort((a, b) => b.score - a.score)
     return out.slice(0, 80)
-  }, [isOpen, query, activeKinds, incidents, entities, flights, vessels, satellites])
+  }, [isOpen, query, activeKinds, incidents, entities, flights, vessels, satellites, earthquakes])
 
   // Group counts for filter chips (uses unfiltered set so counts always reflect the query)
   const allHits = useMemo<SearchHit[]>(() => {
@@ -264,11 +283,15 @@ export function GlobalSearchDropdown({
       const sc = scoreMatch(q, s.name || '') + scoreMatch(q, String(s.noradId || ''))
       if (sc > 0) tmp.push({ id: `s-${s.noradId}`, kind: 'satellite', title: '', subtitle: '', score: sc, raw: s })
     }
+    for (const eq of earthquakes) {
+      const sc = scoreMatch(q, eq.place || '') + scoreMatch(q, eq.id || '')
+      if (sc > 0) tmp.push({ id: `eq-${eq.id}`, kind: 'earthquake', title: '', subtitle: '', score: sc, raw: eq })
+    }
     return tmp
-  }, [isOpen, query, incidents, entities, flights, vessels, satellites])
+  }, [isOpen, query, incidents, entities, flights, vessels, satellites, earthquakes])
 
   const counts = useMemo(() => {
-    const c: Record<SearchHitKind, number> = { incident: 0, entity: 0, flight: 0, vessel: 0, satellite: 0 }
+    const c: Record<SearchHitKind, number> = { incident: 0, entity: 0, satellite: 0, earthquake: 0 }
     for (const h of allHits) c[h.kind]++
     return c
   }, [allHits])
@@ -311,6 +334,15 @@ export function GlobalSearchDropdown({
         title: s.name,
         details: { 'NORAD ID': s.noradId, Category: s.category, 'Altitude (km)': Math.round(s.altitude) },
         latitude: s.latitude, longitude: s.longitude,
+      })
+    } else if (hit.kind === 'earthquake') {
+      const eq = hit.raw
+      onLocate(eq.latitude, eq.longitude, `M${eq.magnitude.toFixed(1)} — ${eq.place}`)
+      onTrackingClick({
+        type: 'earthquake',
+        title: `M${eq.magnitude.toFixed(1)} — ${eq.place}`,
+        details: { Magnitude: eq.magnitude.toFixed(1), Depth: `${eq.depth} km`, Time: new Date(eq.time).toLocaleString() },
+        latitude: eq.latitude, longitude: eq.longitude,
       })
     }
     onClose()
@@ -418,7 +450,7 @@ export function GlobalSearchDropdown({
               <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.12em', marginBottom: '8px' }}>RECENT SEARCHES</div>
               {recent.length === 0 ? (
                 <div style={{ fontSize: '10px', color: P.dim, padding: '12px 0', textAlign: 'center' }}>
-                  Start typing to search across incidents, entities, flights, vessels and satellites.
+                  Start typing to search across incidents, entities, satellites and earthquakes.
                 </div>
               ) : recent.map(r => (
                 <button
@@ -501,7 +533,7 @@ export function GlobalSearchDropdown({
           fontSize: '9px', color: P.dim, background: P.card,
         }}>
           <span>{query.trim() ? `${hits.length} result${hits.length === 1 ? '' : 's'}` : 'Quick search'}</span>
-          <span>{incidents.length} incidents · {entities.length} entities · {flights.length + vessels.length + satellites.length} tracked</span>
+          <span>{incidents.length} incidents · {entities.length} entities · {satellites.length} satellites · {earthquakes.length} quakes</span>
         </div>
       </div>
     </>

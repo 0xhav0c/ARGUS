@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, lazy, Component, type ReactNode, type ErrorInfo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TopBar } from './TopBar'
 import { Sidebar } from './Sidebar'
 import { StatusBar } from './StatusBar'
@@ -62,15 +63,15 @@ const P = {
 
 type TabId = 'intelligence' | 'analysis' | 'media' | 'feed' | 'finance' | 'security' | 'operations' | 'logs'
 
-const TABS: { id: TabId; label: string; icon: string; color: string; featureKey: keyof FeatureFlags }[] = [
-  { id: 'intelligence', label: 'INTELLIGENCE', icon: '◉', color: '#00d4ff', featureKey: 'tabIntelligence' },
-  { id: 'analysis', label: 'ANALYSIS', icon: '◎', color: '#a78bfa', featureKey: 'tabAnalysis' },
-  { id: 'feed', label: 'LIVE FEED', icon: '⚡', color: '#ff6b35', featureKey: 'tabLiveFeed' },
-  { id: 'security', label: 'SECURITY', icon: '🛡', color: '#ff3b5c', featureKey: 'tabSecurity' },
-  { id: 'finance', label: 'FINANCE', icon: '◈', color: '#f5c542', featureKey: 'tabFinance' },
-  { id: 'operations', label: 'OPERATIONS', icon: '⚙', color: '#00e676', featureKey: 'tabOperations' },
-  { id: 'media', label: 'MEDIA', icon: '▶', color: '#64c8ff', featureKey: 'tabMedia' },
-  { id: 'logs', label: 'LOG', icon: '📋', color: '#6b7280', featureKey: 'tabLogs' },
+const TABS: { id: TabId; i18nKey: string; icon: string; color: string; featureKey: keyof FeatureFlags }[] = [
+  { id: 'intelligence', i18nKey: 'tabs.intelligence', icon: '◉', color: '#00d4ff', featureKey: 'tabIntelligence' },
+  { id: 'analysis', i18nKey: 'tabs.analysis', icon: '◎', color: '#a78bfa', featureKey: 'tabAnalysis' },
+  { id: 'feed', i18nKey: 'tabs.feed', icon: '⚡', color: '#ff6b35', featureKey: 'tabLiveFeed' },
+  { id: 'security', i18nKey: 'tabs.security', icon: '🛡', color: '#ff3b5c', featureKey: 'tabSecurity' },
+  { id: 'finance', i18nKey: 'tabs.finance', icon: '◈', color: '#f5c542', featureKey: 'tabFinance' },
+  { id: 'operations', i18nKey: 'tabs.operations', icon: '⚙', color: '#00e676', featureKey: 'tabOperations' },
+  { id: 'media', i18nKey: 'tabs.media', icon: '▶', color: '#64c8ff', featureKey: 'tabMedia' },
+  { id: 'logs', i18nKey: 'tabs.logs', icon: '📋', color: '#6b7280', featureKey: 'tabLogs' },
 ] as const
 
 class AppErrorBoundary extends Component<
@@ -504,33 +505,33 @@ function IncidentClusters({ incidents, onLocateIncident }: { incidents: Incident
   )
 }
 
-type IntelTab = 'overview' | 'timeline' | 'entities' | 'anomaly' | 'briefing'
+type IntelTab = 'overview' | 'timeline' | 'entities' | 'anomaly'
 
-const INTEL_TABS: { id: IntelTab; label: string; icon: string; color: string }[] = [
-  { id: 'overview', label: 'OVERVIEW', icon: '◉', color: '#00d4ff' },
-  { id: 'timeline', label: 'TIME ANALYSIS', icon: '📊', color: '#a78bfa' },
-  { id: 'entities', label: 'ENTITY TRACKER', icon: '⬡', color: '#06b6d4' },
-  { id: 'anomaly', label: 'ANOMALY & RISK', icon: '⚠', color: '#ff6b35' },
-  { id: 'briefing', label: 'DAILY BRIEFING', icon: '📋', color: '#00e676' },
+const INTEL_TABS: { id: IntelTab; i18nKey: string; icon: string; color: string }[] = [
+  { id: 'overview', i18nKey: 'intel.overview', icon: '◉', color: '#00d4ff' },
+  { id: 'timeline', i18nKey: 'intel.timeAnalysis', icon: '📊', color: '#a78bfa' },
+  { id: 'entities', i18nKey: 'intel.entityTracker', icon: '⬡', color: '#06b6d4' },
+  { id: 'anomaly', i18nKey: 'intel.anomalyRisk', icon: '⚠', color: '#ff6b35' },
 ]
 
 const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident?: (i: Incident) => void }) {
+  const { t } = useTranslation()
   const [activeIntelTab, setActiveIntelTab] = useState<IntelTab>('overview')
 
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, overflowX: 'hidden' }}>
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: '4px', padding: '10px 24px 6px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {INTEL_TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveIntelTab(t.id)} style={{
-            padding: '6px 14px', background: activeIntelTab === t.id ? `${t.color}15` : 'transparent',
-            border: `1px solid ${activeIntelTab === t.id ? t.color + '50' : P.border}`,
-            borderRadius: '4px', color: activeIntelTab === t.id ? t.color : P.dim,
+        {INTEL_TABS.map(tab => (
+          <button key={tab.id} onClick={() => setActiveIntelTab(tab.id)} style={{
+            padding: '6px 14px', background: activeIntelTab === tab.id ? `${tab.color}15` : 'transparent',
+            border: `1px solid ${activeIntelTab === tab.id ? tab.color + '50' : P.border}`,
+            borderRadius: '4px', color: activeIntelTab === tab.id ? tab.color : P.dim,
             fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: P.font, letterSpacing: '0.06em',
             transition: 'all 0.15s',
-          }}>{t.icon} {t.label}</button>
+          }}>{tab.icon} {t(tab.i18nKey)}</button>
         ))}
-        <span style={{ fontSize: '8px', color: P.dim, marginLeft: 'auto', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.7 }}>ALL EVENTS (UNFILTERED)</span>
+        <span style={{ fontSize: '8px', color: P.dim, marginLeft: 'auto', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.7 }}>{t('intel.allEventsUnfiltered')}</span>
       </div>
 
       {/* Tab content */}
@@ -563,9 +564,6 @@ const IntelligencePage = React.memo(function IntelligencePage({ incidents, onLoc
         </div>
       )}
 
-      {activeIntelTab === 'briefing' && (
-        <BriefingSummary incidents={incidents} onLocateIncident={onLocateIncident} />
-      )}
     </div>
   )
 })
@@ -822,18 +820,19 @@ const SpikeBar = React.memo(function SpikeBar({ incidents }: { incidents: Incide
 
 /* ─── Analysis Page ─── */
 
-const ANALYSIS_TABS: { id: 'briefing' | 'threats' | 'clusters' | 'compare'; label: string; color: string; featureKey: keyof FeatureFlags }[] = [
-  { id: 'briefing', label: 'BRIEFING', color: '#00d4ff', featureKey: 'analysisBriefing' },
-  { id: 'threats', label: 'THREATS', color: '#ff6b35', featureKey: 'analysisThreats' },
-  { id: 'clusters', label: 'AUTO CLUSTERS', color: '#06b6d4', featureKey: 'analysisClusters' },
-  { id: 'compare', label: 'COMPARE', color: '#ff6b35', featureKey: 'tabCompare' },
+const ANALYSIS_TABS: { id: 'briefing' | 'threats' | 'clusters' | 'compare'; i18nKey: string; color: string; featureKey: keyof FeatureFlags }[] = [
+  { id: 'briefing', i18nKey: 'analysis.briefing', color: '#00d4ff', featureKey: 'analysisBriefing' },
+  { id: 'threats', i18nKey: 'analysis.threats', color: '#ff6b35', featureKey: 'analysisThreats' },
+  { id: 'clusters', i18nKey: 'analysis.autoClusters', color: '#06b6d4', featureKey: 'analysisClusters' },
+  { id: 'compare', i18nKey: 'analysis.compare', color: '#ff6b35', featureKey: 'tabCompare' },
 ]
 
 type AnalysisTabId = 'briefing' | 'threats' | 'clusters' | 'compare'
 
 const AnalysisPage = React.memo(function AnalysisPage({ incidents, onLocateIncident }: { incidents: Incident[]; onLocateIncident: (i: Incident) => void }) {
+  const { t } = useTranslation()
   const features = useSettingsStore(s => s.features)
-  const visibleAnalysisTabs = useMemo(() => ANALYSIS_TABS.filter(t => features?.[t.featureKey] ?? true), [features])
+  const visibleAnalysisTabs = useMemo(() => ANALYSIS_TABS.filter(tab => features?.[tab.featureKey] ?? true), [features])
   const [tab, setTab] = useState<AnalysisTabId>('briefing')
   const effectiveTab = visibleAnalysisTabs.find(t => t.id === tab) ? tab : visibleAnalysisTabs[0]?.id
 
@@ -841,15 +840,15 @@ const AnalysisPage = React.memo(function AnalysisPage({ incidents, onLocateIncid
     <div style={{ width: '100%', boxSizing: 'border-box', minHeight: 0 }}>
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: '0', borderBottom: `1px solid ${P.border}`, padding: '0 20px', background: `${P.bg}` }}>
-        {visibleAnalysisTabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+        {visibleAnalysisTabs.map(at => (
+          <button key={at.id} onClick={() => setTab(at.id)} style={{
             padding: '10px 16px',
-            background: effectiveTab === t.id ? `${t.color}08` : 'transparent',
-            border: 'none', borderBottom: `2px solid ${effectiveTab === t.id ? t.color : 'transparent'}`,
-            color: effectiveTab === t.id ? t.color : P.dim,
+            background: effectiveTab === at.id ? `${at.color}08` : 'transparent',
+            border: 'none', borderBottom: `2px solid ${effectiveTab === at.id ? at.color : 'transparent'}`,
+            color: effectiveTab === at.id ? at.color : P.dim,
             fontSize: '9px', fontWeight: 700, letterSpacing: '0.08em',
             cursor: 'pointer', fontFamily: P.font, transition: 'all 0.15s',
-          }}>{t.label}</button>
+          }}>{t(at.i18nKey)}</button>
         ))}
       </div>
 
@@ -992,6 +991,7 @@ const ToastContainer = React.memo(function ToastContainer({ notifications, allIn
 const isPanelsOnlyWindow = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'panels-only'
 
 function AppShellContent() {
+  const { t } = useTranslation()
   const [viewer, setViewer] = useState<any>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [alertsOpen, setAlertsOpen] = useState(false)
@@ -1348,35 +1348,6 @@ function AppShellContent() {
     return () => clearInterval(t)
   }, [])
 
-  const disasterSeenRef = useRef<Set<string>>(new Set())
-  const disasterPrimedRef = useRef(false)
-  useEffect(() => {
-    if (!window.argus) return
-    const pruneSet = (s: Set<string>, max: number) => {
-      if (s.size <= max) return
-      const it = s.values()
-      let toRemove = s.size - max
-      while (toRemove-- > 0) { const v = it.next().value; if (v !== undefined) s.delete(v) }
-    }
-    const poll = async () => {
-      try {
-        const list = await window.argus.getDisasters()
-        const add = useNotificationStore.getState().addNotification
-        for (const d of list) {
-          if (!disasterPrimedRef.current) { disasterSeenRef.current.add(d.id); continue }
-          if (disasterSeenRef.current.has(d.id)) continue
-          disasterSeenRef.current.add(d.id)
-          add({ type: 'disaster', title: d.title, subtitle: `${d.type} • ${d.source}`, latitude: d.latitude, longitude: d.longitude, disasterType: d.type })
-        }
-        disasterPrimedRef.current = true
-        pruneSet(disasterSeenRef.current, 500)
-      } catch { /* ignore */ }
-    }
-    void poll()
-    const t = setInterval(poll, 120000)
-    return () => clearInterval(t)
-  }, [])
-
   const handleApplyView = useCallback((viewId: string) => {
     const view = views.find((v: any) => v.id === viewId)
     if (!view) return
@@ -1392,13 +1363,14 @@ function AppShellContent() {
   }, [views, viewer, flyToRegion])
 
   const enabledLayers = useTrackingStore(s => s.enabledLayers)
-  useGlobeOverlays({ viewer, incidents, timelineCutoff: null, onSelectIncident: handleSelectIncident })
-  useTrackingOverlays({ viewer, onTrackingClick: useCallback((info: TrackingClickInfo) => setTrackingPopup(info), []) })
-  useInfrastructureLayer({ viewer, enabled: !!(enabledLayers as any).infrastructure, incidents })
-  useAnnotationOverlay({ viewer })
-  useConflictTradeOverlay({ viewer, showConflictZones: !!(enabledLayers as any).conflictZones, showTradeRoutes: !!(enabledLayers as any).tradeRoutes })
-  useSigintOverlay({ viewer, enabled: !!(enabledLayers as any).sigint })
-  useDayNightLayer({ viewer, enabled: !!(enabledLayers as any).daynight })
+  const globeViewer = isPanelsOnlyWindow ? null : viewer
+  useGlobeOverlays({ viewer: globeViewer, incidents, timelineCutoff: null, onSelectIncident: handleSelectIncident })
+  useTrackingOverlays({ viewer: globeViewer, onTrackingClick: useCallback((info: TrackingClickInfo) => setTrackingPopup(info), []) })
+  useInfrastructureLayer({ viewer: globeViewer, enabled: !!(enabledLayers as any).infrastructure, incidents })
+  useAnnotationOverlay({ viewer: globeViewer })
+  useConflictTradeOverlay({ viewer: globeViewer, showConflictZones: !!(enabledLayers as any).conflictZones, showTradeRoutes: !!(enabledLayers as any).tradeRoutes })
+  useSigintOverlay({ viewer: globeViewer, enabled: !!(enabledLayers as any).sigint })
+  useDayNightLayer({ viewer: globeViewer, enabled: !!(enabledLayers as any).daynight })
 
   const advancedLayers = useMemo(() => ({
     weather: !!(enabledLayers as any).weather,
@@ -1419,7 +1391,7 @@ function AppShellContent() {
       longitude: info.longitude,
     })
   }, [])
-  useAdvancedOverlays(viewer, loadCesiumFn, advancedLayers, handleAdvancedOverlayClick)
+  useAdvancedOverlays(globeViewer, loadCesiumFn, advancedLayers, handleAdvancedOverlayClick)
 
   useEffect(() => {
     if (!viewer || viewer.isDestroyed()) return
@@ -1510,7 +1482,7 @@ function AppShellContent() {
         }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#00d4ff40'; e.currentTarget.style.color = P.accent }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dim }}
-        >FULLSCREEN</button>
+        >{t('globe.fullscreen')}</button>
         {(['default', 'nightvision', 'thermal', 'tactical'] as GlobeVisualMode[]).map(m => {
           const icons: Record<GlobeVisualMode, string> = { default: '🌍', nightvision: '🟢', thermal: '🔴', tactical: '🔵' }
           return (
@@ -1580,7 +1552,7 @@ function AppShellContent() {
         onMouseLeave={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = P.dim; e.currentTarget.style.background = 'transparent' } }}
         >
           <span style={{ fontSize: '10px' }}>{tab.icon}</span>
-          {tab.label}
+          {t(tab.i18nKey)}
         </button>
       ))}
       <div style={{ flex: 1 }} />
@@ -1607,13 +1579,13 @@ function AppShellContent() {
         onMouseLeave={e => { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dim }}
         >
           <span style={{ fontSize: '12px' }}>⧉</span>
-          <span style={{ fontSize: '9px', letterSpacing: '0.08em' }}>DETACH</span>
+          <span style={{ fontSize: '9px', letterSpacing: '0.08em' }}>{t('globe.detach')}</span>
         </button>
       )}
     </div>
   )
 
-  const loadingFallback = <div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>Loading module...</div>
+  const loadingFallback = <div style={{ padding: '40px', textAlign: 'center', color: '#4a5568', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace" }}>{t('app.loadingModule')}</div>
 
   const tabContent = (
     <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, minWidth: 0 }}>
@@ -1743,13 +1715,13 @@ function AppShellContent() {
             padding: '8px 20px', background: 'rgba(10,14,23,0.9)', border: `1px solid ${P.border}`,
             borderRadius: '6px', color: P.accent, cursor: 'pointer', fontFamily: P.font,
             fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
-          }}>{'< BACK'}</button>
+          }}>{t('app.back')}</button>
           {ff('featureSplitView') && <button onClick={() => setSplitView(s => !s)} style={{
             padding: '8px 14px', background: splitView ? `${P.accent}15` : 'rgba(10,14,23,0.9)',
             border: `1px solid ${splitView ? P.accent + '40' : P.border}`,
             borderRadius: '6px', color: splitView ? P.accent : P.dim, cursor: 'pointer', fontFamily: P.font,
             fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', backdropFilter: 'blur(8px)',
-          }}>SPLIT</button>}
+          }}>{t('globe.split')}</button>}
         </div>
         {ff('featureCommandPalette') && <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />}
       </div>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@/hooks/useDraggable'
 import { useBookmarkStore } from '@/stores/bookmark-store'
 import { useNotesStore } from '@/stores/notes-store'
@@ -34,6 +35,7 @@ interface IncidentDetailProps {
 }
 
 export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: IncidentDetailProps) {
+  const { t } = useTranslation()
   const sevStyle = SEVERITY_COLORS[incident.severity] ?? SEVERITY_COLORS.INFO
   const { pos, isDragging, onMouseDown, elRef, initialized } = useDraggable(
     screenPosition ? { x: Math.min(screenPosition.x + 20, window.innerWidth - 310), y: Math.max(16, Math.min(screenPosition.y - 80, window.innerHeight - 400)) } : undefined
@@ -95,10 +97,10 @@ export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: I
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '10px' }}>
           {[
-            ['Source', incident.source, P.text],
-            ['Time', new Date(incident.timestamp).toLocaleString(), '#ffb000'],
-            ...(incident.country ? [['Location', incident.country, P.accent]] : []),
-            ...(incident.latitude != null && incident.longitude != null ? [['Coords', `${incident.latitude.toFixed(2)}\u00B0, ${incident.longitude.toFixed(2)}\u00B0`, P.text]] : []),
+            [t('incidentDetail.source'), incident.source, P.text],
+            [t('incidentDetail.time'), new Date(incident.timestamp).toLocaleString(), '#ffb000'],
+            ...(incident.country ? [[t('incidentDetail.location'), incident.country, P.accent]] : []),
+            ...(incident.latitude != null && incident.longitude != null ? [[t('incidentDetail.coords'), `${incident.latitude.toFixed(2)}\u00B0, ${incident.longitude.toFixed(2)}\u00B0`, P.text]] : []),
           ].map(([label, value, color]) => (
             <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: P.dim, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
@@ -130,7 +132,7 @@ export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: I
             color: P.accent, background: 'transparent', border: 'none',
             borderRight: `1px solid ${P.border}`, cursor: 'pointer', fontFamily: P.font,
             fontWeight: 600,
-          }}>{'\u25CE'} LOCATE</button>
+          }}>{'\u25CE'} {t('incidentDetail.locate')}</button>
         )}
         <BookmarkBtn incidentId={incident.id} />
         {incident.sourceUrl && (
@@ -138,7 +140,7 @@ export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: I
             flex: 1, padding: '8px', fontSize: '10px', letterSpacing: '0.1em',
             color: '#4a9eff', background: 'transparent', border: 'none',
             cursor: 'pointer', fontFamily: P.font, fontWeight: 600,
-          }}>{'\u2197'} SOURCE</button>
+          }}>{'\u2197'} {t('incidentDetail.viewSource')}</button>
         )}
       </div>
     </div>
@@ -146,6 +148,7 @@ export function IncidentDetail({ incident, onClose, onFlyTo, screenPosition }: I
 }
 
 function AIAnalysisSection({ incident }: { incident: Incident }) {
+  const { t } = useTranslation()
   const [analysis, setAnalysis] = useState<string | null>(null)
   const [model, setModel] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -176,14 +179,14 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
   return (
     <div style={{ marginTop: '10px', borderTop: `1px solid ${P.border}`, paddingTop: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-        <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>AI ANALYSIS</span>
+        <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>{t('incidentDetail.aiAnalysis')}</span>
         <button onClick={handleAnalyze} disabled={loading} style={{
           padding: '2px 8px', fontSize: '9px', fontWeight: 600,
           background: loading ? 'transparent' : '#a855f715',
           border: `1px solid ${loading ? P.border : '#a855f740'}`,
           borderRadius: '3px', color: loading ? P.dim : '#a855f7',
           cursor: loading ? 'wait' : 'pointer', fontFamily: P.font,
-        }}>{loading ? 'ANALYZING...' : analysis ? 'RE-ANALYZE' : 'ANALYZE'}</button>
+        }}>{loading ? t('ai.analyzing') : analysis ? t('ai.reAnalyze') : t('ai.generate')}</button>
         {analysis && (
           <button onClick={() => setExpanded(e => !e)} style={{
             padding: '2px 6px', fontSize: '9px', background: 'transparent',
@@ -192,12 +195,12 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
           }}>{expanded ? '\u25BC' : '\u25B6'}</button>
         )}
       </div>
-      {loading && <div style={{ fontSize: '9px', color: '#a855f7' }}>Analyzing incident with AI...</div>}
+      {loading && <div style={{ fontSize: '9px', color: '#a855f7' }}>{t('ai.analyzingIncident')}</div>}
       {analysis && expanded && (
         <div style={{ marginTop: '4px' }}>
           <MarkdownText text={analysis} style={{ fontSize: '10px', color: P.text, background: '#0d1220', padding: '8px', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }} />
           {model && model !== 'error' && (
-            <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>model: {model}</div>
+            <div style={{ fontSize: '9px', color: P.dim, marginTop: '3px', textAlign: 'right' }}>{t('ai.model')} {model}</div>
           )}
         </div>
       )}
@@ -207,6 +210,7 @@ function AIAnalysisSection({ incident }: { incident: Incident }) {
 
 
 function NotesSection({ incidentId }: { incidentId: string }) {
+  const { t } = useTranslation()
   const allNotes = useNotesStore(s => s.notes)
   const addNote = useNotesStore(s => s.addNote)
   const deleteNote = useNotesStore(s => s.deleteNote)
@@ -221,10 +225,10 @@ function NotesSection({ incidentId }: { incidentId: string }) {
 
   return (
     <div style={{ marginTop: '10px', borderTop: `1px solid ${P.border}`, paddingTop: '8px' }}>
-      <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>ANALYST NOTES ({notes.length})</span>
+      <span style={{ fontSize: '9px', color: P.dim, fontWeight: 700, letterSpacing: '0.08em' }}>{t('incidentDetail.analystNotes')} ({notes.length})</span>
       <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          placeholder="Add a note..."
+          placeholder={t('incidentDetail.addNote')}
           style={{ flex: 1, padding: '4px 8px', fontSize: '10px', background: '#0d1220', border: `1px solid ${P.border}`, borderRadius: '4px', color: P.text, fontFamily: P.font, outline: 'none' }} />
         <button onClick={handleAdd} style={{
           padding: '4px 8px', fontSize: '9px', fontWeight: 700, background: '#00d4ff15',
@@ -245,6 +249,7 @@ function NotesSection({ incidentId }: { incidentId: string }) {
 }
 
 function BookmarkBtn({ incidentId }: { incidentId: string }) {
+  const { t } = useTranslation()
   const isBookmarked = useBookmarkStore(s => s.isBookmarked(incidentId))
   const addPin = useBookmarkStore(s => s.addPin)
   const pins = useBookmarkStore(s => s.pins)
@@ -265,6 +270,6 @@ function BookmarkBtn({ incidentId }: { incidentId: string }) {
       color: isBookmarked ? '#f5c542' : '#4a5568', background: 'transparent', border: 'none',
       borderRight: '1px solid #141c2e', cursor: 'pointer',
       fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-    }}>{isBookmarked ? '★' : '☆'} PIN</button>
+    }}>{isBookmarked ? '★' : '☆'} {t('incidentDetail.pin')}</button>
   )
 }

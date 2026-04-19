@@ -35,13 +35,16 @@ describe('FAZ1: Military Service — fake data kaldırıldı', () => {
     expect(src).not.toContain('Naval Exercise')
     expect(src).not.toContain('Air Defense')
     expect(src).not.toContain('Troop Deployment')
-    expect(src).not.toContain('exercise')
-    // type: 'exercise' gibi hardcoded tipler olmamalı
+    // Note: 'exercise' is now used as a type pattern in TYPE_PATTERNS regex, not hardcoded data.
+    // It classifies real GDELT/ACLED articles — that's acceptable.
   })
 
-  it('dosya uzunluğu 15 satırdan az (sade wrapper)', () => {
-    const lineCount = src.split('\n').length
-    expect(lineCount).toBeLessThan(15)
+  it('dosya gerçek API entegrasyonu içeriyor (GDELT/ACLED)', () => {
+    // Military service now fetches from real APIs (GDELT, ACLED) instead of returning fake data.
+    // It should not be a stub — it should have real fetch logic.
+    expect(src).toContain('fetchGDELT')
+    expect(src).toContain('fetchACLED')
+    expect(src).toContain('api.gdeltproject.org')
   })
 })
 
@@ -102,9 +105,9 @@ describe('FAZ1: Cyber Threat — fake APT verileri kaldırıldı', () => {
   })
 
   it('cache birleştirmede APT yok', () => {
-    // Sadece cves + ransom olmalı
-    expect(src).toContain('[...cves, ...ransom]')
-    expect(src).not.toMatch(/\[\.\.\.cves,\s*\.\.\.ransom,\s*\.\.\.KNOWN_APT/)
+    // Now merges kev + cves + ransom + ghsa (real API sources, no fake APT)
+    expect(src).toContain('[...kev, ...cves, ...ransom, ...ghsa]')
+    expect(src).not.toMatch(/\.\.\.KNOWN_APT/)
   })
 })
 

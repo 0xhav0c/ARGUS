@@ -34,11 +34,12 @@ function WinBtn({ onClick, children, hoverColor, title }: {
   onClick: () => void; children: React.ReactNode; hoverColor: string; title: string
 }) {
   return (
-    <button onClick={onClick} title={title} style={{
+    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }} title={title} style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '36px', height: '28px', border: 'none', background: 'transparent',
+      width: '46px', height: '100%', minHeight: '32px', border: 'none', background: 'transparent',
       color: P.dim, cursor: 'pointer', fontSize: '11px', fontFamily: P.font,
       transition: 'all 0.15s',
+      ...({ WebkitAppRegion: 'no-drag' } as any),
     }}
     onMouseEnter={e => { e.currentTarget.style.background = hoverColor; e.currentTarget.style.color = '#fff' }}
     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = P.dim }}
@@ -182,22 +183,6 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
             letterSpacing: '0.06em',
           }} title="Press / to focus search">/</span>
         </div>
-        <button onClick={onToggleTrackingSearch} title="Search Flights, Vessels, Satellites" style={{
-          height: '28px', padding: '0 10px',
-          background: trackingSearchOpen ? `${P.accent}15` : '#0d1220',
-          border: `1px solid ${trackingSearchOpen ? P.accent + '40' : P.border}`,
-          borderRadius: '4px', cursor: 'pointer', fontFamily: P.font,
-          fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
-          color: trackingSearchOpen ? P.accent : P.dim,
-          display: 'flex', alignItems: 'center', gap: '5px',
-          transition: 'all 0.15s', whiteSpace: 'nowrap',
-        }}
-        onMouseEnter={e => { if (!trackingSearchOpen) { e.currentTarget.style.borderColor = P.accent + '40'; e.currentTarget.style.color = P.accent } }}
-        onMouseLeave={e => { if (!trackingSearchOpen) { e.currentTarget.style.borderColor = P.border; e.currentTarget.style.color = P.dim } }}
-        >
-          <span style={{ fontSize: '12px' }}>🛰</span>
-          TRACK
-        </button>
       </div>
 
       <div style={{ flex: 1 }} />
@@ -266,7 +251,7 @@ export const TopBar = memo(function TopBar({ onToggleAlerts, onOpenSettings, onT
           <WinBtn onClick={() => window.argus?.windowMaximize()} hoverColor="#1a2235" title={isMaximized ? t('topbar.restore') : t('topbar.maximize')}>
             {isMaximized ? '❐' : '□'}
           </WinBtn>
-          <WinBtn onClick={() => window.argus?.windowClose()} hoverColor="#c42b1c" title={t('topbar.close')}>✕</WinBtn>
+          <WinBtn onClick={() => { window.argus?.windowClose(); setTimeout(() => window.close(), 200) }} hoverColor="#c42b1c" title={t('topbar.close')}>✕</WinBtn>
         </div>
       )}
 

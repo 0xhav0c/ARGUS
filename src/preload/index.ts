@@ -32,9 +32,9 @@ const api = {
   searchIncidents: (query: string) =>
     ipcRenderer.invoke('search-incidents', query) as Promise<Incident[]>,
 
-  windowMinimize: () => ipcRenderer.invoke('window-minimize'),
-  windowMaximize: () => ipcRenderer.invoke('window-maximize'),
-  windowClose: () => ipcRenderer.invoke('window-close'),
+  windowMinimize: () => ipcRenderer.send('window-minimize'),
+  windowMaximize: () => ipcRenderer.send('window-maximize'),
+  windowClose: () => ipcRenderer.send('window-close'),
   windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized') as Promise<boolean>,
   windowIsFullscreen: () => ipcRenderer.invoke('window-is-fullscreen') as Promise<boolean>,
   windowToggleFullscreen: () => ipcRenderer.invoke('window-toggle-fullscreen'),
@@ -127,6 +127,7 @@ const api = {
   aiDailyBriefing: () => ipcRenderer.invoke('ai-daily-briefing') as Promise<{ summary: string; model: string; tokensUsed?: number }>,
 
   aiEntities: () => ipcRenderer.invoke('ai-entities') as Promise<{ summary: string; model: string; tokensUsed?: number }>,
+  aiTranslate: (texts: string[], targetLang: string) => ipcRenderer.invoke('ai-translate', texts, targetLang) as Promise<string[]>,
   aiCheck: () => ipcRenderer.invoke('ai-check') as Promise<{ ollama: boolean; openai: boolean; custom: boolean }>,
   aiConfigGet: () => ipcRenderer.invoke('ai-config-get') as Promise<Record<string, unknown>>,
   aiConfigSet: (updates: Record<string, unknown>) => ipcRenderer.invoke('ai-config-set', updates) as Promise<Record<string, unknown>>,

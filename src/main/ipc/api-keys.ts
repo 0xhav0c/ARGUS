@@ -16,14 +16,12 @@ export function registerApiKeyHandlers(
     if (value.length > 500) return apiKeyMgr.getAll()
     apiKeyMgr.set(name, value)
     sendMainLog('info', 'system', `API key set: ${name}`)
-    if (name === 'opensky_user' || name === 'opensky_pass') trackingService.resetOpenSkyAuth()
     return apiKeyMgr.getAll()
   })
   ipcMain.handle('delete-api-key', (_event, name: string) => {
     if (typeof name !== 'string') return apiKeyMgr.getAll()
     apiKeyMgr.delete(name)
     sendMainLog('info', 'system', `API key deleted: ${name}`)
-    if (name === 'opensky_user' || name === 'opensky_pass') trackingService.resetOpenSkyAuth()
     return apiKeyMgr.getAll()
   })
   ipcMain.handle('test-api-key', async (_event, name: string) => {

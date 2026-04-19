@@ -97,4 +97,15 @@ export function registerAIHandlers(
       return { summary: `AI Error: ${err.message}`, model: 'error' }
     }
   })
+
+  ipcMain.handle('ai-translate', async (_event, texts: string[], targetLang: string) => {
+    if (!Array.isArray(texts) || typeof targetLang !== 'string') return []
+    const safe = texts.filter(t => typeof t === 'string').slice(0, 50)
+    try {
+      return await aiService.translateText(safe, targetLang)
+    } catch (err: any) {
+      sendMainLog('error', 'ai', `AI translate failed`, err?.message)
+      return safe
+    }
+  })
 }

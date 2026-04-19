@@ -357,6 +357,37 @@ Be concise. Respond in the same language as incident titles.`
     return this.callAI(prompt, SYSTEM_PROMPTS.briefing)
   }
 
+  async translateText(texts: string[], targetLang: string): Promise<string[]> {
+    if (!texts.length) return []
+    const LANG_NAMES: Record<string, string> = {
+      en: 'English', tr: 'Turkish', ar: 'Arabic', ru: 'Russian',
+      es: 'Spanish', fr: 'French', de: 'German', zh: 'Chinese',
+      ja: 'Japanese', ko: 'Korean', pt: 'Portuguese', hi: 'Hindi',
+    }
+    const langName = LANG_NAMES[targetLang] || targetLang
+    const batch = texts.slice(0, 30)
+    const numbered = batch.map((t, i) => `${i + 1}. ${t}`).join('\n')
+    const prompt = `Translate the following numbered lines to ${langName}. Return ONLY the translated lines, keeping the same numbering format. Do not add explanations or notes.\n\n${numbered}`
+
+    try {
+      const res = await this.callAI(prompt, 'You are a professional translator. Translate accurately and concisely. Keep technical terms, proper nouns, and acronyms unchanged.')
+      const lines = res.summary.split('\n').filter(l => l.trim())
+      const result: string[] = []
+      for (let i = 0; i < batch.length; i++) {
+        const line = lines.find(l => l.match(new RegExp(`^${i + 1}[\\.\\)\\s]`)))
+        if (line) {
+          result.push(line.replace(/^\d+[\.\)\s]+/, '').trim())
+        } else {
+          result.push(batch[i])
+        }
+      }
+      return result
+    } catch (err) {
+      console.error('[AI] Translation failed:', err)
+      return texts
+    }
+  }
+
   async analyzeEntities(incidents: Incident[]): Promise<AISummaryResponse> {
     const recent = incidents
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

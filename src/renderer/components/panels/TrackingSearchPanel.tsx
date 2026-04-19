@@ -12,10 +12,10 @@ const P = {
   accent: '#00d4ff',
 }
 
-type SearchCategory = 'all' | 'flights' | 'vessels' | 'satellites'
+type SearchCategory = 'all' | 'satellites' | 'earthquakes'
 
 interface TrackingSearchResult {
-  type: 'flight' | 'vessel' | 'satellite'
+  type: 'flight' | 'vessel' | 'satellite' | 'earthquake'
   id: string
   title: string
   subtitle: string
@@ -38,9 +38,10 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
   const [category, setCategory] = useState<SearchCategory>('all')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const flights = useTrackingStore(s => s.flights)
-  const vessels = useTrackingStore(s => s.vessels)
+  const flights: any[] = []
+  const vessels: any[] = []
   const satellites = useTrackingStore(s => s.satellites)
+  const earthquakes = useTrackingStore(s => s.earthquakes)
   const enabledLayers = useTrackingStore(s => s.enabledLayers)
 
   useEffect(() => {
@@ -113,8 +114,24 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
       }
     }
 
+    if (category === 'all' || category === 'earthquakes') {
+      for (const eq of earthquakes) {
+        results.push({
+          type: 'earthquake',
+          id: eq.id,
+          title: `M${eq.magnitude.toFixed(1)} — ${eq.place}`,
+          subtitle: `${new Date(eq.time).toLocaleString()} • Depth: ${eq.depth} km`,
+          icon: '◎',
+          color: '#ff8800',
+          lat: eq.latitude,
+          lng: eq.longitude,
+          raw: eq,
+        })
+      }
+    }
+
     return results
-  }, [flights, vessels, satellites, category])
+  }, [flights, vessels, satellites, earthquakes, category])
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allResults.slice(0, 50)
@@ -196,12 +213,11 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
 
   const categories: { id: SearchCategory; label: string; icon: string; color: string; count: number }[] = [
     { id: 'all', label: 'ALL', icon: '◉', color: P.accent, count: allResults.length },
-    { id: 'flights', label: 'FLIGHTS', icon: '✈', color: '#00b4ff', count: flights.length },
-    { id: 'vessels', label: 'VESSELS', icon: '⚓', color: '#64c8ff', count: vessels.length },
     { id: 'satellites', label: 'SATELLITES', icon: '🛰', color: '#a78bfa', count: satellites.length },
+    { id: 'earthquakes', label: 'EARTHQUAKES', icon: '◎', color: '#ff8800', count: earthquakes.length },
   ]
 
-  const dataNotLoaded = !enabledLayers.flights && !enabledLayers.vessels && !enabledLayers.satellites
+  const dataNotLoaded = !enabledLayers.satellites && !enabledLayers.earthquakes
 
   if (!isOpen) return null
 
@@ -227,7 +243,7 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search flights, vessels, satellites..."
+            placeholder="Search satellites, earthquakes..."
             value={query}
             onChange={e => setQuery(e.target.value)}
             style={{
@@ -282,7 +298,7 @@ export function TrackingSearchPanel({ isOpen, onClose, onLocate, onTrackingClick
               color: P.dim, fontSize: '12px',
             }}>
               {dataNotLoaded
-                ? 'Enable tracking layers (Flights, Vessels, Satellites) from the sidebar to load data.'
+                ? 'Enable tracking layers (Satellites, Earthquakes) from the sidebar to load data.'
                 : query ? `No results for "${query}"` : 'No tracking data loaded yet.'}
             </div>
           ) : (

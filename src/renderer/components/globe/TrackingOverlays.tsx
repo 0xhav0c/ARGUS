@@ -347,8 +347,8 @@ function getCachedIcon(key: string, factory: () => HTMLCanvasElement): HTMLCanva
 
 export function useTrackingOverlays({ viewer, onTrackingClick }: TrackingOverlaysProps) {
   const enabledLayers = useTrackingStore(s => s.enabledLayers)
-  const flights = useTrackingStore(s => s.flights)
-  const vessels = useTrackingStore(s => s.vessels)
+  const flights: any[] = []
+  const vessels: any[] = []
   const earthquakes = useTrackingStore(s => s.earthquakes)
   const disasters = useTrackingStore(s => s.disasters)
   const satellites = useTrackingStore(s => s.satellites)
@@ -543,14 +543,14 @@ export function useTrackingOverlays({ viewer, onTrackingClick }: TrackingOverlay
 
         try {
           const entity = viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(vessel.longitude, vessel.latitude, 0),
+            position: Cesium.Cartesian3.fromDegrees(vessel.longitude, vessel.latitude, 100),
             billboard: {
               image: icon,
               scale: 1.0,
               rotation: Cesium.Math.toRadians(-vessel.heading),
               verticalOrigin: Cesium.VerticalOrigin.CENTER,
-              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-              disableDepthTestDistance: 5e6,
+              heightReference: Cesium.HeightReference.NONE,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
               sizeInMeters: false,
             },
             label: {
@@ -562,7 +562,7 @@ export function useTrackingOverlays({ viewer, onTrackingClick }: TrackingOverlay
               style: Cesium.LabelStyle.FILL_AND_OUTLINE,
               pixelOffset: new Cesium.Cartesian2(0, 24),
               scaleByDistance: new Cesium.NearFarScalar(3e4, 1.0, 2e6, 0.0),
-              disableDepthTestDistance: 5e6,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
             properties: {
               trackingType: new Cesium.ConstantProperty('vessel'),

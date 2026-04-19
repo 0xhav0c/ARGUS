@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAlertStore } from '@/stores/alert-store'
 import { useNotificationStore, type AppNotification } from '@/stores/notification-store'
 import type { Incident, IncidentDomain, IncidentSeverity } from '../../../shared/types'
@@ -17,15 +18,36 @@ const SEV_COLORS: Record<string, string> = {
   CRITICAL: '#ff3b5c', HIGH: '#ff6b35', MEDIUM: '#ffb000', LOW: '#4a9eff', INFO: '#4a5568',
 }
 
-const TYPE_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  incident: { icon: '⚑', color: '#ff6b35', label: 'INCIDENT' },
-  tweet: { icon: '𝕏', color: '#4a9eff', label: 'TWEET' },
-  earthquake: { icon: '◎', color: '#ff8800', label: 'EARTHQUAKE' },
-  disaster: { icon: '⚠', color: '#ff60a0', label: 'DISASTER' },
+const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
+  incident: { icon: '⚑', color: '#ff6b35' },
+  tweet: { icon: '𝕏', color: '#4a9eff' },
+  earthquake: { icon: '◎', color: '#ff8800' },
+  disaster: { icon: '⚠', color: '#ff60a0' },
+}
+
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  incident: 'alerts.typeIncident',
+  tweet: 'alerts.typeTweet',
+  earthquake: 'alerts.typeEarthquake',
+  disaster: 'alerts.typeDisaster',
 }
 
 const DOMAIN_OPTIONS: IncidentDomain[] = ['CONFLICT', 'CYBER', 'INTEL', 'FINANCE']
 const SEVERITY_OPTIONS: IncidentSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+
+const DOMAIN_I18N_KEYS: Record<string, string> = {
+  CONFLICT: 'domains.conflict',
+  CYBER: 'domains.cyber',
+  INTEL: 'domains.intel',
+  FINANCE: 'domains.finance',
+}
+
+const SEVERITY_I18N_KEYS: Record<string, string> = {
+  CRITICAL: 'severity.critical',
+  HIGH: 'severity.high',
+  MEDIUM: 'severity.medium',
+  LOW: 'severity.low',
+}
 
 interface AlertPanelProps {
   isOpen: boolean
@@ -35,6 +57,7 @@ interface AlertPanelProps {
 }
 
 export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: AlertPanelProps) {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<'log' | 'rules' | 'matches'>('log')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -72,10 +95,17 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
   const toggleSeverity = (s: IncidentSeverity) =>
     setSelSeverities(prev => (prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]))
 
+  const formatAge = (age: number): string => {
+    if (age < 60000) return t('time.justNow')
+    if (age < 3600000) return t('time.mAgo', { m: Math.floor(age / 60000) })
+    if (age < 86400000) return t('time.hAgo', { h: Math.floor(age / 3600000) })
+    return t('time.dAgo', { d: Math.floor(age / 86400000) })
+  }
+
   const handleSaveRule = () => {
     const keywords = keywordsText.split(',').map(k => k.trim()).filter(Boolean)
     addRule({
-      name: ruleName.trim() || 'Untitled rule',
+      name: ruleName.trim() || t('alerts.untitledRule'),
       conditions: {
         ...(selDomains.length ? { domains: selDomains } : {}),
         ...(selSeverities.length ? { severities: selSeverities } : {}),
@@ -117,7 +147,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
         padding: '10px 12px', borderBottom: `1px solid ${P.border}`,
       }}>
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', fontWeight: 700, color: P.text, letterSpacing: '0.1em' }}>ALERTS</span>
+          <span style={{ fontSize: '10px', fontWeight: 700, color: P.text, letterSpacing: '0.1em' }}>{t('alerts.title')}</span>
           {unreadCount > 0 && (
             <span style={{
               background: '#ff3b5c', color: '#fff', fontSize: '9px', fontWeight: 700,
@@ -125,14 +155,14 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             }}>{unreadCount}</span>
           )}
           <div style={{ width: '1px', height: '12px', background: P.border, margin: '0 6px' }} />
-          {(['log', 'matches', 'rules'] as const).map(t => (
-            <button key={t} type="button" onClick={() => setTab(t)} style={{
-              background: tab === t ? `${P.accent}22` : 'transparent',
-              border: `1px solid ${tab === t ? P.accent : 'transparent'}`,
-              color: tab === t ? P.accent : P.dim,
+          {(['log', 'matches', 'rules'] as const).map(t2 => (
+            <button key={t2} type="button" onClick={() => setTab(t2)} style={{
+              background: tab === t2 ? `${P.accent}22` : 'transparent',
+              border: `1px solid ${tab === t2 ? P.accent : 'transparent'}`,
+              color: tab === t2 ? P.accent : P.dim,
               cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
               letterSpacing: '0.12em', padding: '3px 8px', borderRadius: '3px',
-            }}>{t === 'log' ? 'LOG' : t === 'matches' ? `MATCHES${alertUnread > 0 ? ` (${alertUnread})` : ''}` : 'RULES'}</button>
+            }}>{t2 === 'log' ? t('alerts.tabLog') : t2 === 'matches' ? `${t('alerts.tabMatches')}${alertUnread > 0 ? ` (${alertUnread})` : ''}` : t('alerts.tabRules')}</button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -141,11 +171,11 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
               <button type="button" onClick={markAllRead} style={{
                 background: 'transparent', border: 'none', color: P.accent,
                 cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
-              }}>READ ALL</button>
+              }}>{t('alerts.readAll')}</button>
               <button type="button" onClick={dismissAll} style={{
                 background: 'transparent', border: 'none', color: P.dim,
                 cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
-              }}>CLEAR</button>
+              }}>{t('app.clear')}</button>
             </>
           )}
           <button type="button" onClick={onToggle} style={{
@@ -168,8 +198,8 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
               border: `1px solid ${!typeFilter ? P.accent + '60' : P.border}`,
               borderRadius: '3px', cursor: 'pointer',
               color: !typeFilter ? P.accent : P.dim,
-            }}>ALL ({notifications.length})</button>
-            {Object.entries(TYPE_CONFIG).map(([type, cfg]) => (
+            }}>{t('app.all')} ({notifications.length})</button>
+            {Object.entries(TYPE_ICONS).map(([type, cfg]) => (
               <button key={type} onClick={() => setTypeFilter(typeFilter === type ? null : type)} style={{
                 padding: '2px 8px', fontSize: '9px', fontFamily: P.font,
                 background: typeFilter === type ? `${cfg.color}20` : 'transparent',
@@ -184,40 +214,39 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {filteredNotifs.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', fontSize: '9px', color: P.dim }}>
-                No alerts yet. New incidents, tweets, earthquakes, and disasters will appear here.
+                {t('alerts.noAlerts')}
               </div>
             ) : filteredNotifs.map(n => {
-              const cfg = TYPE_CONFIG[n.type] || { icon: '◆', color: P.accent, label: 'EVENT' }
-              const sevColor = n.severity ? SEV_COLORS[n.severity] : cfg.color
+              const iconCfg = TYPE_ICONS[n.type] || { icon: '◆', color: P.accent }
+              const labelKey = TYPE_LABEL_KEYS[n.type]
+              const label = labelKey ? t(labelKey) : t('alerts.typeEvent')
+              const sevColor = n.severity ? SEV_COLORS[n.severity] : iconCfg.color
               const age = Date.now() - n.timestamp
-              const ageStr = age < 60000 ? 'just now'
-                : age < 3600000 ? `${Math.floor(age / 60000)}m ago`
-                : age < 86400000 ? `${Math.floor(age / 3600000)}h ago`
-                : `${Math.floor(age / 86400000)}d ago`
+              const ageStr = formatAge(age)
 
               return (
                 <button key={n.id} type="button" onClick={() => handleNotifClick(n)} style={{
                   width: '100%', display: 'flex', gap: '10px', padding: '10px 12px',
-                  background: n.read ? 'transparent' : `${cfg.color}05`,
+                  background: n.read ? 'transparent' : `${iconCfg.color}05`,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   borderBottom: `1px solid ${P.border}20`,
                   borderLeft: `3px solid ${sevColor}`,
                   fontFamily: P.font, transition: 'background 0.15s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = `${cfg.color}0a`}
-                onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : `${cfg.color}05`}
+                onMouseEnter={e => e.currentTarget.style.background = `${iconCfg.color}0a`}
+                onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : `${iconCfg.color}05`}
                 >
                   <div style={{
                     fontSize: '14px', lineHeight: 1, flexShrink: 0, marginTop: '2px',
-                    color: cfg.color,
-                  }}>{cfg.icon}</div>
+                    color: iconCfg.color,
+                  }}>{iconCfg.icon}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                       <span style={{
-                        fontSize: '9px', fontWeight: 700, color: cfg.color,
+                        fontSize: '9px', fontWeight: 700, color: iconCfg.color,
                         letterSpacing: '0.12em', padding: '1px 4px',
-                        background: `${cfg.color}12`, borderRadius: '2px',
-                      }}>{cfg.label}</span>
+                        background: `${iconCfg.color}12`, borderRadius: '2px',
+                      }}>{label}</span>
                       {n.severity && (
                         <span style={{
                           fontSize: '9px', fontWeight: 700, color: sevColor,
@@ -243,8 +272,8 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                   {!n.read && (
                     <div style={{
                       width: '6px', height: '6px', borderRadius: '50%',
-                      background: cfg.color, marginTop: '6px', flexShrink: 0,
-                      boxShadow: `0 0 6px ${cfg.color}80`,
+                      background: iconCfg.color, marginTop: '6px', flexShrink: 0,
+                      boxShadow: `0 0 6px ${iconCfg.color}80`,
                     }} />
                   )}
                 </button>
@@ -257,18 +286,18 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
       {tab === 'matches' && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 10px', borderBottom: `1px solid ${P.border}`, gap: '6px' }}>
-            <button type="button" onClick={markAllAlertRead} style={{ background: 'transparent', border: 'none', color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>READ ALL</button>
-            <button type="button" onClick={clearAlertNotifs} style={{ background: 'transparent', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>CLEAR</button>
+            <button type="button" onClick={markAllAlertRead} style={{ background: 'transparent', border: 'none', color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>{t('alerts.readAll')}</button>
+            <button type="button" onClick={clearAlertNotifs} style={{ background: 'transparent', border: 'none', color: P.dim, cursor: 'pointer', fontSize: '9px', fontFamily: P.font }}>{t('app.clear')}</button>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {alertNotifications.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', fontSize: '9px', color: P.dim }}>
-                No rule matches yet. Incoming incidents that match your alert rules will appear here.
+                {t('alerts.noMatches')}
               </div>
             ) : alertNotifications.map(an => {
               const sevColor = SEV_COLORS[an.incident.severity] || P.accent
               const age = Date.now() - new Date(an.timestamp).getTime()
-              const ageStr = age < 60000 ? 'just now' : age < 3600000 ? `${Math.floor(age / 60000)}m ago` : age < 86400000 ? `${Math.floor(age / 3600000)}h ago` : `${Math.floor(age / 86400000)}d ago`
+              const ageStr = formatAge(age)
               return (
                 <button key={an.id} type="button" onClick={() => { markAlertRead(an.id); onSelectIncident?.(an.incident); onToggle() }} style={{
                   width: '100%', display: 'flex', gap: '10px', padding: '10px 12px',
@@ -282,7 +311,7 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 700, color: P.accent, letterSpacing: '0.12em', padding: '1px 4px', background: `${P.accent}12`, borderRadius: '2px' }}>RULE</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, color: P.accent, letterSpacing: '0.12em', padding: '1px 4px', background: `${P.accent}12`, borderRadius: '2px' }}>{t('alerts.rule')}</span>
                       <span style={{ fontSize: '9px', color: P.dim }}>{an.ruleName}</span>
                       <span style={{ fontSize: '9px', fontWeight: 700, color: sevColor, letterSpacing: '0.1em' }}>{an.incident.severity}</span>
                     </div>
@@ -306,59 +335,59 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
             background: `${P.accent}18`, border: `1px solid ${P.accent}55`,
             color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
             letterSpacing: '0.12em', padding: '6px 12px', borderRadius: '4px',
-          }}>{formOpen ? 'CANCEL' : 'CREATE RULE'}</button>
+          }}>{formOpen ? t('app.cancel') : t('alerts.createRule')}</button>
 
           {formOpen && (
             <div style={{
               background: P.bg, border: `1px solid ${P.border}`,
               borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px',
             }}>
-              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>RULE NAME</label>
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('alerts.ruleName')}</label>
               <input value={ruleName} onChange={e => setRuleName(e.target.value)} style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
               }} />
-              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>DOMAINS</div>
+              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('alerts.domains')}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {DOMAIN_OPTIONS.map(d => (
                   <label key={d} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={selDomains.includes(d)} onChange={() => toggleDomain(d)} /> {d}
+                    <input type="checkbox" checked={selDomains.includes(d)} onChange={() => toggleDomain(d)} /> {t(DOMAIN_I18N_KEYS[d])}
                   </label>
                 ))}
               </div>
-              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>SEVERITIES</div>
+              <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('alerts.severities')}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {SEVERITY_OPTIONS.map(sv => (
                   <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={selSeverities.includes(sv)} onChange={() => toggleSeverity(sv)} /> {sv}
+                    <input type="checkbox" checked={selSeverities.includes(sv)} onChange={() => toggleSeverity(sv)} /> {t(SEVERITY_I18N_KEYS[sv])}
                   </label>
                 ))}
               </div>
-              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>KEYWORDS (COMMA-SEPARATED)</label>
-              <input value={keywordsText} onChange={e => setKeywordsText(e.target.value)} placeholder="e.g. missile, breach" style={{
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('alerts.keywords')}</label>
+              <input value={keywordsText} onChange={e => setKeywordsText(e.target.value)} placeholder={t('alerts.keywordsPlaceholder')} style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
               }} />
-              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>REGION (COUNTRY NAME)</label>
-              <input value={regionText} onChange={e => setRegionText(e.target.value)} placeholder="e.g. Ukraine, Iran" style={{
+              <label style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('alerts.region')}</label>
+              <input value={regionText} onChange={e => setRegionText(e.target.value)} placeholder={t('alerts.regionPlaceholder')} style={{
                 background: P.card, border: `1px solid ${P.border}`,
                 color: P.text, fontFamily: P.font, fontSize: '10px', padding: '6px 8px', borderRadius: '4px',
               }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
-                <input type="checkbox" checked={sound} onChange={() => setSound(v => !v)} /> Sound
+                <input type="checkbox" checked={sound} onChange={() => setSound(v => !v)} /> {t('alerts.sound')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '9px', color: P.text, cursor: 'pointer' }}>
-                <input type="checkbox" checked={desktop} onChange={() => setDesktop(v => !v)} /> Desktop notification
+                <input type="checkbox" checked={desktop} onChange={() => setDesktop(v => !v)} /> {t('alerts.desktopNotification')}
               </label>
               <button type="button" onClick={handleSaveRule} style={{
                 marginTop: '4px', background: P.accent, border: 'none', color: P.bg,
                 cursor: 'pointer', fontSize: '9px', fontFamily: P.font, fontWeight: 700,
                 letterSpacing: '0.1em', padding: '8px', borderRadius: '4px',
-              }}>SAVE</button>
+              }}>{t('app.save')}</button>
             </div>
           )}
 
-          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em' }}>ACTIVE RULES</div>
+          <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em' }}>{t('alerts.activeRules')}</div>
           {rules.map(rule => (
             <div key={rule.id} style={{
               background: P.card, border: `1px solid ${P.border}`,
@@ -372,17 +401,17 @@ export function AlertPanel({ isOpen, onToggle, onSelectIncident, onNavigate }: A
                     background: 'transparent', border: `1px solid ${P.border}`,
                     color: P.accent, cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
                     padding: '2px 6px', borderRadius: '3px',
-                  }}>{rule.enabled ? 'DISABLE' : 'ENABLE'}</button>
+                  }}>{rule.enabled ? t('alerts.disable') : t('alerts.enable')}</button>
                   <button type="button" onClick={() => removeRule(rule.id)} style={{
                     background: 'transparent', border: `1px solid ${P.border}`,
                     color: '#ff3b5c', cursor: 'pointer', fontSize: '9px', fontFamily: P.font,
                     padding: '2px 6px', borderRadius: '3px',
-                  }}>DEL</button>
+                  }}>{t('app.delete')}</button>
                 </div>
               </div>
               <div style={{ fontSize: '9px', color: P.dim }}>
-                triggers: {rule.triggerCount}
-                {rule.lastTriggered && ` · last ${new Date(rule.lastTriggered).toLocaleString()}`}
+                {t('alerts.triggers')} {rule.triggerCount}
+                {rule.lastTriggered && ` · ${t('alerts.last')} ${new Date(rule.lastTriggered).toLocaleString()}`}
               </div>
             </div>
           ))}

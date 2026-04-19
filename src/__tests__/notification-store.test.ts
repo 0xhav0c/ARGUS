@@ -80,9 +80,15 @@ describe('NotificationStore', () => {
   })
 
   it('getUnreadCount returns correct count', () => {
-    useNotificationStore.getState().addNotification({ type: 'incident', title: 'A', subtitle: '' })
-    useNotificationStore.getState().addNotification({ type: 'incident', title: 'B', subtitle: '' })
-    const idA = useNotificationStore.getState().notifications[1].id
+    // Use unique titles to avoid dedup ring buffer collisions with earlier tests
+    const uniqueA = `Unread-${Date.now()}-A`
+    const uniqueB = `Unread-${Date.now()}-B`
+    useNotificationStore.getState().addNotification({ type: 'incident', title: uniqueA, subtitle: '' })
+    useNotificationStore.getState().addNotification({ type: 'incident', title: uniqueB, subtitle: '' })
+    const notifs = useNotificationStore.getState().notifications
+    expect(notifs).toHaveLength(2)
+    // notifications are newest-first, so [0] = B, [1] = A
+    const idA = notifs[1].id
     useNotificationStore.getState().markRead(idA)
     expect(useNotificationStore.getState().getUnreadCount()).toBe(1)
   })

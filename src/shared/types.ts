@@ -117,7 +117,7 @@ export interface FeatureFlags {
 }
 
 export interface AppSettings {
-  language: 'tr' | 'en'
+  language: 'tr' | 'en' | 'ar' | 'ru' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko' | 'pt' | 'hi'
   theme: 'military' | 'dark' | 'midnight'
   autoRefresh: boolean
   refreshInterval: number

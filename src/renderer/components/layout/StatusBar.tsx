@@ -76,7 +76,7 @@ export const StatusBar = memo(function StatusBar({ incidents = [], sceneMode = '
           <span>{incidents.length > 0 ? t('statusbar.sysOk') : t('statusbar.noData', 'NO DATA')}</span>
         </div>
         <span style={{ color: P.border }}>│</span>
-        <span>↑ {formatUptime(uptime)}</span>
+        <span>{t('statusbar.uptime')}: {formatUptime(uptime)}</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

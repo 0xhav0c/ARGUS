@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLayerStore } from '@/stores/layer-store'
 import { useViewStore } from '@/stores/view-store'
 import { useWatchlistStore } from '@/stores/watchlist-store'
@@ -24,71 +25,69 @@ interface SidebarProps {
 
 interface DomainConfig {
   id: IncidentDomain
-  label: string
+  i18nLabel: string
   icon: string
   color: string
-  shortLabel: string
+  i18nShort: string
 }
 
 const DOMAINS: DomainConfig[] = [
-  { id: 'CONFLICT', label: 'Conflict', icon: '⚔', color: '#ff6b35', shortLabel: 'CON' },
-  { id: 'CYBER', label: 'Cyber', icon: '⚡', color: '#00ff87', shortLabel: 'CYB' },
-  { id: 'INTEL', label: 'Intel', icon: '◉', color: '#4a9eff', shortLabel: 'INT' },
-  { id: 'FINANCE', label: 'Finance', icon: '◆', color: '#f5c542', shortLabel: 'FIN' },
+  { id: 'CONFLICT', i18nLabel: 'sidebar.domainConflict', icon: '⚔', color: '#ff6b35', i18nShort: 'sidebar.shortConflict' },
+  { id: 'CYBER', i18nLabel: 'sidebar.domainCyber', icon: '⚡', color: '#00ff87', i18nShort: 'sidebar.shortCyber' },
+  { id: 'INTEL', i18nLabel: 'sidebar.domainIntel', icon: '◉', color: '#4a9eff', i18nShort: 'sidebar.shortIntel' },
+  { id: 'FINANCE', i18nLabel: 'sidebar.domainFinance', icon: '◆', color: '#f5c542', i18nShort: 'sidebar.shortFinance' },
 ]
 
-const SUBLAYERS: Record<IncidentDomain, { id: string; label: string }[]> = {
+const SUBLAYERS: Record<IncidentDomain, { id: string; i18nKey: string }[]> = {
   CONFLICT: [
-    { id: 'active-zones', label: 'Active Zones' },
-    { id: 'military-movements', label: 'Military Moves' },
-    { id: 'refugee-flows', label: 'Refugee Flows' },
-    { id: 'arms-transfers', label: 'Arms Transfers' },
+    { id: 'active-zones', i18nKey: 'sidebar.subActiveZones' },
+    { id: 'military-movements', i18nKey: 'sidebar.subMilitaryMoves' },
+    { id: 'refugee-flows', i18nKey: 'sidebar.subRefugeeFlows' },
+    { id: 'arms-transfers', i18nKey: 'sidebar.subArmsTransfers' },
   ],
   CYBER: [
-    { id: 'ddos-attacks', label: 'DDoS Attacks' },
-    { id: 'apt-groups', label: 'APT Groups' },
-    { id: 'zero-days', label: 'Zero-Day Exploits' },
-    { id: 'infra-outages', label: 'Infra Outages' },
+    { id: 'ddos-attacks', i18nKey: 'sidebar.subDdosAttacks' },
+    { id: 'apt-groups', i18nKey: 'sidebar.subAptGroups' },
+    { id: 'zero-days', i18nKey: 'sidebar.subZeroDayExploits' },
+    { id: 'infra-outages', i18nKey: 'sidebar.subInfraOutages' },
   ],
   INTEL: [
-    { id: 'geopolitical', label: 'Geopolitical' },
-    { id: 'sanctions', label: 'Sanctions' },
-    { id: 'diplomatic', label: 'Diplomatic' },
-    { id: 'nuclear', label: 'Nuclear Activity' },
+    { id: 'geopolitical', i18nKey: 'sidebar.subGeopolitical' },
+    { id: 'sanctions', i18nKey: 'sidebar.subSanctions' },
+    { id: 'diplomatic', i18nKey: 'sidebar.subDiplomatic' },
+    { id: 'nuclear', i18nKey: 'sidebar.subNuclearActivity' },
   ],
   FINANCE: [
-    { id: 'markets', label: 'Stock Markets' },
-    { id: 'commodities', label: 'Commodities' },
-    { id: 'currencies', label: 'Currencies' },
-    { id: 'crypto', label: 'Crypto' },
+    { id: 'markets', i18nKey: 'sidebar.subStockMarkets' },
+    { id: 'commodities', i18nKey: 'sidebar.subCommodities' },
+    { id: 'currencies', i18nKey: 'sidebar.subCurrencies' },
+    { id: 'crypto', i18nKey: 'sidebar.subCrypto' },
   ],
 }
 
 interface TrackingConfig {
   id: TrackingLayer
-  label: string
+  i18nLabel: string
   icon: string
   color: string
-  description: string
+  i18nDesc: string
   featureKey: keyof FeatureFlags
 }
 
 const TRACKING_LAYERS: TrackingConfig[] = [
-  { id: 'flights', label: 'Flights', icon: '✈', color: '#00b4ff', description: 'Live aircraft positions', featureKey: 'trackFlights' },
-  { id: 'vessels', label: 'Vessels', icon: '⚓', color: '#64c8ff', description: 'Ship tracking', featureKey: 'trackVessels' },
-  { id: 'satellites', label: 'Satellites', icon: '🛰', color: '#a78bfa', description: 'Orbital satellite tracking', featureKey: 'trackSatellites' },
-  { id: 'earthquakes', label: 'Earthquakes', icon: '◎', color: '#ff8800', description: 'USGS seismic data', featureKey: 'trackEarthquakes' },
-  { id: 'disasters', label: 'Disasters', icon: '⚠', color: '#ff60a0', description: 'NASA EONET events', featureKey: 'trackDisasters' },
+  { id: 'satellites', i18nLabel: 'sidebar.trackSatellites', icon: '🛰', color: '#a78bfa', i18nDesc: 'sidebar.trackSatellitesDesc', featureKey: 'trackSatellites' },
+  { id: 'earthquakes', i18nLabel: 'sidebar.trackEarthquakes', icon: '◎', color: '#ff8800', i18nDesc: 'sidebar.trackEarthquakesDesc', featureKey: 'trackEarthquakes' },
 ]
 
 const SIDEBAR_TABS = [
-  { id: 'layers', icon: '☰', label: 'Layers' },
-  { id: 'tracking', icon: '📡', label: 'Track' },
-  { id: 'views', icon: '◎', label: 'Views' },
-  { id: 'watchlist', icon: '★', label: 'Watch' },
+  { id: 'layers', icon: '☰', i18nKey: 'sidebar.tabLayers' },
+  { id: 'tracking', icon: '📡', i18nKey: 'sidebar.tabTrack' },
+  { id: 'views', icon: '◎', i18nKey: 'sidebar.tabViews' },
+  { id: 'watchlist', icon: '★', i18nKey: 'sidebar.tabWatch' },
 ]
 
 export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView }: SidebarProps) {
+  const { t } = useTranslation()
   const layers = useLayerStore(s => s.layers)
   const toggleLayer = useLayerStore(s => s.toggleLayer)
   const toggleSublayer = useLayerStore(s => s.toggleSublayer)
@@ -101,13 +100,10 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
   const trackingEnabled = useTrackingStore(s => s.enabledLayers)
   const toggleTrackingLayer = useTrackingStore(s => s.toggleLayer)
   const trackingLoading = useTrackingStore(s => s.loading)
-  const flightCount = useTrackingStore(s => s.flights.length)
-  const vesselCount = useTrackingStore(s => s.vessels.length)
   const quakeCount = useTrackingStore(s => s.earthquakes.length)
-  const disasterCount = useTrackingStore(s => s.disasters.length)
   const satelliteCount = useTrackingStore(s => s.satellites.length)
   const features = useSettingsStore(s => s.features)
-  const visibleTrackingLayers = useMemo(() => TRACKING_LAYERS.filter(t => features?.[t.featureKey] ?? true), [features])
+  const visibleTrackingLayers = useMemo(() => TRACKING_LAYERS.filter(tl => features?.[tl.featureKey] ?? true), [features])
 
   const [expandedDomain, setExpandedDomain] = useState<IncidentDomain | null>(null)
   const [tab, setTab] = useState<string>('layers')
@@ -141,7 +137,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
           const layer = layers.find(l => l.domain === d.id)
           const isActive = layer?.visible ?? true
           return (
-            <button key={d.id} onClick={() => toggleLayer(d.id)} title={d.label} style={{
+            <button key={d.id} onClick={() => toggleLayer(d.id)} title={t(d.i18nLabel)} style={{
               width: '32px', height: '28px', background: 'transparent',
               border: 'none', cursor: 'pointer', fontSize: '12px',
               color: isActive ? d.color : P.dim + '40',
@@ -170,15 +166,15 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
         display: 'flex', alignItems: 'center',
         borderBottom: `1px solid ${P.border}`, height: '32px',
       }}>
-        {SIDEBAR_TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+        {SIDEBAR_TABS.map(st => (
+          <button key={st.id} onClick={() => setTab(st.id)} style={{
             flex: 1, height: '100%', border: 'none', cursor: 'pointer',
-            background: tab === t.id ? '#0d1220' : 'transparent',
-            color: tab === t.id ? P.accent : P.dim,
+            background: tab === st.id ? '#0d1220' : 'transparent',
+            color: tab === st.id ? P.accent : P.dim,
             fontSize: '9px', fontFamily: P.font,
-            borderBottom: tab === t.id ? `2px solid ${P.accent}` : '2px solid transparent',
+            borderBottom: tab === st.id ? `2px solid ${P.accent}` : '2px solid transparent',
             transition: 'all 0.2s', letterSpacing: '0.1em',
-          }}>{t.icon} {t.label.toUpperCase()}</button>
+          }}>{st.icon} {t(st.i18nKey).toUpperCase()}</button>
         ))}
         <button onClick={onToggle} style={{
           width: '28px', height: '100%', border: 'none', background: 'transparent',
@@ -191,7 +187,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
       {tab === 'layers' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
-            DOMAIN LAYERS
+            {t('sidebar.domainLayers')}
           </div>
           {DOMAINS.map(domain => {
             const layer = layers.find(l => l.domain === domain.id)
@@ -225,7 +221,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
                     <span style={{
                       fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                       color: isActive ? P.text : P.dim, transition: 'color 0.2s',
-                    }}>{domain.label.toUpperCase()}</span>
+                    }}>{t(domain.i18nLabel).toUpperCase()}</span>
                   </button>
 
                   <span style={{
@@ -252,7 +248,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
                             fontSize: '6px', color: domain.color,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>{subActive ? '✓' : ''}</span>
-                          <span style={{ fontSize: '9px', color: subActive ? P.text : P.dim }}>{sub.label}</span>
+                          <span style={{ fontSize: '9px', color: subActive ? P.text : P.dim }}>{t(sub.i18nKey)}</span>
                         </button>
                       )
                     })}
@@ -268,16 +264,12 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
       {tab === 'tracking' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
-            LIVE TRACKING LAYERS
+            {t('sidebar.liveTrackingLayers')}
           </div>
           {visibleTrackingLayers.map(track => {
             const isActive = trackingEnabled[track.id]
             const isLoading = trackingLoading[track.id]
-            const count = track.id === 'flights' ? flightCount
-              : track.id === 'vessels' ? vesselCount
-              : track.id === 'earthquakes' ? quakeCount
-              : track.id === 'satellites' ? satelliteCount
-              : disasterCount
+            const count = track.id === 'earthquakes' ? quakeCount : satelliteCount
 
             return (
               <div key={track.id} style={{
@@ -306,9 +298,9 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
                   <div style={{
                     fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                     color: isActive ? P.text : P.dim, transition: 'color 0.2s',
-                  }}>{track.label.toUpperCase()}</div>
+                  }}>{t(track.i18nLabel).toUpperCase()}</div>
                   <div style={{ fontSize: '9px', color: P.dim, marginTop: '1px' }}>
-                    {track.description}
+                    {t(track.i18nDesc)}
                   </div>
                 </div>
 
@@ -317,7 +309,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
                     <span style={{
                       fontSize: '9px', color: track.color,
                       animation: 'pulse 1s infinite',
-                    }}>Loading...</span>
+                    }}>{t('app.loading')}</span>
                   ) : isActive ? (
                     <span style={{ fontSize: '9px', color: track.color, fontWeight: 600 }}>
                       {count}
@@ -352,8 +344,8 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
               <div style={{
                 fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                 color: (trackingEnabled as any).daynight ? P.text : P.dim,
-              }}>DAY / NIGHT</div>
-              <div style={{ fontSize: '9px', color: P.dim }}>Solar terminator overlay</div>
+              }}>{t('sidebar.layerDayNight')}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{t('sidebar.layerDayNightDesc')}</div>
             </div>
           </div>
 
@@ -380,23 +372,22 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
               <div style={{
                 fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
                 color: (trackingEnabled as any).infrastructure ? P.text : P.dim,
-              }}>INFRASTRUCTURE</div>
-              <div style={{ fontSize: '9px', color: P.dim }}>Pipelines, cables, chokepoints</div>
+              }}>{t('sidebar.layerInfrastructure')}</div>
+              <div style={{ fontSize: '9px', color: P.dim }}>{t('sidebar.layerInfrastructureDesc')}</div>
             </div>
           </div>
 
           {/* Conflict Zones toggle */}
           {[
-            { key: 'conflictZones', label: 'CONFLICT ZONES', desc: 'Active conflict boundaries', color: '#ff3b5c', icon: '⬡' },
-            { key: 'tradeRoutes', label: 'TRADE ROUTES', desc: 'Maritime & pipeline routes', color: '#f5c542', icon: '⛵' },
-            { key: 'sigint', label: 'SIGINT / RF', desc: 'GPS jamming & interference', color: '#a78bfa', icon: '📡' },
-            { key: 'weather', label: 'WEATHER', desc: 'Extreme weather alerts', color: '#64c8ff', icon: '🌪' },
-            { key: 'pandemic', label: 'PANDEMIC', desc: 'Disease outbreaks', color: '#ff8800', icon: '🦠' },
-            { key: 'nuclear', label: 'NUCLEAR/WMD', desc: 'Nuclear facilities & missiles', color: '#f5c542', icon: '☢' },
-            { key: 'military', label: 'MILITARY', desc: 'Exercises & deployments', color: '#a78bfa', icon: '🎖' },
-            { key: 'energy', label: 'ENERGY', desc: 'Power plants & pipelines', color: '#ffd700', icon: '⚡' },
-            { key: 'migration', label: 'MIGRATION', desc: 'Refugee & migration routes', color: '#ff3b5c', icon: '🚶' },
-            { key: 'internet', label: 'INTERNET', desc: 'Outages & infrastructure', color: '#00e676', icon: '🌐' },
+            { key: 'conflictZones', i18nLabel: 'sidebar.layerConflictZones', i18nDesc: 'sidebar.layerConflictZonesDesc', color: '#ff3b5c', icon: '⬡' },
+            { key: 'tradeRoutes', i18nLabel: 'sidebar.layerTradeRoutes', i18nDesc: 'sidebar.layerTradeRoutesDesc', color: '#f5c542', icon: '⛵' },
+            { key: 'sigint', i18nLabel: 'sidebar.layerSigint', i18nDesc: 'sidebar.layerSigintDesc', color: '#a78bfa', icon: '📡' },
+            { key: 'pandemic', i18nLabel: 'sidebar.layerPandemic', i18nDesc: 'sidebar.layerPandemicDesc', color: '#ff8800', icon: '🦠' },
+            { key: 'nuclear', i18nLabel: 'sidebar.layerNuclear', i18nDesc: 'sidebar.layerNuclearDesc', color: '#f5c542', icon: '☢' },
+            { key: 'military', i18nLabel: 'sidebar.layerMilitary', i18nDesc: 'sidebar.layerMilitaryDesc', color: '#a78bfa', icon: '🎖' },
+            { key: 'energy', i18nLabel: 'sidebar.layerEnergy', i18nDesc: 'sidebar.layerEnergyDesc', color: '#ffd700', icon: '⚡' },
+            { key: 'migration', i18nLabel: 'sidebar.layerMigration', i18nDesc: 'sidebar.layerMigrationDesc', color: '#ff3b5c', icon: '🚶' },
+            { key: 'internet', i18nLabel: 'sidebar.layerInternet', i18nDesc: 'sidebar.layerInternetDesc', color: '#00e676', icon: '🌐' },
           ].map(item => (
             <div key={item.key} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
@@ -415,8 +406,8 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
               }}>{(trackingEnabled as any)[item.key] ? '✓' : ''}</button>
               <span style={{ fontSize: '12px', color: (trackingEnabled as any)[item.key] ? item.color : P.dim }}>{item.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: (trackingEnabled as any)[item.key] ? P.text : P.dim }}>{item.label}</div>
-                <div style={{ fontSize: '9px', color: P.dim }}>{item.desc}</div>
+                <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', color: (trackingEnabled as any)[item.key] ? P.text : P.dim }}>{t(item.i18nLabel)}</div>
+                <div style={{ fontSize: '9px', color: P.dim }}>{t(item.i18nDesc)}</div>
               </div>
             </div>
           ))}
@@ -425,17 +416,14 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
             padding: '8px 10px', borderTop: `1px solid ${P.border}`, marginTop: '8px',
           }}>
             <div style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.15em', marginBottom: '4px' }}>
-              DATA SOURCES
+              {t('sidebar.dataSources')}
             </div>
             <div style={{ fontSize: '9px', color: P.dim, lineHeight: '1.6' }}>
-              ✈ OpenSky Network (live)<br/>
-              ⚓ AIS Global (sample)<br/>
-              🛰 CelesTrak TLE (live)<br/>
-              ◎ USGS Earthquake Feed<br/>
-              ⚠ NASA EONET<br/>
-              ⬡ Conflict zones (curated)<br/>
-              ⛵ Trade routes &amp; chokepoints<br/>
-              📡 SIGINT/RF monitoring
+              🛰 {t('sidebar.sourceCelestrak')}<br/>
+              ◎ {t('sidebar.sourceUSGS')}<br/>
+              ⬡ {t('sidebar.sourceConflict')}<br/>
+              ⛵ {t('sidebar.sourceTrade')}<br/>
+              📡 {t('sidebar.sourceSigint')}
             </div>
           </div>
         </div>
@@ -445,7 +433,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
       {tab === 'views' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
-            SAVED VIEWS
+            {t('sidebar.savedViews')}
           </div>
           {views.map(view => (
             <div key={view.id} style={{
@@ -478,12 +466,12 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
       {tab === 'watchlist' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '8px 10px 4px', fontSize: '9px', color: P.dim, letterSpacing: '0.2em' }}>
-            WATCHLIST
+            {t('sidebar.watchlist')}
           </div>
           <div style={{ padding: '4px 10px 8px', display: 'flex', gap: '4px' }}>
             <input
               type="text"
-              placeholder="Add keyword..."
+              placeholder={t('sidebar.addKeyword')}
               value={newWatchValue}
               onChange={e => setNewWatchValue(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddWatch()}
@@ -522,7 +510,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
           ))}
           {watchItems.length === 0 && (
             <div style={{ padding: '16px 10px', fontSize: '9px', color: P.dim, textAlign: 'center' }}>
-              No watchlist items
+              {t('sidebar.noWatchlistItems')}
             </div>
           )}
         </div>
@@ -533,7 +521,7 @@ export const Sidebar = memo(function Sidebar({ collapsed, onToggle, onApplyView 
         borderTop: `1px solid ${P.border}`, padding: '6px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>LAYERS</span>
+        <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em' }}>{t('sidebar.layers')}</span>
         <span style={{ fontSize: '10px', color: P.accent, fontWeight: 600 }}>
           {layers.filter(l => l.visible).length}/{layers.length}
         </span>

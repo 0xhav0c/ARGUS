@@ -20,25 +20,24 @@ export function registerWindowHandlers(
   getMainWindow: () => BrowserWindow | null,
   getRendererPort: () => number
 ): void {
-  ipcMain.handle('window-minimize', () => getMainWindow()?.minimize())
-  ipcMain.handle('window-maximize', () => {
-    const mainWindow = getMainWindow()
-    if (mainWindow?.isMaximized()) {
-      mainWindow.unmaximize()
-    } else {
-      mainWindow?.maximize()
-    }
+  ipcMain.on('window-minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isDestroyed()) win.minimize()
   })
-  ipcMain.handle('window-close', (event) => {
+  ipcMain.on('window-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) return
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+  })
+  ipcMain.on('window-close', (event) => {
     const mainWindow = getMainWindow()
-    // Find which window made the request — close it specifically.
-    // If it is the main window, also tear down auxiliary windows so the app fully quits.
-    const senderWin = BrowserWindow.fromWebContents(event.sender)
+    let senderWin: BrowserWindow | null = null
+    try { senderWin = BrowserWindow.fromWebContents(event.sender) } catch {}
     if (senderWin && senderWin !== mainWindow && !senderWin.isDestroyed()) {
       senderWin.close()
       return
     }
-    // Main window close — close detached panels, then quit the app
     try { windowManager.closeAll() } catch {}
     for (const w of BrowserWindow.getAllWindows()) {
       if (w !== mainWindow && !w.isDestroyed()) {
@@ -48,8 +47,6 @@ export function registerWindowHandlers(
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.close()
     }
-    // On macOS, closing the main window does not quit by default. The user clicking
-    // the explicit close button in our custom titlebar is a quit intent — honor it.
     setTimeout(() => { try { app.quit() } catch {} }, 100)
   })
   ipcMain.handle('window-is-maximized', () => getMainWindow()?.isMaximized() ?? false)
@@ -101,24 +98,35 @@ export function registerWindowHandlers(
     const win = new BrowserWindow({
       width: 1000, height: 800, x, y,
       title: 'Argus — Panels',
-      // Frameless on Win/Linux (we render our own TopBar with controls).
-      // On macOS, use hiddenInset so native traffic lights remain available.
       frame: process.platform === 'darwin',
       titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
       autoHideMenuBar: true,
       backgroundColor: '#0a0e17',
+      show: false,
       ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 14 } } : {}),
       webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true, nodeIntegration: false },
     })
     applyWindowOpenHandler(win)
-    // Build the URL deterministically from the renderer source instead of relying on
-    // mainWindow.webContents.getURL(), which can return '' if called before the page
-    // commits a navigation. Falling back to that produced ERR_INVALID_URL.
+    let shown = false
+    const showOnce = () => { if (!shown && !win.isDestroyed()) { shown = true; win.show() } }
+    win.on('ready-to-show', showOnce)
+    win.webContents.on('did-finish-load', showOnce)
+    const showTimer = setTimeout(showOnce, 5000)
+    win.on('closed', () => clearTimeout(showTimer))
+    win.webContents.on('did-fail-load', (_e, code, desc, url) => {
+      console.error(`[Detach] Load failed: ${code} ${desc} ${url}`)
+      showOnce()
+    })
     const devUrl = process.env.ELECTRON_RENDERER_URL
-    const targetUrl = devUrl
-      ? `${devUrl}?mode=panels-only`
-      : `http://127.0.0.1:${getRendererPort()}/index.html?mode=panels-only`
-    win.loadURL(targetUrl)
+    let targetUrl: string
+    if (devUrl) {
+      const sep = devUrl.includes('?') ? '&' : '?'
+      targetUrl = `${devUrl}${sep}mode=panels-only`
+    } else {
+      targetUrl = `http://127.0.0.1:${getRendererPort()}/index.html?mode=panels-only`
+    }
+    console.log(`[Detach] Loading panels window: ${targetUrl}`)
+    win.loadURL(targetUrl).catch(err => console.error('[Detach] loadURL error:', err))
     panelsWindow = win
     mainWindow?.webContents.send('panels-detached', true)
     win.on('closed', () => {
@@ -169,10 +177,21 @@ export function registerWindowHandlers(
     const win = new BrowserWindow({
       x: x + 50, y: y + 50, width: Math.min(1200, width - 100), height: Math.min(800, height - 100),
       frame: true, title: `Argus — ${type}`,
+      show: false,
+      backgroundColor: '#0a0e17',
       webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, nodeIntegration: false, contextIsolation: true },
     })
+    applyWindowOpenHandler(win)
+    let shown = false
+    const showOnce = () => { if (!shown && !win.isDestroyed()) { shown = true; win.show() } }
+    win.on('ready-to-show', showOnce)
+    win.webContents.on('did-finish-load', showOnce)
+    const showTimer = setTimeout(showOnce, 5000)
+    win.on('closed', () => clearTimeout(showTimer))
     const devUrl = process.env.ELECTRON_RENDERER_URL
-    win.loadURL(devUrl || `http://127.0.0.1:${getRendererPort()}/index.html`)
+    const base = devUrl || `http://127.0.0.1:${getRendererPort()}/index.html`
+    const sep = base.includes('?') ? '&' : '?'
+    win.loadURL(`${base}${sep}mode=panels-only`).catch(err => console.error('[DetachWindow] loadURL error:', err))
     return { windowId: win.id }
   })
 }

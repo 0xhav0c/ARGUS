@@ -29,14 +29,13 @@ function Card({ title, subtitle, color, children, onClick }: { title: string; su
   )
 }
 
-type SubTab = 'cyber' | 'pandemic' | 'nuclear' | 'military' | 'weather' | 'internet' | 'space' | 'drones'
+type SubTab = 'cyber' | 'pandemic' | 'nuclear' | 'military' | 'internet' | 'space' | 'drones'
 
 const SUB_TABS: { id: SubTab; label: string; icon: string; color: string; tip: string; featureKey: keyof FeatureFlags }[] = [
   { id: 'cyber', label: 'CYBER THREATS', icon: '🛡', color: '#ff3b5c', tip: 'Active cyber threats including malware campaigns, data breaches, and vulnerability exploits. Click events with coordinates to locate on the globe.', featureKey: 'secCyber' },
   { id: 'pandemic', label: 'PANDEMIC', icon: '🦠', color: '#ff8800', tip: 'Disease outbreak monitoring — tracks epidemics, pandemics, and public health emergencies worldwide.', featureKey: 'secPandemic' },
   { id: 'nuclear', label: 'NUCLEAR/WMD', icon: '☢', color: '#f5c542', tip: 'Nuclear proliferation, WMD threats, missile tests, and radiation incidents. Includes both state and non-state actor activities.', featureKey: 'secNuclear' },
   { id: 'military', label: 'MILITARY', icon: '🎖', color: '#a78bfa', tip: 'Military operations, force deployments, arms buildups, and defense-related incidents across all regions.', featureKey: 'secMilitary' },
-  { id: 'weather', label: 'WEATHER', icon: '🌪', color: '#64c8ff', tip: 'Severe weather alerts, natural disasters, and climate-related events that may impact security and infrastructure.', featureKey: 'secWeather' },
   { id: 'internet', label: 'INTERNET', icon: '🌐', color: '#00e676', tip: 'Internet connectivity disruptions, major outages, and infrastructure issues. Often correlates with conflict or censorship events.', featureKey: 'secInternet' },
   { id: 'space', label: 'SPACE & NEO', icon: '☄', color: '#fbbf24', tip: 'Space weather events (solar flares, CMEs, geomagnetic storms), Near-Earth Objects (NEOs), asteroids, and fireball sightings from NASA data.', featureKey: 'secSpace' },
   { id: 'drones', label: 'DRONES/UAV', icon: '🛩', color: '#06b6d4', tip: 'Drone and UAV activity reports — unauthorized flights, military drone operations, and aerial surveillance detections.', featureKey: 'secDrones' },
@@ -171,22 +170,6 @@ export function SecurityIntelPage({ onLocateIncident }: SecurityIntelPageProps) 
               </Card>
           ))}
           {(!military || military.length === 0) && <Empty />}
-        </div>
-      )}
-
-      {effectiveTab === 'weather' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '8px' }}>
-          {(weather || []).map(w => (
-            <Card key={w.id} title={w.title} subtitle={`${w.type.toUpperCase()} • ${w.source}`} color={sevColor(w.severity)}
-              onClick={onLocateIncident && w.latitude != null && w.longitude != null ? () => onLocateIncident(toIncident({
-                id: w.id, title: w.title, description: w.description,
-                severity: w.severity === 'EXTREME' ? 'CRITICAL' : w.severity === 'SEVERE' ? 'HIGH' : w.severity === 'MODERATE' ? 'MEDIUM' : 'LOW',
-                domain: 'ENVIRONMENT', source: w.source, latitude: w.latitude, longitude: w.longitude,
-              })) : undefined}>
-              <div style={{ fontSize: '9px', color: P.dim, marginTop: '4px' }}>{w.description}</div>
-            </Card>
-          ))}
-          {(!weather || weather.length === 0) && <Empty />}
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Incident, IncidentDomain } from '../../../shared/types'
 import { useFilterStore } from '@/stores/filter-store'
 import { InfoTip } from '../ui/InfoTip'
@@ -22,14 +23,14 @@ const DOMAIN_ICONS: Record<string, string> = {
   CONFLICT: '\u2694', CYBER: '\u26A1', INTEL: '\u25C9', FINANCE: '\u25C6',
 }
 
-function timeAgo(ts: string): string {
+function timeAgo(ts: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const d = Date.now() - new Date(ts).getTime()
   const m = Math.floor(d / 60000)
-  if (m < 1) return 'now'
-  if (m < 60) return `${m}m ago`
+  if (m < 1) return t('time.now')
+  if (m < 60) return t('time.mAgo', { m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
+  if (h < 24) return t('time.hAgo', { h })
+  return t('time.dAgo', { d: Math.floor(h / 24) })
 }
 
 interface Props {
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function DashboardFeed({ incidents, onLocateIncident }: Props) {
+  const { t } = useTranslation()
   const [popupOpen, setPopupOpen] = useState(false)
   const showCount = 10
 
@@ -149,7 +151,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
   const selectStyle: CSSProperties = {
     padding: '6px 8px', fontSize: '9px', fontFamily: P.font,
     background: P.bg, border: `1px solid ${P.border}`, borderRadius: '4px',
-    color: P.text, minWidth: '120px', maxWidth: '160px', cursor: 'pointer',
+    color: P.text, minWidth: '80px', maxWidth: '140px', cursor: 'pointer',
   }
 
   return (
@@ -159,9 +161,9 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ width: '3px', height: '16px', background: '#ff6b35', borderRadius: '2px' }} />
-        <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>INCIDENT FEED</span>
+        <span style={{ fontSize: '11px', fontWeight: 700, color: P.text, letterSpacing: '0.15em' }}>{t('feed.incidentFeed')}</span>
         <InfoTip text="Incident feed filtered by active sidebar layers and map filters. Toggle layers in the sidebar to include/exclude domains. For unfiltered data, see Intelligence tab." />
-        <span style={{ fontSize: '9px', color: '#ff6b35', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.8 }}>FILTERED</span>
+        <span style={{ fontSize: '9px', color: '#ff6b35', fontFamily: P.font, letterSpacing: '0.05em', opacity: 0.8 }}>{t('feed.filtered')}</span>
         <span style={{ fontSize: '9px', color: P.dim }}>{filteredAll.length} / {incidents.length} events</span>
         {filterCount > 0 && (
           <span style={{
@@ -184,7 +186,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
             color: filterCount ? P.accent : P.dim,
           }}
         >
-          CLEAR
+          {t('app.clear')}
         </button>
       </div>
 
@@ -194,18 +196,18 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
       }}>
         <input
           type="search"
-          placeholder="Search title, description, source, country…"
+          placeholder={t('feed.searchPlaceholder')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           style={{
-            flex: '1 1 220px', minWidth: '200px', padding: '8px 12px',
+            flex: '1 1 180px', minWidth: '140px', padding: '8px 12px',
             fontSize: '11px', fontFamily: P.font, color: P.text,
             background: P.card, border: `1px solid ${P.border}`, borderRadius: '6px',
             outline: 'none',
           }}
         />
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>RANGE</span>
+          <span style={{ fontSize: '9px', color: P.dim, letterSpacing: '0.1em', marginRight: '4px' }}>{t('feed.range')}</span>
           {presetBtn('1H')}
           {presetBtn('6H')}
           {presetBtn('24H')}
@@ -216,7 +218,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '14px', alignItems: 'center' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '9px', color: P.dim }}>
-          <span style={{ letterSpacing: '0.08em' }}>COUNTRY</span>
+          <span style={{ letterSpacing: '0.08em' }}>{t('feed.country')}</span>
           <select
             value={countryFilter ?? ''}
             onChange={e => setCountryFilter(e.target.value || null)}
@@ -229,11 +231,11 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           </select>
         </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '9px', color: P.dim }}>
-          <span style={{ letterSpacing: '0.08em' }}>SOURCE</span>
+          <span style={{ letterSpacing: '0.08em' }}>{t('feed.source')}</span>
           <select
             value={sourceFilter ?? ''}
             onChange={e => setSourceFilter(e.target.value || null)}
-            style={{ ...selectStyle, minWidth: '140px', maxWidth: '200px' }}
+            style={{ ...selectStyle, minWidth: '80px', maxWidth: '160px' }}
           >
             <option value="">All</option>
             {sources.map(s => (
@@ -268,17 +270,18 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '32px 60px 1fr 120px 80px 60px',
-          gap: '8px', padding: '8px 14px',
+          gridTemplateColumns: '24px 44px 1fr minmax(40px, 100px) minmax(36px, 70px) 42px',
+          gap: '6px', padding: '8px 12px',
           borderBottom: `1px solid ${P.border}`,
           fontSize: '9px', color: P.dim, letterSpacing: '0.12em', fontWeight: 600,
+          minWidth: 0,
         }}>
           <span />
-          <span>SEV</span>
-          <span>INCIDENT</span>
-          <span>SOURCE</span>
-          <span>LOCATION</span>
-          <span style={{ textAlign: 'right' }}>TIME</span>
+          <span>{t('feed.sev')}</span>
+          <span>{t('feed.incident')}</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('feed.source')}</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('feed.location')}</span>
+          <span style={{ textAlign: 'right' }}>{t('feed.time')}</span>
         </div>
 
         {filtered.map(inc => {
@@ -288,11 +291,11 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
               onClick={() => onLocateIncident(inc)}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '32px 60px 1fr 120px 80px 60px',
-                gap: '8px', padding: '10px 14px',
+                gridTemplateColumns: '24px 44px 1fr minmax(40px, 100px) minmax(36px, 70px) 42px',
+                gap: '6px', padding: '10px 12px',
                 borderBottom: `1px solid ${P.border}15`,
                 cursor: 'pointer', transition: 'background 0.15s',
-                alignItems: 'center',
+                alignItems: 'center', minWidth: 0,
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#0d122080' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
@@ -324,7 +327,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
               }}>{inc.country || '\u2014'}</span>
 
               <span style={{ fontSize: '9px', color: P.dim, textAlign: 'right' }}>
-                {timeAgo(inc.timestamp)}
+                {timeAgo(inc.timestamp, t)}
               </span>
             </div>
           )
@@ -332,7 +335,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
 
         {filteredAll.length === 0 && (
           <div style={{ padding: '24px', textAlign: 'center', fontSize: '11px', color: P.dim, fontFamily: P.font }}>
-            No incidents match filters.
+            {t('feed.noIncidents')}
           </div>
         )}
 
@@ -347,7 +350,7 @@ export function DashboardFeed({ incidents, onLocateIncident }: Props) {
           onMouseEnter={e => { e.currentTarget.style.background = `${P.accent}12` }}
           onMouseLeave={e => { e.currentTarget.style.background = `${P.accent}06` }}
           >
-            VIEW ALL {filteredAll.length} INCIDENTS →
+            {t('feed.viewAllIncidents', { count: filteredAll.length })}
           </button>
         )}
       </div>

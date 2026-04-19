@@ -44,8 +44,12 @@ describe('Drone Service — 100% fake data kaldırıldı', () => {
     expect(readSrc('main/services/drone-service.ts')).toContain('return []')
   })
 
-  it('dosya 15 satırdan az', () => {
-    expect(readSrc('main/services/drone-service.ts').split('\n').length).toBeLessThan(15)
+  it('dosya gerçek API entegrasyonu içeriyor (GDELT/OpenSky)', () => {
+    // Drone service now fetches from real APIs instead of returning fake data.
+    const full = readSrc('main/services/drone-service.ts')
+    expect(full).toContain('fetchDroneGDELT')
+    expect(full).toContain('fetchOpenSkyDrones')
+    expect(full).toContain('api.gdeltproject.org')
   })
 })
 

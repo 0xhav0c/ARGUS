@@ -31,16 +31,17 @@ describe('FAZ4: Entity Tracker boş liste mesajı', () => {
 describe('FAZ4: SecurityIntelPage tab empty states', () => {
   const src = readSrc('renderer/components/pages/SecurityIntelPage.tsx')
 
-  it('Sanctions boş durum mesajı var', () => {
-    expect(src).toMatch(/No sanctions data/)
+  it('Generic Empty component boş durum mesajı var', () => {
+    // SecurityIntelPage uses a shared <Empty> component for all tabs
+    expect(src).toMatch(/No data available/)
   })
 
-  it('DarkWeb boş durum mesajı var', () => {
-    expect(src).toMatch(/No dark web alert/)
-  })
-
-  it('Drones boş durum mesajı var', () => {
+  it('Drones specific boş durum mesajı var', () => {
     expect(src).toMatch(/No drone activity/)
+  })
+
+  it('Cyber threats specific boş durum mesajı var', () => {
+    expect(src).toMatch(/No threats in this category/)
   })
 })
 

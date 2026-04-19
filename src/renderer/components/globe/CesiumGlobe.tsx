@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, Component, type ReactNode, type ErrorInfo } from 'react'
+import { useSettingsStore } from '@/stores/settings-store'
 
 interface CesiumGlobeProps {
   onReady?: (viewer: any) => void
@@ -46,7 +47,6 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
   const [loading, setLoading] = useState(true)
   const onReadyRef = useRef(onReady)
   onReadyRef.current = onReady
-
   // Handle scene mode changes
   useEffect(() => {
     const viewer = viewerRef.current
@@ -78,6 +78,9 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
         if (destroyed || !containerRef.current) return
         await import('cesium/Build/Cesium/Widgets/widgets.css')
 
+        const quality = useSettingsStore.getState().globeQuality || 'medium'
+        const msaa = quality === 'high' ? 4 : quality === 'medium' ? 2 : 1
+
         const viewer = new Cesium.Viewer(containerRef.current, {
           animation: false,
           baseLayerPicker: false,
@@ -91,7 +94,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           navigationHelpButton: false,
           scene3DOnly: false,
           orderIndependentTranslucency: false,
-          msaaSamples: 4,
+          msaaSamples: msaa,
           contextOptions: {
             webgl: { alpha: true, antialias: true, depth: true, stencil: false, powerPreference: 'high-performance' }
           }
@@ -101,27 +104,29 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
 
         const scene = viewer.scene
 
-        // HiDPI/Retina resolution: render at native device pixel ratio for sharp imagery
+        const dpr = window.devicePixelRatio || 1
+        const maxScale = quality === 'high' ? 2 : quality === 'medium' ? 1.5 : 1
         viewer.useBrowserRecommendedResolution = false
-        viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2)
+        viewer.resolutionScale = Math.min(dpr, maxScale)
 
         scene.backgroundColor = Cesium.Color.BLACK
-        scene.globe.baseColor = Cesium.Color.fromCssColorString('#0a1628')
+        scene.globe.baseColor = Cesium.Color.fromCssColorString('#080e1a')
         scene.globe.enableLighting = false
         scene.globe.showGroundAtmosphere = false
         scene.globe.depthTestAgainstTerrain = true
+        scene.globe.showWaterEffect = false
 
-        // Subtle atmosphere edge glow (thin blue halo at Earth's rim)
         if (scene.skyAtmosphere) {
-          scene.skyAtmosphere.show = true
-          scene.skyAtmosphere.brightnessShift = -0.4
-          scene.skyAtmosphere.hueShift = 0.0
-          scene.skyAtmosphere.saturationShift = -0.2
+          scene.skyAtmosphere.show = false
         }
 
         scene.fog.enabled = false
-        if (scene.sun) scene.sun.show = false
-        if (scene.moon) scene.moon.show = false
+        scene.sun.show = false
+        scene.moon.show = false
+
+        if (quality === 'high') {
+          try { scene.postProcessStages.fxaa.enabled = true } catch {}
+        }
 
         // High-quality realistic starfield
         const generateStarFace = (seed: number): HTMLCanvasElement => {
@@ -294,8 +299,9 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
         // === IMAGERY LAYERS ===
         viewer.imageryLayers.removeAll()
 
-        scene.globe.maximumScreenSpaceError = 1.0
-        scene.globe.tileCacheSize = 1000
+        const ssError = quality === 'high' ? 1.0 : quality === 'medium' ? 2.0 : 4.0
+        scene.globe.maximumScreenSpaceError = ssError
+        scene.globe.tileCacheSize = quality === 'high' ? 1000 : quality === 'medium' ? 500 : 200
 
         // Apple Silicon ANGLE/Metal shader bug workaround
         // https://github.com/CesiumGS/cesium/issues/11251
@@ -313,7 +319,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
                   && /Mac/.test(navigator.userAgent))
         })()
 
-        // Layer 1: NaturalEarthII - dark blue tinted globe
+        // Layer 1: NaturalEarthII - base globe texture
         let baseLayer: any = null
         try {
           const baseImagery = await Cesium.TileMapServiceImageryProvider.fromUrl(
@@ -322,10 +328,10 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           if (!destroyed) {
             baseLayer = viewer.imageryLayers.addImageryProvider(baseImagery)
             if (!isAppleSiliconMac) {
-              baseLayer.brightness = 0.5
+              baseLayer.brightness = 0.55
               baseLayer.contrast = 1.3
-              baseLayer.saturation = 0.3
-              baseLayer.gamma = 0.8
+              baseLayer.saturation = 0.4
+              baseLayer.gamma = 0.75
             }
           }
         } catch {
@@ -340,9 +346,11 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           )
           if (!destroyed) {
             satLayer = viewer.imageryLayers.addImageryProvider(arcgisImagery)
-            satLayer.alpha = 0
-            satLayer.brightness = 1.0
-            satLayer.contrast = 1.05
+            satLayer.alpha = 0.2
+            satLayer.brightness = 0.6
+            satLayer.contrast = 1.2
+            satLayer.saturation = 0.45
+            satLayer.gamma = 0.75
             console.log('[Globe] ArcGIS satellite layer ready')
           }
         } catch {
@@ -369,7 +377,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           }
         }
 
-        // Layer 4: ArcGIS Reference Labels - city/country names (zoom-in)
+        // Layer 3: ArcGIS Reference Labels - city/country names (zoom-in)
         let labelLayer: any = null
         try {
           const labelsImagery = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
@@ -378,6 +386,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           if (!destroyed) {
             labelLayer = viewer.imageryLayers.addImageryProvider(labelsImagery)
             labelLayer.alpha = 0
+            labelLayer.brightness = 1.0
             console.log('[Globe] Label overlay ready')
           }
         } catch {
@@ -389,7 +398,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           try {
             const terrain = await Cesium.CesiumTerrainProvider.fromIonAssetId(1, {
               requestVertexNormals: true,
-              requestWaterMask: false
+              requestWaterMask: true
             })
             if (!destroyed) {
               viewer.terrainProvider = terrain
@@ -434,7 +443,7 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
         scene.camera.defaultZoomAmount = 500000
 
         // Auto-rotation with smooth zoom-out resume
-        let autoRotate = true
+        let autoRotate = useSettingsStore.getState().autoRotateGlobe !== false
         let isZoomingOut = false
         let resumeTimer: ReturnType<typeof setTimeout> | null = null
         const OVERVIEW_ALT = 18000000
@@ -446,7 +455,6 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
           if (isZoomingOut) {
             const currentAlt = viewer.camera.positionCartographic.height
             if (currentAlt < OVERVIEW_ALT * 0.95) {
-              const t = Math.min(1, (OVERVIEW_ALT - currentAlt) / OVERVIEW_ALT)
               const step = Math.max(50000, (OVERVIEW_ALT - currentAlt) * 0.02)
               const carto = viewer.camera.positionCartographic
 
@@ -492,35 +500,40 @@ function CesiumGlobeInner({ onReady, sceneMode }: CesiumGlobeProps) {
 
           const alt = viewer.camera.positionCartographic.height
 
-          // Satellite imagery fades in as user zooms closer
-          const SAT_START = 8000000
-          const SAT_FULL  = 800000
-          let satAlpha = 0
+          // Satellite imagery: subtle from space, clear on zoom, dark cinematic tone
+          const SAT_MIN = 0.3
+          const SAT_START = 15000000
+          const SAT_FULL  = 400000
+          let satAlpha = SAT_MIN
           if (alt <= SAT_FULL) {
             satAlpha = 1
           } else if (alt < SAT_START) {
-            const t = 1 - (alt - SAT_FULL) / (SAT_START - SAT_FULL)
-            satAlpha = t * t
+            const p = 1 - (alt - SAT_FULL) / (SAT_START - SAT_FULL)
+            satAlpha = SAT_MIN + (1 - SAT_MIN) * p * p * (3 - 2 * p)
           }
 
-          if (satLayer) satLayer.alpha = satAlpha
-
-          if (baseLayer && !isAppleSiliconMac) {
-            baseLayer.brightness = 0.5 + 0.3 * satAlpha
-            baseLayer.saturation = 0.3 + 0.5 * satAlpha
+          if (satLayer) {
+            satLayer.alpha = satAlpha
+            satLayer.brightness = 0.6 + 0.2 * satAlpha
+            satLayer.saturation = 0.45 + 0.35 * satAlpha
           }
 
-          // Labels at medium-close zoom
+          // Labels at medium-close zoom (respects mapLabels setting)
           if (labelLayer) {
-            const LBL_START = 3000000
-            const LBL_FULL  = 500000
-            if (alt > LBL_START) {
+            const showLabels = useSettingsStore.getState().mapLabels !== false
+            if (!showLabels) {
               labelLayer.alpha = 0
-            } else if (alt < LBL_FULL) {
-              labelLayer.alpha = 0.9
             } else {
-              const t = 1 - (alt - LBL_FULL) / (LBL_START - LBL_FULL)
-              labelLayer.alpha = t * 0.9
+              const LBL_START = 3000000
+              const LBL_FULL  = 500000
+              if (alt > LBL_START) {
+                labelLayer.alpha = 0
+              } else if (alt < LBL_FULL) {
+                labelLayer.alpha = 0.9
+              } else {
+                const t = 1 - (alt - LBL_FULL) / (LBL_START - LBL_FULL)
+                labelLayer.alpha = t * 0.9
+              }
             }
           }
         })

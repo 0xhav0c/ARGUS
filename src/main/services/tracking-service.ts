@@ -828,33 +828,36 @@ export class TrackingService {
   }
 
   private async fetchAISData(): Promise<VesselData[]> {
-    // Try multiple free AIS endpoints with retry
+    const seenMmsi = new Set<string>()
     const vessels: VesselData[] = []
 
-    // Source 1: Try MarineTraffic-style public endpoint (limited)
+    const addVessel = (v: VesselData) => {
+      if (seenMmsi.has(v.mmsi)) return
+      seenMmsi.add(v.mmsi)
+      vessels.push(v)
+    }
+
+    // Source 1: Finnish Digitraffic (Baltic/Nordic waters)
     try {
       const res = await fetch(
         'https://meri.digitraffic.fi/api/ais/v1/locations',
-        { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) }
+        { headers: { 'Accept': 'application/json', 'Accept-Encoding': 'gzip' }, signal: AbortSignal.timeout(15000) }
       )
       if (res.ok) {
         const data: any = await res.json()
         const features = data?.features || []
-        for (const f of features.slice(0, 200)) {
+        for (const f of features.slice(0, 1500)) {
           const props = f?.properties || {}
           const coords = f?.geometry?.coordinates || []
           if (!coords[0] || !coords[1]) continue
-          if (isOnLand(coords[1], coords[0])) continue
-
           const mmsi = String(props.mmsi || '')
           if (!mmsi || mmsi.length < 5) continue
-
-          vessels.push({
+          addVessel({
             mmsi,
             name: props.name || `VESSEL ${mmsi.slice(-4)}`,
             latitude: coords[1],
             longitude: coords[0],
-            heading: props.heading || props.cog || 0,
+            heading: (props.heading && props.heading !== 511) ? props.heading : (props.cog || 0),
             speed: (props.sog || 0) / 10,
             type: this.resolveVesselType(props.shipType || 0),
             destination: props.destination || 'UNKNOWN',
@@ -864,14 +867,12 @@ export class TrackingService {
             lastUpdate: props.timestampExternal ? new Date(props.timestampExternal).toISOString() : new Date().toISOString(),
           })
         }
-        if (vessels.length > 0) {
-          console.log(`[Tracking] Digitraffic AIS: ${vessels.length} real vessels loaded`)
-        }
+        console.log(`[Tracking] Digitraffic: ${vessels.length} vessels`)
       }
-    } catch (err) {
-      console.error('[Tracking] AIS fetch failed:', err)
-    }
+    } catch {}
 
+
+    console.log(`[Tracking] Total AIS vessels: ${vessels.length}`)
     return vessels
   }
 
